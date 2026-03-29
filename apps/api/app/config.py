@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 100
     chat_rate_limit_per_minute: int = 20
 
+    # Twilio (SMS OTP)
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
+
     # AI
     anthropic_api_key: str = ""
     openai_api_key: str = ""

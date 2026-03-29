@@ -40,7 +40,7 @@ class User(BaseModel):
 
     # Relationships
     accounts: Mapped[list["Account"]] = relationship(  # noqa: F821
-        back_populates="user", lazy="selectin"
+        back_populates="user", lazy="noload"
     )
     transactions: Mapped[list["Transaction"]] = relationship(  # noqa: F821
         back_populates="user", foreign_keys="[Transaction.user_id]", lazy="noload"
