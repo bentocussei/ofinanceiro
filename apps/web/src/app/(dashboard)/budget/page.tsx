@@ -160,9 +160,9 @@ export default function BudgetPage() {
       {budgets.length === 0 ? (
         <div className="text-center py-16">
           <PieChart className="h-10 w-10 mx-auto text-muted-foreground/30" />
-          <p className="text-muted-foreground mt-3">Nenhum orcamento criado</p>
+          <p className="text-muted-foreground mt-3">Nenhum orçamento criado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie um orcamento para controlar os seus gastos
+            Crie um orçamento para controlar os seus gastos
           </p>
         </div>
       ) : (

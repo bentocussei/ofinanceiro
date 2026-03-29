@@ -7,34 +7,33 @@ import {
   PiggyBank,
   Users,
   BarChart3,
-  Wallet,
   ChevronRight,
 } from "lucide-react"
 
 const features = [
   {
     icon: Eye,
-    title: "Veja todos os seus gastos num so lugar",
+    title: "Veja todos os seus gastos num só lugar",
     description:
-      "Junte todas as suas contas e saiba exactamente quanto gastou, em que categoria, e quanto resta. Sem surpresas no fim do mes.",
+      "Junte todas as suas contas e saiba exactamente quanto gastou, em que categoria, e quanto resta. Sem surpresas no fim do mês.",
   },
   {
     icon: PiggyBank,
-    title: "Nunca mais perca o controlo do orcamento familiar",
+    title: "Nunca mais perca o controlo do orçamento familiar",
     description:
       "Defina limites por categoria e receba alertas antes de ultrapassar. O dinheiro rende mais quando sabe para onde vai.",
   },
   {
     icon: Users,
-    title: "Financas da familia, organizadas em conjunto",
+    title: "Finanças da família, organizadas em conjunto",
     description:
-      "Partilhe o controlo com o seu conjuge. Defina limites para dependentes. Alcance metas juntos, como familia.",
+      "Partilhe o controlo com o seu cônjuge. Defina limites para dependentes. Alcance metas juntos, como família.",
   },
   {
     icon: BarChart3,
-    title: "Relatorios que mostram a verdade",
+    title: "Relatórios que mostram a verdade",
     description:
-      "Graficos claros sobre receitas, despesas e tendencias. Tome decisoes financeiras com confianca, nao com intuicao.",
+      "Gráficos claros sobre receitas, despesas e tendências. Tome decisões financeiras com confiança, não com intuição.",
   },
 ]
 
@@ -42,44 +41,44 @@ const plans = [
   {
     name: "Gratuito",
     price: "0",
-    suffix: "Kz/mes",
-    description: "Para comecar a organizar",
+    suffix: "Kz/mês",
+    description: "Para começar a organizar",
     features: [
       "1 conta",
-      "50 transaccoes/mes",
-      "Orcamentos basicos",
-      "Relatorios simples",
+      "50 transacções/mês",
+      "Orçamentos básicos",
+      "Relatórios simples",
     ],
-    cta: "Comecar gratis",
+    cta: "Começar grátis",
     href: "/register",
     highlighted: false,
   },
   {
     name: "Pessoal",
     price: "2.990",
-    suffix: "Kz/mes",
-    description: "Controlo total das suas financas",
+    suffix: "Kz/mês",
+    description: "Controlo total das suas finanças",
     features: [
       "Contas ilimitadas",
-      "Transaccoes ilimitadas",
-      "Orcamentos avancados",
+      "Transacções ilimitadas",
+      "Orçamentos avançados",
       "Assistente pessoal completo",
-      "Relatorios detalhados",
+      "Relatórios detalhados",
     ],
     cta: "Experimentar agora",
     href: "/register",
     highlighted: true,
   },
   {
-    name: "Familia",
+    name: "Família",
     price: "5.990",
-    suffix: "Kz/mes",
-    description: "Para casais e familias",
+    suffix: "Kz/mês",
+    description: "Para casais e famílias",
     features: [
       "Tudo do Pessoal",
-      "Ate 4 membros",
-      "Orcamento familiar partilhado",
-      "Metas de poupanca em conjunto",
+      "Até 4 membros",
+      "Orçamento familiar partilhado",
+      "Metas de poupança em conjunto",
       "Controlo de dependentes",
     ],
     cta: "Experimentar agora",
@@ -87,16 +86,16 @@ const plans = [
     highlighted: false,
   },
   {
-    name: "Familia+",
+    name: "Família+",
     price: "9.990",
-    suffix: "Kz/mes",
-    description: "Familia alargada + investimentos",
+    suffix: "Kz/mês",
+    description: "Família alargada + investimentos",
     features: [
-      "Tudo do Familia",
-      "Ate 8 membros",
+      "Tudo do Família",
+      "Até 8 membros",
       "Acompanhamento de investimentos",
       "Consultoria personalizada",
-      "Suporte prioritario",
+      "Suporte prioritário",
     ],
     cta: "Experimentar agora",
     href: "/register",
@@ -121,7 +120,7 @@ export default function LandingPage() {
               Funcionalidades
             </a>
             <a href="#precos" className="text-muted-foreground transition-colors hover:text-foreground">
-              Precos
+              Preços
             </a>
           </nav>
           <div className="flex items-center gap-3">
@@ -129,13 +128,13 @@ export default function LandingPage() {
               href="/login"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Ja tenho conta
+              Já tenho conta
             </Link>
             <Link
               href="/register"
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Comecar gratis
+              Começar grátis
             </Link>
           </div>
         </div>
@@ -149,17 +148,12 @@ export default function LandingPage() {
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-5">
           {/* Left — text, takes 3 cols */}
           <div className="lg:col-span-3">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
-              <Wallet className="h-3.5 w-3.5" />
-              Feito para Angola
-            </div>
-
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
               Saiba exactamente para onde vai o seu dinheiro
             </h1>
 
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Junte todas as suas contas e finalmente tenha clareza sobre as suas financas pessoais e familiares.
+              Junte todas as suas contas e finalmente tenha clareza sobre as suas finanças pessoais e familiares.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -167,14 +161,14 @@ export default function LandingPage() {
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_2px_8px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(21,128,61,0.3)]"
               >
-                Comecar gratis
+                Começar grátis
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
               >
-                Ja tenho conta
+                Já tenho conta
               </Link>
             </div>
 
@@ -192,7 +186,7 @@ export default function LandingPage() {
               </div>
               <div className="space-y-3">
                 <div className="rounded-lg bg-muted/60 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Patrimonio liquido</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Património líquido</p>
                   <p className="mt-1 font-mono text-2xl font-bold text-foreground">1.245.800 Kz</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -207,7 +201,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Alimentacao</span>
+                    <span className="text-muted-foreground">Alimentação</span>
                     <span className="font-mono text-muted-foreground">68%</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted">
@@ -221,7 +215,7 @@ export default function LandingPage() {
                     <div className="h-1.5 rounded-full bg-green-500" style={{ width: "42%" }} />
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Educacao</span>
+                    <span className="text-muted-foreground">Educação</span>
                     <span className="font-mono text-muted-foreground">91%</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted">
@@ -242,7 +236,7 @@ export default function LandingPage() {
             Porque usar O Financeiro
           </p>
           <h2 className="mt-3 max-w-lg text-2xl font-bold tracking-tight sm:text-3xl">
-            Controlo financeiro sem complicacoes
+            Controlo financeiro sem complicações
           </h2>
           <p className="mt-3 max-w-xl text-muted-foreground">
             Funcionalidades pensadas para a forma como realmente gere o seu dinheiro no dia-a-dia.
@@ -276,13 +270,13 @@ export default function LandingPage() {
       <section id="precos" className="border-t border-border bg-muted/30 py-20">
         <div className="mx-auto max-w-6xl px-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Precos
+            Preços
           </p>
           <h2 className="mt-3 max-w-lg text-2xl font-bold tracking-tight sm:text-3xl">
             Planos simples, em Kwanzas
           </h2>
           <p className="mt-3 max-w-xl text-muted-foreground">
-            Comece gratis. Faca upgrade quando precisar de mais controlo.
+            Comece grátis. Faça upgrade quando precisar de mais controlo.
           </p>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -339,24 +333,24 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Comece hoje. E gratis.
+                Comece hoje. É grátis.
               </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-                Junte-se a quem ja sabe exactamente para onde vai cada Kwanza. Sem compromisso.
+                Junte-se a quem já sabe exactamente para onde vai cada Kwanza. Sem compromisso.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
                   href="/register"
                   className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_2px_8px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90"
                 >
-                  Criar conta gratis
+                  Criar conta grátis
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/login"
                   className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Ja tenho conta
+                  Já tenho conta
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -380,7 +374,7 @@ export default function LandingPage() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                       <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
-                    <p className="text-sm">Veja as suas financas com total clareza</p>
+                    <p className="text-sm">Veja as suas finanças com total clareza</p>
                   </div>
                 </div>
               </div>
@@ -398,7 +392,7 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold text-foreground">O Financeiro</span>
           </div>
-          <p>Gestao financeira pessoal e familiar</p>
+          <p>Gestão financeira pessoal e familiar</p>
         </div>
       </footer>
     </div>

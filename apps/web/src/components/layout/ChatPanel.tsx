@@ -16,8 +16,8 @@ interface ChatMessage {
 
 const QUICK_ACTIONS = [
   { label: "Quanto tenho?", Icon: Banknote },
-  { label: "Ultimas transaccoes", Icon: ClipboardList },
-  { label: "Gastos deste mes", Icon: BarChart3 },
+  { label: "Últimas transacções", Icon: ClipboardList },
+  { label: "Gastos deste mês", Icon: BarChart3 },
 ]
 
 export function ChatPanel() {
@@ -152,7 +152,7 @@ export function ChatPanel() {
             <div className="flex flex-col items-center pt-8 gap-3">
               <Bot className="h-10 w-10 text-muted-foreground" />
               <p className="text-sm text-center text-muted-foreground">
-                Ola! Sou o teu assistente financeiro.
+                Olá! Sou o teu assistente financeiro.
               </p>
               <div className="w-full space-y-2 mt-4">
                 {QUICK_ACTIONS.map((action) => (

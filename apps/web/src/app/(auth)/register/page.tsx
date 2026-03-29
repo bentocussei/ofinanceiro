@@ -29,7 +29,7 @@ export default function RegisterPage() {
     }
 
     if (password !== confirmPassword) {
-      setError("As senhas nao coincidem.")
+      setError("As senhas não coincidem.")
       setLoading(false)
       return
     }
@@ -44,7 +44,7 @@ export default function RegisterPage() {
     if (success) {
       router.push("/dashboard")
     } else {
-      setError("Nao foi possivel criar a conta. Tente novamente.")
+      setError("Não foi possível criar a conta. Tente novamente.")
       setLoading(false)
     }
   }
@@ -67,7 +67,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Numero de telefone</Label>
+          <Label htmlFor="phone">Número de telefone</Label>
           <Input
             id="phone"
             type="tel"
@@ -83,7 +83,7 @@ export default function RegisterPage() {
           <Input
             id="password"
             type="password"
-            placeholder="Minimo 6 caracteres"
+            placeholder="Mínimo 6 caracteres"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
@@ -117,7 +117,7 @@ export default function RegisterPage() {
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Ja tem conta?{" "}
+        Já tem conta?{" "}
         <Link href="/login" className="font-medium text-primary hover:underline">
           Entrar
         </Link>

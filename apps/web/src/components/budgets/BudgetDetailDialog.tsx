@@ -127,7 +127,7 @@ export function BudgetDetailDialog({
 
   const handleDelete = () => {
     if (!item) return
-    toast("Eliminar este orcamento?", {
+    toast("Eliminar este orçamento?", {
       description: "Esta acção não pode ser revertida.",
       action: {
         label: "Eliminar",
@@ -137,7 +137,7 @@ export function BudgetDetailDialog({
             await apiFetch(`/api/v1/budgets/${item.id}`, { method: "DELETE" })
             onOpenChange(false)
             onDeleted?.()
-            toast.success("Orcamento eliminado com sucesso")
+            toast.success("Orçamento eliminado com sucesso")
           } catch (err: any) {
             setError(err.message || "Erro ao eliminar")
           } finally {
@@ -158,7 +158,7 @@ export function BudgetDetailDialog({
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setIsEditing(false) }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Detalhe do orcamento</DialogTitle>
+          <DialogTitle>Detalhe do orçamento</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -170,11 +170,11 @@ export function BudgetDetailDialog({
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nome do orcamento"
+                  placeholder="Nome do orçamento"
                 />
               </div>
             ) : (
-              <h3 className="text-lg font-semibold">{item.name || "Orcamento"}</h3>
+              <h3 className="text-lg font-semibold">{item.name || "Orçamento"}</h3>
             )}
           </div>
 

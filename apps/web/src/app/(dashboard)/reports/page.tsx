@@ -217,7 +217,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <IconDisplay name="financeiro" className="h-12 w-12 opacity-30" />
+          <IconDisplay name="financeiro" className="h-12 w-12 mx-auto opacity-30" />
           <p className="text-muted-foreground mt-3">
             Registe transacções para ver os relatórios
           </p>

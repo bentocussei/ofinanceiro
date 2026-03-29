@@ -138,7 +138,7 @@ export default function GoalsPage() {
         <div className="text-center py-16">
           <Target className="h-10 w-10 mx-auto text-muted-foreground/30" />
           <p className="text-muted-foreground mt-3">Nenhuma meta criada</p>
-          <p className="text-sm text-muted-foreground mt-1">Defina metas para acompanhar as suas poupancas</p>
+          <p className="text-sm text-muted-foreground mt-1">Defina metas para acompanhar as suas poupanças</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

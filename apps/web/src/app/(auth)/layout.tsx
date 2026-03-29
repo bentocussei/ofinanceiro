@@ -8,7 +8,7 @@ export default function AuthLayout({
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight">O Financeiro</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Gestao financeira pessoal e familiar
+          Gestão financeira pessoal e familiar
         </p>
       </div>
       <div className="w-full max-w-sm">{children}</div>

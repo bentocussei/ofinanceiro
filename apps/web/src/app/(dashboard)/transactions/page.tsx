@@ -155,8 +155,8 @@ export default function TransactionsPage() {
           <Receipt className="h-10 w-10 mx-auto text-muted-foreground/30" />
           <p className="text-muted-foreground mt-3">
             {typeFilter !== "all" || periodFilter !== "all"
-              ? "Nenhuma transaccao encontrada com estes filtros"
-              : "Nenhuma transaccao registada"}
+              ? "Nenhuma transacção encontrada com estes filtros"
+              : "Nenhuma transacção registada"}
           </p>
         </div>
       ) : viewMode === "table" ? (

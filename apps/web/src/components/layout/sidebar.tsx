@@ -47,27 +47,27 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Principal",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: Home },
-      { href: "/transactions", label: "Transaccoes", icon: ArrowLeftRight },
+      { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
       { href: "/accounts", label: "Contas", icon: Wallet },
     ],
   },
   {
-    label: "Gestao",
+    label: "Gestão",
     items: [
-      { href: "/budget", label: "Orcamentos", icon: PieChart },
+      { href: "/budget", label: "Orçamentos", icon: PieChart },
       { href: "/goals", label: "Metas", icon: Target },
-      { href: "/debts", label: "Dividas", icon: CreditCard },
+      { href: "/debts", label: "Dívidas", icon: CreditCard },
       { href: "/investments", label: "Investimentos", icon: TrendingUp },
     ],
   },
   {
     label: "Mais",
     items: [
-      { href: "/family", label: "Familia", icon: Users },
-      { href: "/reports", label: "Relatorios", icon: BarChart3 },
-      { href: "/news", label: "Noticias", icon: Newspaper },
-      { href: "/education", label: "Educacao", icon: GraduationCap },
-      { href: "/notifications", label: "Notificacoes", icon: Bell },
+      { href: "/family", label: "Família", icon: Users },
+      { href: "/reports", label: "Relatórios", icon: BarChart3 },
+      { href: "/news", label: "Notícias", icon: Newspaper },
+      { href: "/education", label: "Educação", icon: GraduationCap },
+      { href: "/notifications", label: "Notificações", icon: Bell },
     ],
   },
 ]
@@ -236,7 +236,7 @@ export function Sidebar() {
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                Configuracoes
+                Configurações
               </Link>
             </div>
 
@@ -264,7 +264,7 @@ export function Sidebar() {
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
-                Terminar sessao
+                Terminar sessão
               </button>
             </div>
           </PopoverContent>

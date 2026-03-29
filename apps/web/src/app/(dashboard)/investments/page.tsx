@@ -147,13 +147,13 @@ export default function InvestmentsPage() {
             <DialogContent className="sm:max-w-md">
               <DialogHeader><DialogTitle>Novo investimento</DialogTitle></DialogHeader>
               <div className="space-y-4 py-2">
-                <div><Label>Nome</Label><Input placeholder="Ex: Deposito a prazo BAI" value={name} onChange={(e) => setName(e.target.value)} /></div>
+                <div><Label>Nome</Label><Input placeholder="Ex: Depósito a prazo BAI" value={name} onChange={(e) => setName(e.target.value)} /></div>
                 <div><Label>Tipo</Label>
                   <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="fixed_income">Renda fixa</option>
-                    <option value="stocks">Accoes</option>
-                    <option value="bonds">Obrigacoes</option>
-                    <option value="real_estate">Imobiliario</option>
+                    <option value="stocks">Acções</option>
+                    <option value="bonds">Obrigações</option>
+                    <option value="real_estate">Imobiliário</option>
                     <option value="mutual_fund">Fundo de investimento</option>
                     <option value="other">Outro</option>
                   </select>
@@ -213,9 +213,9 @@ export default function InvestmentsPage() {
                     <p className="font-medium">{inv.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {inv.type === "fixed_income" ? "Renda fixa" :
-                       inv.type === "stocks" ? "Accoes" :
-                       inv.type === "bonds" ? "Obrigacoes" :
-                       inv.type === "real_estate" ? "Imobiliario" :
+                       inv.type === "stocks" ? "Acções" :
+                       inv.type === "bonds" ? "Obrigações" :
+                       inv.type === "real_estate" ? "Imobiliário" :
                        inv.type === "mutual_fund" ? "Fundo" : inv.type}
                       {inv.annual_return_rate ? ` -- ${inv.annual_return_rate}% a.a.` : ""}
                     </p>
@@ -253,7 +253,7 @@ export default function InvestmentsPage() {
           <div className="space-y-4 py-2">
             <div><Label>Capital inicial (Kz)</Label><Input type="number" placeholder="0" value={simPrincipal} onChange={(e) => setSimPrincipal(e.target.value)} className="font-mono" /></div>
             <div><Label>Taxa de juros anual (%)</Label><Input type="number" step="0.1" placeholder="0" value={simRate} onChange={(e) => setSimRate(e.target.value)} className="font-mono" /></div>
-            <div><Label>Periodo (anos)</Label><Input type="number" placeholder="0" value={simYears} onChange={(e) => setSimYears(e.target.value)} className="font-mono" /></div>
+            <div><Label>Período (anos)</Label><Input type="number" placeholder="0" value={simYears} onChange={(e) => setSimYears(e.target.value)} className="font-mono" /></div>
             <div><Label>Aporte mensal (Kz, opcional)</Label><Input type="number" placeholder="0" value={simMonthly} onChange={(e) => setSimMonthly(e.target.value)} className="font-mono" /></div>
             <Button className="w-full" onClick={handleSimulate}>Simular</Button>
 

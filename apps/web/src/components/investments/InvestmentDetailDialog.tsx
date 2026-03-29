@@ -35,9 +35,9 @@ interface Props {
 
 const TYPE_LABELS: Record<string, string> = {
   fixed_income: "Renda fixa",
-  stocks: "Accoes",
-  bonds: "Obrigacoes",
-  real_estate: "Imobiliario",
+  stocks: "Acções",
+  bonds: "Obrigações",
+  real_estate: "Imobiliário",
   mutual_fund: "Fundo de investimento",
   other: "Outro",
 }
@@ -133,7 +133,7 @@ export function InvestmentDetailDialog({
           {/* Start date */}
           {item.start_date && (
             <p className="text-sm text-muted-foreground text-center">
-              Inicio: {new Date(item.start_date + "T00:00:00").toLocaleDateString("pt-AO")}
+              Início: {new Date(item.start_date + "T00:00:00").toLocaleDateString("pt-AO")}
             </p>
           )}
 

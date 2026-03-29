@@ -186,7 +186,7 @@ export function GoalDetailDialog({
             ) : (
               <>
                 <h3 className="text-lg font-semibold">{item.name}</h3>
-                {isComplete && <span className="text-xs text-green-500 font-semibold">Concluida</span>}
+                {isComplete && <span className="text-xs text-green-500 font-semibold">Concluída</span>}
               </>
             )}
           </div>
@@ -236,7 +236,7 @@ export function GoalDetailDialog({
               {/* Contribution history */}
               {progress && progress.contributions.length > 0 && (
                 <div className="space-y-1 border-t pt-3">
-                  <p className="text-xs font-semibold text-muted-foreground">Historico de contribuicoes</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Histórico de contribuições</p>
                   {progress.contributions.slice(0, 8).map((c, i) => (
                     <div key={i} className="flex justify-between text-xs">
                       <span className="text-muted-foreground">

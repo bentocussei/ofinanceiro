@@ -37,10 +37,10 @@ interface Props {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  personal_loan: "Emprestimo pessoal",
+  personal_loan: "Empréstimo pessoal",
   mortgage: "Hipoteca",
-  credit_card: "Cartao de credito",
-  auto_loan: "Emprestimo auto",
+  credit_card: "Cartão de crédito",
+  auto_loan: "Empréstimo auto",
   other: "Outro",
 }
 
@@ -76,7 +76,7 @@ export function DebtDetailDialog({
 
   const handleDelete = () => {
     if (!item) return
-    toast(`Eliminar a divida "${item.name}"?`, {
+    toast(`Eliminar a dívida "${item.name}"?`, {
       description: "Esta acção não pode ser revertida.",
       action: {
         label: "Eliminar",
@@ -86,7 +86,7 @@ export function DebtDetailDialog({
             await apiFetch(`/api/v1/debts/${item.id}`, { method: "DELETE" })
             onOpenChange(false)
             onDeleted?.()
-            toast.success("Divida eliminada com sucesso")
+            toast.success("Dívida eliminada com sucesso")
           } catch (err: any) {
             setError(err.message || "Erro ao eliminar")
           } finally {
@@ -151,14 +151,14 @@ export function DebtDetailDialog({
               <p className="font-mono font-bold">{item.interest_rate}%</p>
             </div>
             <div className="rounded-lg bg-muted p-3 text-center">
-              <p className="text-xs text-muted-foreground">Pagamento minimo</p>
+              <p className="text-xs text-muted-foreground">Pagamento mínimo</p>
               <p className="font-mono font-bold text-sm">{formatKz(item.minimum_payment)}</p>
             </div>
           </div>
 
           {item.due_day > 0 && (
             <p className="text-sm text-muted-foreground text-center">
-              Vencimento: dia {item.due_day} de cada mes
+              Vencimento: dia {item.due_day} de cada mês
             </p>
           )}
 
@@ -193,7 +193,7 @@ export function DebtDetailDialog({
               disabled={isDeleting}
             >
               <Trash2 className="h-4 w-4 mr-1" />
-              {isDeleting ? "A eliminar..." : "Eliminar divida"}
+              {isDeleting ? "A eliminar..." : "Eliminar dívida"}
             </Button>
           </div>
         </div>

@@ -30,7 +30,7 @@ export default function LoginPage() {
     if (success) {
       router.push("/dashboard")
     } else {
-      setError("Numero de telefone ou senha incorrectos.")
+      setError("Número de telefone ou senha incorrectos.")
       setLoading(false)
     }
   }
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="phone">Numero de telefone</Label>
+          <Label htmlFor="phone">Número de telefone</Label>
           <Input
             id="phone"
             type="tel"
@@ -79,7 +79,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Nao tem conta?{" "}
+        Não tem conta?{" "}
         <Link href="/register" className="font-medium text-primary hover:underline">
           Criar conta
         </Link>

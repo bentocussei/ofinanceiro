@@ -63,7 +63,7 @@ export default function NewsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[22px] font-bold tracking-tight">Noticias</h2>
+        <h2 className="text-[22px] font-bold tracking-tight">Notícias</h2>
         <Button variant="outline" onClick={fetchData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
           Actualizar
@@ -74,7 +74,7 @@ export default function NewsPage() {
       <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] mb-8 overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Taxas de cambio
+            Taxas de câmbio
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -132,15 +132,15 @@ export default function NewsPage() {
       {/* News Feed */}
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Feed de noticias financeiras
+          Feed de notícias financeiras
         </p>
       </div>
 
       {news.length === 0 && !isLoading ? (
         <div className="text-center py-16">
           <Newspaper className="h-12 w-12 mx-auto text-muted-foreground/30" />
-          <p className="text-muted-foreground mt-3">Nenhuma noticia disponivel</p>
-          <p className="text-sm text-muted-foreground mt-1">As noticias aparecerao aqui quando estiverem disponiveis</p>
+          <p className="text-muted-foreground mt-3">Nenhuma notícia disponível</p>
+          <p className="text-sm text-muted-foreground mt-1">As notícias aparecerão aqui quando estiverem disponíveis</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -72,7 +72,7 @@ export default function EducationPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[22px] font-bold tracking-tight">Educacao financeira</h2>
+        <h2 className="text-[22px] font-bold tracking-tight">Educação financeira</h2>
         <Button variant="outline" onClick={fetchData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
           Actualizar
@@ -89,7 +89,7 @@ export default function EducationPage() {
                 <Star className="h-7 w-7 text-amber-500" />
               </div>
               <div>
-                <p className="text-xl font-bold">Nivel {profile.level}</p>
+                <p className="text-xl font-bold">Nível{profile.level}</p>
                 <p className="text-sm text-muted-foreground font-mono">{profile.total_xp} XP total</p>
               </div>
             </div>
@@ -97,7 +97,7 @@ export default function EducationPage() {
             {/* XP Progress */}
             <div className="flex-1 min-w-0">
               <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                <span>Progresso para o proximo nivel</span>
+                <span>Progresso para o próximo nível</span>
                 <span className="font-mono">{profile.xp_to_next_level} XP restantes</span>
               </div>
               <div className="h-2.5 bg-muted rounded-full">
@@ -136,7 +136,7 @@ export default function EducationPage() {
         {/* Badges */}
         {profile && profile.badges.length > 0 && (
           <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Insignias</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Insígnias</p>
             <div className="flex flex-wrap gap-2">
               {profile.badges.map((badge) => (
                 <div
@@ -174,7 +174,7 @@ export default function EducationPage() {
             ) : (
               <div className="text-center py-6">
                 <Lightbulb className="h-8 w-8 mx-auto text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground mt-2">Nenhuma dica disponivel hoje</p>
+                <p className="text-sm text-muted-foreground mt-2">Nenhuma dica disponível hoje</p>
               </div>
             )}
           </div>
@@ -190,7 +190,7 @@ export default function EducationPage() {
             {challenges.length === 0 ? (
               <div className="text-center py-6">
                 <Trophy className="h-8 w-8 mx-auto text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground mt-2">Nenhum desafio disponivel</p>
+                <p className="text-sm text-muted-foreground mt-2">Nenhum desafio disponível</p>
               </div>
             ) : (
               <div className="space-y-3">

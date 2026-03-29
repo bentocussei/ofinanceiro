@@ -167,7 +167,7 @@ export default function DashboardPage() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Transaccoes Recentes
+                Transacções Recentes
               </h2>
               <Link
                 href="/transactions"
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">
-                          {txn.description || "Sem descricao"}
+                          {txn.description || "Sem descrição"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {txn.category_name || (txn.type === "income" ? "Receita" : "Despesa")}
@@ -217,8 +217,8 @@ export default function DashboardPage() {
             ) : (
               <EmptyState
                 icon={ArrowUpRight}
-                message="Nenhuma transaccao registada"
-                cta="Adicionar transaccao"
+                message="Nenhuma transacção registada"
+                cta="Adicionar transacção"
                 href="/transactions"
               />
             )}
@@ -284,7 +284,7 @@ export default function DashboardPage() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Orcamento
+                Orçamento
               </h2>
               <Link
                 href="/budget"
@@ -328,8 +328,8 @@ export default function DashboardPage() {
             ) : (
               <EmptyState
                 icon={PieChart}
-                message="Nenhum orcamento definido"
-                cta="Criar orcamento"
+                message="Nenhum orçamento definido"
+                cta="Criar orçamento"
                 href="/budget"
               />
             )}
@@ -417,8 +417,8 @@ export default function DashboardPage() {
             ) : (
               <EmptyState
                 icon={PieChart}
-                message="Sem dados de despesas este mes"
-                cta="Registar transaccao"
+                message="Sem dados de despesas este mês"
+                cta="Registar transacção"
                 href="/transactions"
               />
             )}

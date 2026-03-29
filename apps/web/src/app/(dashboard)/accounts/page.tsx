@@ -74,7 +74,7 @@ export default function AccountsPage() {
               </p>
             </div>
             <div className="rounded-xl bg-card p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Patrimonio liquido</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Património líquido</p>
               <p className="text-xl font-mono font-bold mt-1">{formatKz(summary.net_worth)}</p>
             </div>
           </div>
