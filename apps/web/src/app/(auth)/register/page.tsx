@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     const success = await register(phone, name, password)
     if (success) {
-      router.push("/")
+      router.push("/dashboard")
     } else {
       setError("Nao foi possivel criar a conta. Tente novamente.")
       setLoading(false)

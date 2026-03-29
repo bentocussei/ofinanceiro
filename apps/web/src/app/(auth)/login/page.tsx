@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     const success = await login(phone, password)
     if (success) {
-      router.push("/")
+      router.push("/dashboard")
     } else {
       setError("Numero de telefone ou senha incorrectos.")
       setLoading(false)
