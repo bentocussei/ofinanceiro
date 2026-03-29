@@ -36,7 +36,7 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | 2 | **AdvisorAgent** | ✅ Completo (4 tools) | Phase 2 Sem 14 | — |
 | 3 | **BudgetAgent** | ✅ Completo (3 tools) | Phase 3 | — |
 | 4 | **GoalsAgent** | ✅ Completo (3 tools) | Phase 3 | — |
-| 5 | **FamilyAgent** | ❌ Não implementado | Phase 4 | Resposta genérica via BaseAgent |
+| 5 | **FamilyAgent** | ✅ Completo (3 tools) | Phase 4 | — |
 | 6 | **ReportAgent** | ❌ Não implementado | Phase 6 | Resposta genérica via BaseAgent |
 | 7 | **DebtAgent** | ❌ Não implementado | Phase 7 | Resposta genérica via BaseAgent |
 | 8 | **InvestmentAgent** | ❌ Não implementado | Phase 7 | Resposta genérica via BaseAgent |

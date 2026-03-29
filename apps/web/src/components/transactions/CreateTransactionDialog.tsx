@@ -41,6 +41,8 @@ export function CreateTransactionDialog({ onCreated }: Props) {
   const [description, setDescription] = useState("")
   const [accountId, setAccountId] = useState("")
   const [categoryId, setCategoryId] = useState("")
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [needsReview, setNeedsReview] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
@@ -95,6 +97,8 @@ export function CreateTransactionDialog({ onCreated }: Props) {
           type,
           description: description.trim() || undefined,
           category_id: categoryId || undefined,
+          is_private: isPrivate || undefined,
+          needs_review: needsReview || undefined,
         }),
       })
       reset()
@@ -193,6 +197,18 @@ export function CreateTransactionDialog({ onCreated }: Props) {
                   ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Privacy toggles */}
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="rounded" />
+              Privada
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={needsReview} onChange={(e) => setNeedsReview(e.target.checked)} className="rounded" />
+              Necessita revisão
+            </label>
           </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
