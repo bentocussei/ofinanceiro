@@ -2,7 +2,6 @@ import Link from "next/link"
 import {
   ArrowRight,
   Check,
-  Shield,
   Eye,
   Banknote,
   PiggyBank,
@@ -17,7 +16,7 @@ const features = [
     icon: Eye,
     title: "Veja todos os seus gastos num so lugar",
     description:
-      "Multicaixa, BAI, BFA, dinheiro em mao — tudo reunido. Deixe de adivinhar quanto gastou e passe a saber.",
+      "Junte todas as suas contas e saiba exactamente quanto gastou, em que categoria, e quanto resta. Sem surpresas no fim do mes.",
   },
   {
     icon: PiggyBank,
@@ -160,7 +159,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Junte todas as suas contas — Multicaixa, banco, dinheiro em mao — e finalmente tenha clareza sobre as suas financas pessoais e familiares.
+              Junte todas as suas contas e finalmente tenha clareza sobre as suas financas pessoais e familiares.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -179,16 +178,6 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                Dados seguros e privados
-              </span>
-              <span className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
-                Sem cartao de credito
-              </span>
-            </div>
           </div>
 
           {/* Right — dashboard mockup, takes 2 cols */}
@@ -245,29 +234,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social proof strip */}
-      <section className="border-y border-border bg-muted/30 py-8">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">10.000+</p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Angolanos a controlar as suas financas</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">2M+</p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Transaccoes registadas</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">99,9%</p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Disponibilidade da plataforma</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">4,8/5</p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Avaliacao dos utilizadores</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Features */}
       <section id="funcionalidades" className="py-20">
@@ -279,7 +245,7 @@ export default function LandingPage() {
             Controlo financeiro sem complicacoes
           </h2>
           <p className="mt-3 max-w-xl text-muted-foreground">
-            Funcionalidades pensadas para a forma como os angolanos realmente gerem o dinheiro — cash, Multicaixa, transferencias, kixikila.
+            Funcionalidades pensadas para a forma como realmente gere o seu dinheiro no dia-a-dia.
           </p>
 
           <div className="mt-14 grid gap-8 sm:grid-cols-2">
@@ -375,8 +341,8 @@ export default function LandingPage() {
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
                 Comece hoje. E gratis.
               </h2>
-              <p className="mt-4 max-w-md text-muted-foreground">
-                Junte-se a milhares de angolanos que ja sabem exactamente para onde vai cada Kwanza. Sem compromisso, sem cartao de credito.
+            <p className="mt-4 max-w-md text-muted-foreground">
+                Junte-se a quem ja sabe exactamente para onde vai cada Kwanza. Sem compromisso.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
@@ -432,7 +398,7 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold text-foreground">O Financeiro</span>
           </div>
-          <p>Gestao financeira para Angola e PALOP</p>
+          <p>Gestao financeira pessoal e familiar</p>
         </div>
       </footer>
     </div>

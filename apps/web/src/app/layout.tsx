@@ -14,9 +14,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "O Financeiro — Gestão Financeira para Angola",
+  title: "O Financeiro — Gestão financeira pessoal e familiar",
   description:
-    "Controle as suas finanças pessoais e familiares. Orçamentos, metas, contas, e muito mais.",
+    "Saiba exactamente para onde vai o seu dinheiro. Controle contas, orçamentos, metas e finanças familiares.",
   icons: {
     icon: "/favicon.svg",
   },
