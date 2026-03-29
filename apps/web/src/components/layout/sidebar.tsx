@@ -1,16 +1,26 @@
 "use client"
 
+import {
+  ArrowLeftRight,
+  BarChart3,
+  Home,
+  PieChart,
+  Settings,
+  Target,
+  Wallet,
+} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import type { ElementType } from "react"
 
-const NAV_ITEMS = [
-  { href: "/", label: "Início", icon: "🏠" },
-  { href: "/accounts", label: "Contas", icon: "💳" },
-  { href: "/transactions", label: "Transacções", icon: "🔄" },
-  { href: "/budget", label: "Orçamentos", icon: "📊" },
-  { href: "/goals", label: "Metas", icon: "🎯" },
-  { href: "/reports", label: "Relatórios", icon: "📈" },
-  { href: "/settings", label: "Configurações", icon: "⚙️" },
+const NAV_ITEMS: { href: string; label: string; icon: ElementType }[] = [
+  { href: "/", label: "Início", icon: Home },
+  { href: "/accounts", label: "Contas", icon: Wallet },
+  { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
+  { href: "/budget", label: "Orçamentos", icon: PieChart },
+  { href: "/goals", label: "Metas", icon: Target },
+  { href: "/reports", label: "Relatórios", icon: BarChart3 },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ]
 
 export function Sidebar() {
@@ -25,6 +35,7 @@ export function Sidebar() {
       <nav className="flex-1 px-3">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
+          const Icon = item.icon
           return (
             <Link
               key={item.href}
@@ -35,7 +46,7 @@ export function Sidebar() {
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon className="h-4 w-4" />
               {item.label}
             </Link>
           )
