@@ -2,25 +2,18 @@
 
 import {
   ArrowLeftRight,
-  Banknote,
   BarChart3,
-  Bell,
-  CreditCard,
-  GraduationCap,
   Home,
   LogOut,
   Monitor,
   Moon,
-  Newspaper,
   PanelLeftClose,
   PanelLeftOpen,
+  Percent,
   PieChart,
-  Receipt,
-  Repeat,
   Settings,
   Sun,
   Target,
-  TrendingUp,
   Users,
   Wallet,
 } from "lucide-react"
@@ -50,31 +43,25 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Principal",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: Home },
-      { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
-      { href: "/accounts", label: "Contas", icon: Wallet },
+      { href: "/family/dashboard", label: "Dashboard", icon: Home },
+      { href: "/family/accounts", label: "Contas partilhadas", icon: Wallet },
+      { href: "/family/transactions", label: "Transacções", icon: ArrowLeftRight },
     ],
   },
   {
-    label: "Gestão",
+    label: "Gestão Familiar",
     items: [
-      { href: "/budget", label: "Orçamentos", icon: PieChart },
-      { href: "/goals", label: "Metas", icon: Target },
-      { href: "/debts", label: "Dívidas", icon: CreditCard },
-      { href: "/investments", label: "Investimentos", icon: TrendingUp },
-      { href: "/income-sources", label: "Rendimentos", icon: Banknote },
-      { href: "/bills", label: "Contas a Pagar", icon: Receipt },
-      { href: "/recurring-rules", label: "Recorrentes", icon: Repeat },
+      { href: "/family/budget", label: "Orçamento doméstico", icon: PieChart },
+      { href: "/family/goals", label: "Metas familiares", icon: Target },
+      { href: "/family/members", label: "Membros", icon: Users },
+      { href: "/family/expense-splits", label: "Divisão de despesas", icon: Percent },
     ],
   },
   {
     label: "Mais",
     items: [
-      { href: "/family", label: "Família", icon: Users },
-      { href: "/reports", label: "Relatórios", icon: BarChart3 },
-      { href: "/news", label: "Notícias", icon: Newspaper },
-      { href: "/education", label: "Educação", icon: GraduationCap },
-      { href: "/notifications", label: "Notificações", icon: Bell },
+      { href: "/family/reports", label: "Relatórios", icon: BarChart3 },
+      { href: "/family/settings", label: "Configurações", icon: Settings },
     ],
   },
 ]
@@ -116,7 +103,7 @@ function applyTheme(t: Theme) {
   }
 }
 
-export function Sidebar() {
+export function FamilySidebar({ familyName }: { familyName: string }) {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [collapsed, setCollapsed] = useState(false)
@@ -127,15 +114,9 @@ export function Sidebar() {
   }, [])
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard"
+    if (href === "/family/dashboard") return pathname === "/family/dashboard"
     return pathname.startsWith(href)
   }
-
-  const themeOptions: { value: Theme; label: string; icon: ElementType }[] = [
-    { value: "light", label: "Claro", icon: Sun },
-    { value: "dark", label: "Escuro", icon: Moon },
-    { value: "system", label: "Sistema", icon: Monitor },
-  ]
 
   return (
     <aside
@@ -147,7 +128,7 @@ export function Sidebar() {
       <div className={`flex items-center h-14 px-3 ${collapsed ? "justify-center" : "justify-between"}`}>
         {!collapsed && (
           <h1 className="text-base font-bold tracking-tight text-sidebar-foreground pl-2">
-            O Financeiro
+            {familyName}
           </h1>
         )}
         <button
@@ -231,7 +212,6 @@ export function Sidebar() {
             align="start"
             className="w-56 p-0"
           >
-            {/* User info */}
             <div className="px-4 py-3 border-b border-border">
               <p className="text-sm font-medium truncate">
                 {user?.name || "Utilizador"}
@@ -241,10 +221,9 @@ export function Sidebar() {
               </p>
             </div>
 
-            {/* Settings link */}
             <div className="p-1">
               <Link
-                href="/settings"
+                href="/family/settings"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
                 <Settings className="h-4 w-4" />
@@ -252,7 +231,6 @@ export function Sidebar() {
               </Link>
             </div>
 
-            {/* Theme toggle — single cycle button */}
             <div className="border-t border-border p-1">
               <button
                 onClick={() => {
@@ -269,7 +247,6 @@ export function Sidebar() {
               </button>
             </div>
 
-            {/* Logout */}
             <div className="border-t border-border p-1">
               <button
                 onClick={logout}
