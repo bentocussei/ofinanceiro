@@ -5,6 +5,7 @@ import {
   BarChart3,
   Home,
   PieChart,
+  Bell,
   Settings,
   Target,
   Users,
@@ -22,6 +23,7 @@ const NAV_ITEMS: { href: string; label: string; icon: ElementType }[] = [
   { href: "/goals", label: "Metas", icon: Target },
   { href: "/family", label: "Família", icon: Users },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
+  { href: "/notifications", label: "Notificações", icon: Bell },
   { href: "/settings", label: "Configurações", icon: Settings },
 ]
 
