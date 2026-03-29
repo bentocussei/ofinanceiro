@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import { StyleSheet, Text, View, Pressable, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -6,6 +7,7 @@ import { useAuthStore } from '../../stores/auth'
 
 export default function MoreScreen() {
   const isDark = useColorScheme() === 'dark'
+  const router = useRouter()
   const logout = useAuthStore((s) => s.logout)
 
   return (
@@ -15,7 +17,9 @@ export default function MoreScreen() {
       </View>
 
       <View style={styles.menu}>
-        <MenuItem icon="flag-outline" label="Metas" isDark={isDark} />
+        <MenuItem icon="pie-chart-outline" label="Orçamentos" isDark={isDark} onPress={() => router.push('/budget')} />
+        <MenuItem icon="bar-chart-outline" label="Relatórios" isDark={isDark} onPress={() => router.push('/(tabs)/reports')} />
+        <MenuItem icon="flag-outline" label="Metas" isDark={isDark} onPress={() => router.push('/goals')} />
         <MenuItem icon="card-outline" label="Dívidas" isDark={isDark} />
         <MenuItem icon="people-outline" label="Família" isDark={isDark} />
         <MenuItem icon="settings-outline" label="Configurações" isDark={isDark} />
@@ -29,9 +33,9 @@ export default function MoreScreen() {
   )
 }
 
-function MenuItem({ icon, label, isDark }: { icon: string; label: string; isDark: boolean }) {
+function MenuItem({ icon, label, isDark, onPress }: { icon: string; label: string; isDark: boolean; onPress?: () => void }) {
   return (
-    <Pressable style={[styles.menuRow, isDark && styles.menuRowDark]}>
+    <Pressable style={[styles.menuRow, isDark && styles.menuRowDark]} onPress={onPress}>
       <Ionicons name={icon as any} size={22} color={isDark ? '#ccc' : '#333'} />
       <Text style={[styles.menuLabel, isDark && styles.textLight]}>{label}</Text>
       <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
