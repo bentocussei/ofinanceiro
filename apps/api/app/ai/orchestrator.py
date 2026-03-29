@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.agents.advisor_agent import AdvisorAgent
 from app.ai.agents.base import AgentContext, AgentResponse
 from app.ai.agents.budget_agent import BudgetAgent
+from app.ai.agents.family_agent import FamilyAgent
 from app.ai.agents.goals_agent import GoalsAgent
 from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
@@ -33,8 +34,8 @@ class ChatOrchestrator:
             "ADVISOR": AdvisorAgent(router),
             "BUDGET": BudgetAgent(router),
             "GOALS": GoalsAgent(router),
+            "FAMILY": FamilyAgent(router),
             # Remaining agents added in their respective phases:
-            # "FAMILY": FamilyAgent(router),     — Phase 4
             # "REPORT": ReportAgent(router),     — Phase 6
             # "DEBT": DebtAgent(router),         — Phase 7
             # "INVESTMENT": InvestmentAgent(router), — Phase 7
