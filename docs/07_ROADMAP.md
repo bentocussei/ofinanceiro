@@ -1,364 +1,687 @@
-# O Financeiro — Roadmap de Desenvolvimento (Granular)
+# O Financeiro — Roadmap de Desenvolvimento (Detalhado)
 
-**Versao:** 2.0 | **Data:** 2026-03-28
+**Versão:** 3.0 | **Data:** 2026-03-29
 
+Cada tarefa está classificada por camada: **[API]** Backend, **[MOB]** Mobile, **[WEB]** Web, **[AI]** IA, **[TST]** Testes.
 Cada funcionalidade referencia o ID do documento `02_MODULOS_FUNCIONALIDADES.md`.
-Estimativa total: ~670h ate lancamento (40 semanas) + ~110h expansao.
+
+**Regras:**
+- Cada tarefa deve ser implementada completamente antes de avançar
+- Se existe no backend, DEVE existir UI no mobile E na web (ver tabela paridade no CLAUDE.md)
+- "Mirror" não é tarefa — cada ecrã/acção deve ser listado individualmente
+- Testes obrigatórios: backend (pytest) + E2E web (Playwright) por fase
+- Validação com protocolo de 7 fases (`.claude/skills/feature-validation.md`)
 
 ---
 
-## Fase 0: Fundacao (Semanas 1-4) — ~80h
+## ✅ Fase 0: Fundação (Semanas 1-4) — COMPLETA
 
-### Semana 1: Setup de Projecto
-- Monorepo Turborepo (apps/web, apps/mobile, apps/api) — 2h
-- Docker Compose: PostgreSQL 16 (pgvector) + Redis 7 — 1h
-- FastAPI skeleton (main, config, deps, router) — 3h
-- Next.js 15 skeleton (Tailwind + Shadcn + Zustand) — 2h
-- Expo skeleton (React Native + navegacao) — 2h
-- Alembic init + ESLint/Prettier — 2h
+### Semana 1: Setup
+- [API] Monorepo Turborepo + FastAPI skeleton + config + Alembic init
+- [WEB] Next.js 16 skeleton + Tailwind v4 + Shadcn UI v4
+- [MOB] Expo SDK 55 skeleton + Expo Router
+- [API] Docker Compose: PostgreSQL 17 (pgvector) + Redis 8
 
 ### Semana 2: Modelo de Dados Core
-- Enums SQL (account_type, transaction_type, etc.) — 1h
-- Tabela users + model + schema — 2h
-- Tabela accounts + model + schema — 2h
-- Tabela categories + model + schema — 1.5h
-- Tabela transactions + model + schema + indices — 3h
-- Seed data: 60+ categorias Angola — 1h
-- Trigger update_account_balance + views — 2h
-- Migracao Alembic + testes — 2.5h
+- [API] Enums StrEnum (14 tipos) + models (User, Account, Category, Transaction)
+- [API] Pydantic v2 schemas com validação (centavos, limites)
+- [API] Migration Alembic async + seed 84 categorias Angola
+- [TST] 17 testes (enums, schemas, seed structure)
 
 ### Semana 3: Auth
-- POST /auth/register (telefone + email) — 3h
-- POST /auth/login (password + OTP) — 2h
-- OTP via SMS (Twilio) — 2h
-- JWT (access + refresh) + middleware — 3h
-- Rate limiting + testes — 3h
+- [API] POST /auth/register, /login, /otp/send, /otp/verify, /refresh
+- [API] bcrypt hashing, JWT access (15min) + refresh (7d), OTP Redis + Twilio
+- [API] Rate limiting Redis (100 req/min API, 20 msg/min chat, 5 OTP/10min)
+- [API] get_current_user dependency (Bearer token)
+- [TST] 18 testes (hash, JWT roundtrip, endpoints, validation)
 
 ### Semana 4: CRUD Core
-- CRUD /accounts (GET/POST/PUT/DELETE) — 3h [ACC-01]
-- GET /accounts/summary (saldo consolidado) — 1h [ACC-03]
-- POST /accounts/transfer — 2h [ACC-08]
-- CRUD /transactions (GET/POST/PUT/DELETE) — 4h [TXN-04]
-- GET /transactions com filtros — 2h [TXN-11]
-- Categorizacao por regras (sem IA) — 1h [TXN-06 parcial]
-- Testes — 3h
+- [API] CRUD /accounts (GET/POST/PUT/DELETE) + /accounts/summary + /accounts/transfer
+- [API] CRUD /transactions (GET/POST/PUT/DELETE) + filtros (tipo, data, categoria, valor, search)
+- [API] GET /categories (sistema + custom)
+- [API] Categorização por regras (Angola keywords) integrada no create
+- [API] Balance auto-update em create/update/delete
+- [TST] 15 testes CRUD + 4 testes categorização
 
 ---
 
-## Fase 1: Core MVP — UI (Semanas 5-10) — ~100h
+## ✅ Fase 1: Core MVP — UI (Semanas 5-10) — COMPLETA
 
-### Semana 5-6: Mobile Home + Contas
-- Tab bar + navegacao principal — 3h
-- Home: saldo total, receitas/despesas — 4h
-- Home: ultimas 5 transaccoes — 2h
-- Lista de contas com saldo — 3h [ACC-01, ACC-03]
-- Criar conta (formulario) — 2h [ACC-01]
-- API client (axios + JWT interceptors) — 2h
-- Zustand stores (accounts, transactions) — 2h
-- Pull to refresh — 1h
+### Semana 5-6: Home + Contas
 
-### Semana 7-8: Mobile Transaccoes
-- FAB (+) com bottom sheet — 2h
-- Formulario registar transaccao — 4h [TXN-04]
-- Teclado numerico optimizado — 1h
-- Grid de categorias (icones, frequentes) — 2h
-- Lista de transaccoes (agrupada por dia) — 4h
-- Vista estilo planilha — 3h [RPT-14]
-- Swipe actions (editar, eliminar) — 2h
-- Filtros (data, categoria, conta) — 2h [TXN-11]
-- Detalhe de transaccao — 2h
+**Mobile:**
+- [MOB] Tab bar 5 tabs: Início, Contas, Assistente, Transacções, Mais
+- [MOB] Home: card saldo total, receitas/despesas, últimas 5 transacções, pull-to-refresh
+- [MOB] Contas: lista com ícones/saldo, card resumo (activos/passivos/patrimônio)
+- [MOB] Criar conta: bottom sheet (nome, tipo picker 7 tipos, instituição, saldo inicial)
+- [MOB] Editar/eliminar conta: long-press → Alert com opções
+- [MOB] Transferência: bottom sheet (origem, destino, valor, descrição)
+- [MOB] Botão "Transferir" no header quando 2+ contas
+- [MOB] API client (fetch + JWT auto-refresh + SecureStore)
+- [MOB] Zustand stores (auth, accounts, transactions, categories, chat)
 
-### Semana 9: Dashboard Basico
-- Grafico circular: gastos por categoria — 3h [RPT-04]
-- Selector de periodo — 1h
-- Card receitas vs despesas — 2h [RPT-07]
-- Net worth — 1h [RPT-08, ACC-12]
+**Web:**
+- [WEB] Layout 3 colunas: sidebar + main + chat panel
+- [WEB] Dashboard (/): cards saldo/receitas/despesas, lista contas, transacções recentes
+- [WEB] Contas (/accounts): cards resumo, lista com click-to-detail
+- [WEB] Criar conta: Shadcn Dialog (nome, tipo Select, instituição, saldo)
+- [WEB] Editar/eliminar conta: click conta → AccountDetailDialog (edit name/institution, delete)
+- [WEB] Transferência: TransferDialog (Select origem/destino, valor, descrição)
+- [WEB] API client (fetch + JWT auto-refresh + localStorage)
+- [WEB] Format utils (formatKz, formatRelativeDate em pt-AO)
 
-### Semana 10: Web Mirror
-- Layout responsivo (sidebar + main + panel) — 3h
-- Home/Dashboard web — 3h
-- Lista de contas web — 2h
-- Lista de transaccoes web — 3h
-- Formulario de transaccao web — 2h
-- Design system Shadcn — 3h
+### Semana 7-8: Transacções
+
+**Mobile:**
+- [MOB] FAB (+) com haptic feedback no Home e Transacções
+- [MOB] Criar transacção: bottom sheet (type toggle, AmountInput custom keypad, descrição, conta picker, categoria grid da API)
+- [MOB] Lista transacções: agrupada por data com totais diários, infinite scroll
+- [MOB] Filtros: chips tipo (Todas/Despesas/Receitas/Transf) + período (7d/Mês/3m/Ano/Tudo)
+- [MOB] Swipe-to-delete: gesto + confirmação Alert + haptic
+- [MOB] Detalhe transacção: /transaction/[id] com edit mode (valor + descrição) + delete
+- [MOB] Tap numa transacção → navega para detalhe
+
+**Web:**
+- [WEB] Transacções (/transactions): vista agrupada + vista planilha/tabela (toggle)
+- [WEB] Criar transacção: Dialog (type toggle, valor, descrição, conta Select, categoria Select) + atalho Ctrl+N
+- [WEB] Filtros: chips tipo + período (matching mobile)
+- [WEB] Tabela: colunas Data, Descrição, Tipo (badge), Valor (font-mono)
+- [WEB] Click transacção → TransactionDetailDialog (ver, editar descrição/valor, eliminar)
+
+### Semana 9: Dashboard/Relatórios
+
+**Backend:**
+- [API] GET /reports/spending-by-category (date_from, date_to)
+- [API] GET /reports/income-expense-summary (date_from, date_to)
+
+**Mobile:**
+- [MOB] Reports tab: cards Receitas/Despesas/Balanço
+- [MOB] Selector período (Este mês / 3 meses / Este ano)
+- [MOB] Gastos por categoria: barras horizontais com %, valores, dots coloridos
+- [MOB] Pull-to-refresh + empty state
+
+**Web:**
+- [WEB] Reports (/reports): cards summary com contagem transacções
+- [WEB] Bar chart Receitas vs Despesas (Recharts)
+- [WEB] Pie chart donut gastos por categoria (Recharts)
+- [WEB] Lista breakdown com cores + percentagens
+- [WEB] Selector período
+
+### Testes Fase 1
+- [TST] 60 backend tests (auth + CRUD + categorização + reports)
+- [TST] 8 E2E Playwright (dashboard, accounts, transactions, filters, table, reports, pt-AO, dialog)
 
 ---
 
-## Fase 2: Assistente IA (Semanas 11-16) — ~120h
+## ✅ Fase 2: Assistente IA (Semanas 11-16) — COMPLETA
 
 ### Semana 11: LLM Infrastructure
-- LLMProvider abstracto — 2h
-- AnthropicProvider (Claude) — 2h
-- OpenAIProvider (GPT-4o) — 2h
-- LLMRouter (seleccao por tarefa + fallback) — 3h
-- Config modelos por tarefa — 1h
-- Testes com mocks — 2h
+- [AI] LLMProvider abstracto (chat + tool calling interface)
+- [AI] AnthropicProvider (Claude Haiku/Sonnet)
+- [AI] OpenAIProvider (GPT-4o/mini)
+- [AI] MockLLMProvider (respostas determinísticas para dev/test)
+- [AI] LLMRouter (9 task types, fallback chain, auto-discover providers)
+- [AI] Factory (create_llm_router, create_mock_router)
+- [TST] 17 testes (mock responses, routing, tool calling, fallback, errors)
 
-### Semana 12: Router + Tracker Agent
-- RouterAgent (classificacao de intent) — 3h
-- BaseAgent (skills, tools, memoria) — 2h
-- TrackerAgent (system prompt + skills) — 3h
-- Tool: add_transaction — 2h [TXN-01]
-- Tool: get_transactions — 1.5h
-- Tool: get_balance — 1h
-- Tool: search_transactions — 1.5h [TXN-10 parcial]
-- Tool registry + dispatcher — 2h
-- POST /chat/message endpoint — 2h
-- Testes agent + tool — 3h
+### Semana 12: Agents + Tools
+- [AI] BaseAgent (tool call loop, confirm_before_execute, context injection)
+- [AI] RouterAgent (10 intents: TRACKER, BUDGET, ADVISOR, GOALS, FAMILY, REPORT, DEBT, INVESTMENT, NEWS, GENERAL)
+- [AI] TrackerAgent (tools: add_transaction, get_balance, get_transactions, search_transactions)
+- [AI] ChatOrchestrator (route → agent → response, session + facts injection)
+- [API] POST /api/v1/chat/message (autenticado, quota check, cache)
+- [TST] 11 testes (routing intents, chat endpoint, auth, validation)
 
-### Semana 13: UI Chat
-- Ecra Chat mobile (mensagens, input) — 4h
-- Streaming de resposta (SSE) — 3h
-- Botoes de confirmacao inline — 2h
-- Quick actions — 2h
-- Chat web (painel lateral) — 3h
-- Historico de conversas — 2h
+### Semana 13: Chat UI
+
+**Mobile:**
+- [MOB] Tab Assistente (posição central): chat screen completo
+- [MOB] Message bubbles (user dark, assistant light) com agent label
+- [MOB] Quick actions no empty state (Quanto tenho?, Últimas transacções, Gastos)
+- [MOB] Input com send button + haptic + multiline + max 2000 chars
+- [MOB] Typing indicator ("A pensar...")
+- [MOB] Clear chat button no header
+- [MOB] Chat store (Zustand): send message, history, session management
+
+**Web:**
+- [WEB] ChatPanel: painel lateral permanente no desktop (lg:w-80 xl:w-96)
+- [WEB] Message bubbles com agent labels
+- [WEB] Quick actions no empty state
+- [WEB] Form input + Enter para enviar
+- [WEB] Clear chat, loading indicator
+- [WEB] Responsive: hidden em mobile/tablet, visible em desktop
 
 ### Semana 14: Advisor Agent
-- AdvisorAgent (prompt + skills) — 3h
-- Skill: spending_analysis.md — 1h
-- Skill: angolan_context.md — 2h
-- Tool: get_spending — 2h
-- Tool: get_cashflow — 1.5h
-- Fluxo "posso comprar X?" — 3h
-- Testes — 2h
+- [AI] AdvisorAgent (prompt Angola, dados reais, tom directo)
+- [AI] Tool: get_spending (gastos por categoria num período)
+- [AI] Tool: get_cashflow (receitas vs despesas + taxa poupança)
+- [AI] Tool: get_balance (saldo total + por conta)
+- [AI] Tool: can_afford (calcula impacto real no saldo vs despesas mensais)
 
-### Semana 15: Memoria
-- Memoria de sessao Redis — 2h
-- Tabela user_facts + CRUD — 2h
-- MemoryExtractor (async pos-conversa) — 4h
-- Injeccao de factos no system prompt — 2h
-- Factos do onboarding — 1h
-- Testes — 2h
+### Semana 15: Memória
+- [AI] Session memory Redis (24h TTL, 20 msgs, graceful degradation)
+- [AI] Fact memory PostgreSQL (via preferences JSONB)
+- [AI] MemoryExtractor (regex: salary_day, children, bank, rent, employer)
+- [AI] Factos injectados no system prompt de cada agent
+- [AI] Extracção async após cada mensagem
 
-### Semana 16: Categorizacao IA + Cache
-- Categorizacao por LLM — 3h [TXN-06]
-- Feedback loop (correccoes) — 2h [TXN-07]
-- Cache L1 (respostas exactas, Redis) — 2h
-- Cache L3 (dados computados) — 2h
-- Metering tokens por utilizador — 1.5h
-- Quotas plano gratuito — 1.5h
+### Semana 16: Cache + Metering
+- [AI] Cache L1 Redis (exact match, 1h TTL)
+- [AI] Cache L3 Redis (dados computados, 5min TTL)
+- [AI] Token metering diário por user em Redis
+- [AI] Quotas por plano (free=5K, personal=50K, family=80K, family+=150K tokens/dia)
+- [API] 429 quando quota excedida (mensagem pt-AO)
+- [AI] AI categorization service + feedback loop
+- [TST] 8 testes (plan limits, memory patterns)
+
+**Total testes Phase 2: 96 backend + 8 E2E (de Phase 1)**
 
 ---
 
-## Fase 3: Orcamento + Metas (Semanas 17-22) — ~90h
+## Fase 3: Orçamento + Metas (Semanas 17-22) — ~90h
 
-### Semana 17-18: Orcamento
-- Tabelas budgets + budget_items — 2h
-- CRUD /budgets API — 3h [BUD-01]
-- 5 metodos de orcamento (logica) — 4h
-- UI mobile: barras de progresso — 4h [BUD-04]
-- UI mobile: criar orcamento — 3h [BUD-01]
-- Tracking tempo real — 2h [BUD-04]
-- Alertas 70/90/100% — 2h [BUD-05]
-- Rollover — 2h [BUD-06]
-- Comparacao orcado vs realizado — 2h [BUD-07]
-- Web mirror — 3h
+### Semana 17-18: Orçamento
+
+**Backend:**
+- [API] Tabelas budgets + budget_items (Alembic migration)
+- [API] CRUD /budgets (GET/POST/PUT/DELETE) [BUD-01]
+- [API] GET /budgets/{id}/status (gasto actual vs limite por item)
+- [API] 5 métodos de orçamento: category, fifty_thirty_twenty, envelope, flex, zero_based
+- [API] Rollover: transferir remanescente para próximo período [BUD-06]
+- [API] GET /budgets/suggested (IA sugere com base em 3 meses histórico) [BUD-02]
+- [TST] Testes CRUD orçamento (criar, listar, status, rollover, limites)
+
+**Mobile:**
+- [MOB] Ecrã orçamento (nova tab ou dentro de Mais): lista orçamentos activos
+- [MOB] Criar orçamento: bottom sheet (nome, método, período, categorias com limites)
+- [MOB] Barras de progresso por categoria (verde <70%, amarelo 70-90%, vermelho >90%)
+- [MOB] Percentagem consumida + valor restante + dias restantes
+- [MOB] Detalhe orçamento: tap para ver breakdown completo
+- [MOB] Editar orçamento: alterar limites por categoria
+- [MOB] Eliminar orçamento: swipe ou detalhe
+- [MOB] Alerta visual quando >70%, >90%, >100%
+- [MOB] Comparação orçado vs realizado por categoria
+
+**Web:**
+- [WEB] Orçamento (/budget): lista orçamentos com barras de progresso
+- [WEB] Criar orçamento: Dialog (método, período, categorias, limites)
+- [WEB] Detalhe: click → dialog/página com breakdown completo
+- [WEB] Barras de progresso coloridas (matching mobile)
+- [WEB] Editar/eliminar orçamento via dialog
+- [WEB] Comparação orçado vs realizado (tabela ou gráfico barras)
 
 ### Semana 19: Budget Agent
-- BudgetAgent (prompt + skills) — 2h
-- Tool: create_budget — 2h [BUD-11]
-- Tool: check_budget — 2h [BUD-11]
-- Orcamento sugerido por IA — 3h [BUD-02]
-- Testes — 2h
+- [AI] BudgetAgent (prompt + tools)
+- [AI] Tool: create_budget (criar via chat)
+- [AI] Tool: check_budget (quanto resta em cada categoria)
+- [AI] Tool: suggest_budget (IA analisa 3 meses e sugere limites)
+- [AI] Registar BudgetAgent no orchestrator
+- [TST] Testes agent + tools
 
-### Semana 20: Metas
-- Tabelas goals + goal_contributions — 2h
-- CRUD /goals API — 3h [GOL-01]
-- UI: lista com progresso visual — 3h [GOL-04]
-- UI: criar meta — 2h [GOL-01]
-- Calculo contribuicao mensal — 1h [GOL-03]
-- Contribuicao manual — 1.5h [GOL-05]
-- Multiplas metas — 1h [GOL-07]
-- Fundo de emergencia — 2h [GOL-08]
-- Marcos e celebracoes — 2h [GOL-12]
+### Semana 20-21: Metas
+
+**Backend:**
+- [API] Tabelas goals + goal_contributions (Alembic migration)
+- [API] CRUD /goals (GET/POST/PUT/DELETE) [GOL-01]
+- [API] POST /goals/{id}/contribute (contribuição manual) [GOL-05]
+- [API] GET /goals/{id}/progress (progresso + projecção de conclusão)
+- [API] Cálculo contribuição mensal necessária [GOL-03]
+- [API] Fundo de emergência (auto-cálculo 3-6 meses despesas) [GOL-08]
+- [TST] Testes CRUD metas + contribuições + projecções
+
+**Mobile:**
+- [MOB] Ecrã metas: lista com barras progresso visual (0-100%)
+- [MOB] Criar meta: bottom sheet (nome, tipo, valor alvo, data limite, contribuição mensal)
+- [MOB] Detalhe meta: progresso visual, histórico contribuições, projecção conclusão
+- [MOB] Contribuir: botão no detalhe → input valor → confirmar
+- [MOB] Marcos (25%, 50%, 75%, 100%) com celebração (confetti/haptic)
+- [MOB] Editar/eliminar meta
+- [MOB] Fundo emergência: card especial com cálculo automático
+
+**Web:**
+- [WEB] Metas (/goals): lista com barras de progresso
+- [WEB] Criar meta: Dialog (nome, tipo, valor, data, contribuição)
+- [WEB] Detalhe: click → dialog com progresso, histórico, projecção
+- [WEB] Contribuir: botão no dialog → input valor
+- [WEB] Editar/eliminar via dialog
+- [WEB] Fundo emergência: card com cálculo
 
 ### Semana 21: Goals Agent
-- GoalsAgent (prompt + skills) — 2h
-- Tool: create_goal — 1.5h
-- Tool: get_goal_progress — 1.5h
-- Recomendacoes IA — 3h [GOL-10, GOL-11]
-- Testes — 2h
+- [AI] GoalsAgent (prompt + tools)
+- [AI] Tool: create_goal
+- [AI] Tool: get_goal_progress
+- [AI] Tool: simulate_goal (e se poupar X/mês? quanto tempo?)
+- [AI] Registar GoalsAgent no orchestrator
+- [TST] Testes agent + tools
 
-### Semana 22: Polish
-- Orcamento sugerido por IA — 2h [BUD-02]
-- Simulacao de metas — 2h [GOL-11]
-- Ajuste automatico de meta — 2h [GOL-14]
-- Integration tests — 3h
-- Bug fixes e polish — 3h
+### Semana 22: Polish + Integração
+- [API] Orçamento sugerido por IA (endpoint completo) [BUD-02]
+- [AI] Simulação de metas via chat [GOL-11]
+- [API] Ajuste automático de meta quando contribuição muda [GOL-14]
+- [TST] Integration tests (orçamento ↔ transacções, metas ↔ contribuições)
+- [TST] E2E Playwright: criar orçamento, ver progresso, criar meta, contribuir
+- Bug fixes verificados com protocolo validação
 
 ---
 
-## Fase 4: Familia (Semanas 23-28) — ~100h
+## Fase 4: Família (Semanas 23-28) — ~100h
 
 ### Semana 23-24: Modelo Familiar
-- Tabelas families, family_members, invites — 3h
-- CRUD /families API — 3h [FAM-01]
-- Sistema de convites — 4h [FAM-02]
-- Papeis e permissoes — 3h [FAM-03]
-- UI mobile: ecra familia + convites — 3h
 
-### Semana 25: Contas e Contribuicoes
-- Contas partilhadas — 2h [FAM-04]
-- Contas individuais (privacidade) — 1.5h [FAM-05]
-- Modelos de contribuicao — 3h [FAM-07]
-- Tracking contribuicoes — 2h [FAM-08]
-- UI dashboard contribuicoes — 2h
+**Backend:**
+- [API] Tabelas families, family_members, family_invites (Alembic migration)
+- [API] Adicionar FK family_id em accounts (migration separada)
+- [API] CRUD /families (GET/POST/PUT/DELETE) [FAM-01]
+- [API] POST /families/invite (enviar convite por telefone/código) [FAM-02]
+- [API] POST /families/invite/accept (aceitar convite)
+- [API] PUT /families/members/{id}/role (alterar papel) [FAM-03]
+- [API] DELETE /families/members/{id} (remover membro)
+- [TST] Testes família (CRUD, convites, papéis, permissões)
 
-### Semana 26: Orcamento e Gastos Familiares
-- Orcamento domestico — 3h [FAM-06]
-- Gastos por filho — 2h [FAM-09]
-- Categorias domesticas — 1h [FAM-10]
-- Eventos familiares — 2h [FAM-11]
-- Toggle pessoal/familia UI — 2h
+**Mobile:**
+- [MOB] Ecrã Família (dentro de Mais → Família): membros + resumo
+- [MOB] Criar família: bottom sheet (nome)
+- [MOB] Convidar membro: bottom sheet (telefone ou partilhar código)
+- [MOB] Lista membros: nome, papel, contribuição
+- [MOB] Alterar papel: tap membro → Alert opções (admin/adult/dependent)
+- [MOB] Remover membro: swipe ou long-press
+
+**Web:**
+- [WEB] Família (/family): lista membros, resumo, convites pendentes
+- [WEB] Criar família: Dialog (nome)
+- [WEB] Convidar: Dialog (telefone ou copiar código)
+- [WEB] Gestão membros: click → dialog (alterar papel, remover)
+
+### Semana 25: Contas e Contribuições
+
+**Backend:**
+- [API] PUT /accounts/{id} → is_shared, family_id [FAM-04]
+- [API] GET /families/{id}/contributions (tracking por membro) [FAM-08]
+- [API] Modelos contribuição: equal, percentage, fixed, proportional [FAM-07]
+- [API] Privacidade: filtrar contas individuais de outros membros [FAM-05]
+- [TST] Testes contas partilhadas + privacidade + contribuições
+
+**Mobile:**
+- [MOB] Toggle partilhar conta: switch no detalhe da conta
+- [MOB] Dashboard contribuições: quem contribuiu quanto este mês
+- [MOB] Modelo contribuição: configuração no ecrã família
+- [MOB] Contas individuais marcadas com cadeado (privadas)
+
+**Web:**
+- [WEB] Toggle partilhar conta no AccountDetailDialog
+- [WEB] Dashboard contribuições na página Família
+- [WEB] Configuração modelo contribuição
+- [WEB] Indicador visual contas privadas vs partilhadas
+
+### Semana 26: Orçamento e Gastos Familiares
+
+**Backend:**
+- [API] POST /budgets com family_id (orçamento doméstico separado) [FAM-06]
+- [API] GET /families/{id}/spending (gastos por membro) [FAM-09]
+- [API] GET /families/{id}/children/{id}/spending (gastos por filho) [FAM-09]
+- [API] Eventos familiares (aniversários, regresso às aulas) [FAM-11]
+- [TST] Testes orçamento familiar + gastos por membro + por filho
+
+**Mobile:**
+- [MOB] Toggle pessoal/família no orçamento e transacções
+- [MOB] Orçamento doméstico: criar com family_id
+- [MOB] Gastos por filho: lista de dependentes com totais (propina, uniforme, etc.)
+- [MOB] Eventos familiares: calendário/lista com gastos associados
+
+**Web:**
+- [WEB] Toggle pessoal/família nas páginas de orçamento e transacções
+- [WEB] Orçamento doméstico no /budget
+- [WEB] Gastos por filho na página Família
+- [WEB] Eventos familiares com tabela
 
 ### Semana 27: Family Agent
-- FamilyAgent (prompt + skills) — 2h
-- Tool: get_family_summary — 2h
-- Tool: get_child_spending — 1.5h
-- Relatorio familiar mensal — 3h [FAM-13]
-- Dashboard familiar — 3h [FAM-14]
+- [AI] FamilyAgent (prompt + tools)
+- [AI] Tool: get_family_summary
+- [AI] Tool: get_child_spending (por dependente)
+- [AI] Tool: get_member_contributions
+- [AI] Registar FamilyAgent no orchestrator
+- [API] GET /families/{id}/report (relatório familiar mensal) [FAM-13]
+
+**Mobile:**
+- [MOB] Dashboard familiar: card resumo, contribuições, gastos por categoria familiar
+
+**Web:**
+- [WEB] Dashboard familiar na página /family com gráficos
+- [WEB] Relatório familiar exportável
 
 ### Semana 28: Privacidade e Review
-- Needs Review flag — 2h [FAM-15]
-- Transaccoes privadas — 2h [FAM-16]
-- Permissoes granulares — 3h [FAM-17]
-- Metas familiares — 2h [FAM-12, GOL-09]
-- Notificacoes familiares — 1.5h [FAM-20]
-- Testes familia completa — 3h
+
+**Backend:**
+- [API] needs_review flag em transacções (parceiro revê) [FAM-15]
+- [API] is_private flag (esconder da família) [FAM-16]
+- [API] Permissões granulares por membro [FAM-17]
+- [API] Metas familiares: goals com family_id [FAM-12, GOL-09]
+- [API] Notificações familiares [FAM-20]
+- [TST] Testes privacidade (A não vê dados de B, review flow, permissões)
+
+**Mobile:**
+- [MOB] Switch "Necessita revisão" ao criar transacção
+- [MOB] Switch "Privada" ao criar transacção
+- [MOB] Lista transacções pendentes de revisão (para parceiro)
+- [MOB] Metas familiares com contribuição por membro
+
+**Web:**
+- [WEB] Toggles revisão/privada no CreateTransactionDialog
+- [WEB] Painel de transacções pendentes de revisão
+- [WEB] Metas familiares no /goals
+
+- [TST] E2E Playwright: criar família, convidar, contas partilhadas, privacidade
 
 ---
 
-## Fase 5: IA Avancada (Semanas 29-34) — ~100h
+## Fase 5: IA Avançada (Semanas 29-34) — ~100h
 
 ### Semana 29: OCR de Recibos
-- POST /chat/image endpoint — 2h
-- Pre-processamento imagem — 1h
-- Prompt multimodal extracao recibo — 2h
-- Preview dados + confirmacao — 3h [TXN-03]
-- UI: botao camara no chat + FAB — 2h
-- Testes com recibos angolanos — 2h
+
+**Backend:**
+- [API] POST /chat/image (upload imagem base64)
+- [API] Pré-processamento imagem (resize, optimizar)
+- [API] Prompt multimodal (GPT-4o/Sonnet) para extrair: comerciante, data, itens, total
+- [API] Validação (total = soma itens?)
+- [TST] Testes OCR com imagens de recibos angolanos
+
+**Mobile:**
+- [MOB] Botão câmara no chat input + no FAB (long-press)
+- [MOB] Captura foto com expo-camera
+- [MOB] Preview dados extraídos → confirmar → criar transacção
+- [MOB] Loading state durante processamento OCR
+
+**Web:**
+- [WEB] Botão upload foto no chat panel
+- [WEB] Input file para upload de foto de recibo
+- [WEB] Preview dados extraídos → confirmar → criar transacção
 
 ### Semana 30: Import de Extractos
-- Parser CSV (multi-banco) — 4h [ACC-06]
-- Parser PDF (multimodal GPT-4o) — 3h [ACC-06, ACC-07]
-- Preview + seleccao — 3h
-- Deteccao duplicados — 2h [TXN-12]
-- Categorizacao batch — 1.5h
-- Testes extractos BAI/BFA/BIC — 2h
+
+**Backend:**
+- [API] POST /accounts/import (upload CSV/PDF)
+- [API] Parser CSV multi-banco (BAI, BFA, BIC) [ACC-06]
+- [API] Parser PDF via multimodal (GPT-4o) [ACC-07]
+- [API] Detecção duplicados [TXN-12]
+- [API] Categorização batch das transacções importadas
+- [TST] Testes import com extractos reais (CSV + PDF)
+
+**Mobile:**
+- [MOB] Botão importar no ecrã de contas
+- [MOB] Picker de ficheiro (DocumentPicker)
+- [MOB] Preview transacções detectadas → seleccionar/desseleccionar → confirmar import
+- [MOB] Indicador de duplicados detectados
+
+**Web:**
+- [WEB] Botão importar na página /accounts
+- [WEB] Drop zone ou file input para CSV/PDF
+- [WEB] Tabela preview com checkbox para cada transacção
+- [WEB] Indicador de duplicados + categorias sugeridas
 
 ### Semana 31: Smart Insights Engine
-- Cron job analise diaria — 3h
-- Regra: gasto incomum (3x media) — 1.5h
-- Regra: orcamento em risco (>80%) — 1h
-- Regra: previsao saldo negativo — 2h
-- Regra: padrao sazonal — 1.5h
-- Regra: oportunidade poupanca — 1.5h
-- Regra: recorrencia detectada — 2h [TXN-08]
-- Formulacao mensagens LLM (batch) — 2h
-- Filtro relevancia (max 2/dia) — 1h
 
-### Semana 32: Notificacoes
-- Tabelas notifications + preferences + push_tokens — 2h
-- Expo Push setup (FCM/APNS) — 3h
-- Push: alertas orcamento — 1h
-- Push: insights proactivos — 1h
-- Push: resumo semanal — 2h
-- Push: factura proxima — 1.5h
-- Push: meta atingida — 1h
-- Push: divida a vencer — 1h
-- UI: centro notificacoes + preferencias — 3h [NTF-01 a NTF-05]
+**Backend:**
+- [API] Cron job análise diária (FastAPI background task ou Celery)
+- [API] 6 regras de insight:
+  - Gasto incomum (>3x média categoria 30d)
+  - Orçamento em risco (>80% e >5 dias restantes)
+  - Previsão saldo negativo (projecção até dia salário)
+  - Padrão sazonal (mês actual >20% vs anterior)
+  - Oportunidade poupança (surplus >threshold 3 meses)
+  - Recorrência detectada (transacção similar 3+ meses) [TXN-08]
+- [API] Formulação mensagens LLM (batch, Haiku)
+- [API] Filtro relevância (max 2 insights/dia por user)
+- [API] GET /insights (últimos insights do user)
+- [TST] Testes para cada regra de insight
 
-### Semana 33: Memoria Semantica
-- Tabela user_embeddings + pgvector index — 2h
-- Geracao embeddings por conversa — 2h
-- Pesquisa semantica transaccoes — 3h [TXN-10]
-- Busca semantica no chat — 2h
-- Cache L2 (respostas similares) — 2h
+**Mobile:**
+- [MOB] Card insight no Home screen (máx 1 visível)
+- [MOB] Lista insights no ecrã de notificações
+- [MOB] Tap insight → acção (ver orçamento, ver transacções, etc.)
+
+**Web:**
+- [WEB] Card insight no dashboard
+- [WEB] Lista insights numa secção dedicada ou sidebar
+
+### Semana 32: Notificações
+
+**Backend:**
+- [API] Tabelas notifications + notification_preferences + push_tokens (migration)
+- [API] CRUD /notifications (GET, mark_read)
+- [API] PUT /notifications/preferences (por tipo de notificação)
+- [API] Expo Push setup (FCM/APNS)
+- [API] Push: alertas orçamento, insights, resumo semanal, factura próxima, meta atingida
+- [TST] Testes notificações (criar, marcar lida, preferências)
+
+**Mobile:**
+- [MOB] Centro de notificações: lista com read/unread
+- [MOB] Badge no tab (número não lidas)
+- [MOB] Preferências de notificação: toggles por tipo
+- [MOB] Quiet hours (horário silêncio)
+- [MOB] Push notifications via expo-notifications
+- [MOB] Tap notificação → deep link para ecrã relevante
+
+**Web:**
+- [WEB] Ícone sino no header com dropdown de notificações
+- [WEB] Lista notificações com mark-as-read
+- [WEB] Preferências em /settings
+
+### Semana 33: Memória Semântica
+
+**Backend:**
+- [API] Tabela user_embeddings + pgvector HNSW index (migration)
+- [API] Geração embeddings por conversa (text-embedding-3-small)
+- [API] Pesquisa semântica transacções [TXN-10]
+- [API] Busca semântica no chat ("da última vez que falámos sobre...")
+- [API] Cache L2 (respostas semânticas similares, cosine >0.95, 24h TTL)
+- [TST] Testes embedding + pesquisa semântica
 
 ### Semana 34: Voz e Personalidade
-- Whisper API (speech-to-text) — 3h
-- UI: botao voz no chat — 2h
-- POST /chat/voice endpoint — 1.5h
-- Personalidade configuravel — 2h [CFG-05]
-- UI: configuracoes personalidade — 1.5h
+
+**Backend:**
+- [API] POST /chat/voice (upload áudio → Whisper → texto → chat normal)
+- [API] Personalidade configurável: tom (balanced/casual/formal/coach), proactividade, detalhe [CFG-05]
+- [API] Personalidade injectada no system prompt
+- [TST] Testes voz (mock Whisper) + personalidade
+
+**Mobile:**
+- [MOB] Botão microfone no chat input
+- [MOB] Gravação áudio com expo-av
+- [MOB] Indicador visual "a ouvir..." durante gravação
+- [MOB] Transcrição aparece como mensagem normal
+
+**Web:**
+- [WEB] Voz não prioritário (conforme tabela paridade)
+
+**Mobile + Web:**
+- [MOB] Configurações → Personalidade IA (3 sliders: tom, proactividade, detalhe)
+- [WEB] /settings → Personalidade IA (matching mobile)
+
+- [TST] E2E Playwright: insights no dashboard, notificações, configurações personalidade
 
 ---
 
-## Fase 6: Monetizacao e Lancamento (Semanas 35-40) — ~80h
+## Fase 6: Monetização e Lançamento (Semanas 35-40) — ~80h
 
 ### Semana 35-36: Billing
-- Tabela subscriptions — 1.5h
-- Integracao Stripe — 6h
-- Logica de planos (free/personal/family/family+) — 3h
-- Quotas por plano — 2h
-- UI: ecra subscracao — 3h [CFG-15]
-- Testes billing — 2h
+
+**Backend:**
+- [API] Tabela subscriptions (migration)
+- [API] Integração Stripe (webhooks, checkout session)
+- [API] POST /billing/checkout (criar sessão Stripe)
+- [API] POST /billing/webhook (processar eventos Stripe)
+- [API] GET /billing/subscription (estado actual)
+- [API] Lógica planos (free → personal → family → family+)
+- [API] Quotas enforced por plano (transacções, AI questions, membros família)
+- [TST] Testes billing (mock Stripe)
+
+**Mobile:**
+- [MOB] Ecrã subscrição: plano actual, features, preços
+- [MOB] Botão upgrade → Stripe checkout (in-app browser)
+- [MOB] Indicador de quota (X/50 transacções este mês)
+- [MOB] Bloqueio gracioso quando quota excedida
+
+**Web:**
+- [WEB] Página /settings/billing: plano actual, features, upgrade
+- [WEB] Stripe checkout redirect
+- [WEB] Indicador quota no dashboard
 
 ### Semana 37: Onboarding
-- Flow onboarding assistido (chat-based) — 4h [CFG-14]
-- Setup: moeda, pais, dia salario — 1h
-- Setup: primeira conta e saldo — 1.5h
-- Demo interactiva — 2h
-- Testes onboarding — 1.5h
 
-### Semana 38: Marketing e Stores
-- Landing page (Next.js) — 8h
-- App Store listing — 3h
-- Play Store listing — 3h
-- EAS Build producao — 2h
-- Submissao stores — 2h
+**Backend:**
+- [API] Flow onboarding (chat-based com steps) [CFG-14]
+- [API] PUT /users/onboarding (marcar steps completos)
+- [TST] Testes onboarding flow
 
-### Semana 39: Relatorios e Export
-- ReportAgent (prompt + tools) — 3h
-- Tool: generate_report — 3h [RPT-02]
-- Export PDF — 3h [RPT-12]
-- Partilha WhatsApp/email — 2h [RPT-13]
-- Relatorio familiar — 2h [RPT-03]
-- Score financeiro — 2h [RPT-10]
+**Mobile:**
+- [MOB] Ecrã onboarding: welcome → registo → moeda/país → dia salário → primeira conta → saldo → demo
+- [MOB] Chat-based: assistente guia passo-a-passo
+- [MOB] Demo interactiva: registar despesa, fazer pergunta
 
-### Semana 40: Lancamento
-- Bug fixes finais — 8h
-- Performance optimization — 4h
-- Sentry + PostHog setup — 2h
-- Monitoring dashboards — 2h
-- LANCAMENTO PUBLICO
+**Web:**
+- [WEB] Onboarding wizard: mesmos steps adaptados ao desktop
+- [WEB] Chat no painel lateral guia o processo
+
+### Semana 38: Marketing + Stores
+- [WEB] Landing page pública (Next.js): hero, features, preços, download links
+- [MOB] App Store listing + screenshots + descrição pt-AO
+- [MOB] Play Store listing + screenshots + descrição pt-AO
+- [MOB] EAS Build produção (iOS + Android)
+- [MOB] Submissão stores
+
+### Semana 39: Relatórios Avançados + Export
+
+**Backend:**
+- [AI] ReportAgent (prompt + tools)
+- [AI] Tool: generate_report (relatório mensal em linguagem natural) [RPT-02]
+- [API] GET /reports/export/pdf (gerar PDF) [RPT-12]
+- [API] GET /reports/financial-score (score 0-100) [RPT-10]
+- [API] Registar ReportAgent no orchestrator
+- [TST] Testes relatórios + export
+
+**Mobile:**
+- [MOB] Relatório mensal IA: card com resumo em linguagem natural
+- [MOB] Botão "Gerar relatório" → IA formula texto
+- [MOB] Export PDF → partilhar (WhatsApp, email) [RPT-13]
+- [MOB] Score financeiro: card visual (0-100, cor por nível)
+- [MOB] Relatório familiar [RPT-03]
+
+**Web:**
+- [WEB] Relatório mensal IA na /reports
+- [WEB] Botão gerar + download PDF
+- [WEB] Score financeiro com gráfico
+- [WEB] Relatório familiar
+
+### Semana 40: Lançamento
+- Sentry + PostHog setup (ambas plataformas)
+- Monitoring dashboards
+- Bug fixes finais (lista de issues)
+- Performance optimisation (Lighthouse web, profiler mobile)
+- Railway: merge staging → main (deploy produção)
+- **LANÇAMENTO PÚBLICO**
 
 ---
 
-## Fase 7: Expansao (Semanas 41-56) — ~110h
+## Fase 7: Expansão (Semanas 41-56) — ~110h
 
-### Semanas 41-44: Dividas (~25h)
-- Tabelas debts + debt_payments — 2h [DEB-01, DEB-02]
-- CRUD /debts API + UI — 6h [DEB-01 a DEB-06]
-- Plano amortizacao visual — 3h [DEB-03]
-- Dividas informais — 2h [DEB-04]
-- DebtAgent + tools — 4h [DEB-07, DEB-08]
-- Simulacao aceleracao — 3h [DEB-08]
-- Debt-free date — 2h [DEB-10]
-- Racio divida/rendimento — 1h [DEB-11]
+### Semanas 41-44: Dívidas (~25h)
+
+**Backend:**
+- [API] Tabelas debts + debt_payments (migration)
+- [API] CRUD /debts (GET/POST/PUT/DELETE) [DEB-01 a DEB-06]
+- [API] GET /debts/{id}/amortization (plano amortização) [DEB-03]
+- [API] POST /debts/{id}/payment (registar pagamento)
+- [API] GET /debts/simulate (simulação aceleração) [DEB-08]
+- [API] Dívidas informais (amigo/família) [DEB-04]
+- [AI] DebtAgent + tools (simulate, suggest strategy avalanche/snowball) [DEB-07]
+- [TST] Testes dívidas + simulações
+
+**Mobile:**
+- [MOB] Ecrã dívidas (Mais → Dívidas): lista com saldo restante
+- [MOB] Criar dívida: bottom sheet (nome, tipo, valor, taxa juros, prestação, credor)
+- [MOB] Detalhe: plano amortização visual, histórico pagamentos
+- [MOB] Registar pagamento: botão no detalhe
+- [MOB] Simulador: "e se pagar X/mês a mais?"
+- [MOB] Debt-free date projecção [DEB-10]
+- [MOB] Rácio dívida/rendimento [DEB-11]
+- [MOB] Editar/eliminar dívida
+
+**Web:**
+- [WEB] Dívidas (/debts): lista com saldo, taxa, prestação
+- [WEB] Criar dívida: Dialog
+- [WEB] Detalhe: click → dialog com plano amortização (tabela)
+- [WEB] Simulador: form com sliders
+- [WEB] Registar pagamento via dialog
+- [WEB] Editar/eliminar
 
 ### Semanas 45-48: Investimentos (~20h)
-- Tabela investments + CRUD — 4h [INV-01]
-- UI: lista e detalhe — 4h [INV-01]
-- Tracking rendimento — 2h [INV-02]
-- Simulador juros compostos — 3h [INV-03]
-- Distribuicao por tipo — 2h [INV-04]
-- InvestmentAgent — 3h
-- Contexto angolano (OTs, BNA) — 2h [INV-06]
 
-### Semanas 49-52: Noticias (~15h)
-- Scraper/RSS fontes angolanas — 4h [NEW-01, NEW-02]
-- Feed curado com resumo IA — 3h [NEW-06]
-- Cambio Kz/USD/EUR (BNA + paralelo) — 2h [NEW-04]
-- NewsAgent — 3h
-- Analise personalizada — 2h [NEW-07]
+**Backend:**
+- [API] Tabela investments (migration)
+- [API] CRUD /investments [INV-01]
+- [API] GET /investments/performance (rendimento por investimento) [INV-02]
+- [API] GET /investments/simulate (juros compostos) [INV-03]
+- [AI] InvestmentAgent + tools
+- [API] Contexto angolano: OTs BNA, certificados aforro [INV-06]
+- [TST] Testes investimentos + simulador
 
-### Semanas 53-56: Educacao e Gamificacao (~18h)
-- Dicas diarias personalizadas — 2h [EDU-01]
-- Desafios semanais — 3h [EDU-02]
-- Mini-cursos (conteudo markdown) — 4h [EDU-03]
-- Badges e XP — 3h [EDU-06]
-- Streaks — 2h [EDU-07]
-- Leaderboard familiar — 2h [EDU-08]
-- Simulador investimento interactivo — 2h [EDU-05]
+**Mobile:**
+- [MOB] Ecrã investimentos (Mais → Investimentos): lista com valor actual
+- [MOB] Criar investimento: bottom sheet (nome, tipo, instituição, valor, taxa, maturidade)
+- [MOB] Detalhe: rendimento, projecção, maturidade
+- [MOB] Simulador juros compostos
+- [MOB] Distribuição por tipo (gráfico)
+- [MOB] Editar/eliminar
+
+**Web:**
+- [WEB] Investimentos (/investments): lista + performance
+- [WEB] Criar/editar via Dialog
+- [WEB] Simulador com gráfico de projecção (Recharts)
+- [WEB] Distribuição por tipo (pie chart)
+
+### Semanas 49-52: Notícias (~15h)
+
+**Backend:**
+- [API] Scraper/RSS fontes angolanas [NEW-01, NEW-02]
+- [API] GET /news (feed curado)
+- [API] Câmbio Kz/USD/EUR (BNA + paralelo) [NEW-04]
+- [AI] NewsAgent + tools (resumo IA, análise personalizada) [NEW-06, NEW-07]
+- [TST] Testes scraper + câmbio
+
+**Mobile:**
+- [MOB] Feed notícias: lista com thumbnails e resumo IA
+- [MOB] Câmbio: card com taxas actuais (BNA)
+- [MOB] "Como me afecta?": tap → análise personalizada via chat
+
+**Web:**
+- [WEB] Notícias (/news): feed com resumos
+- [WEB] Widget câmbio no dashboard
+- [WEB] Análise personalizada no chat panel
+
+### Semanas 53-56: Educação e Gamificação (~18h)
+
+**Backend:**
+- [API] Dicas diárias personalizadas [EDU-01]
+- [API] Desafios semanais [EDU-02]
+- [API] Mini-cursos (conteúdo markdown) [EDU-03]
+- [API] Badges, XP, levels [EDU-06]
+- [API] Streaks (dias consecutivos registando) [EDU-07]
+- [API] Leaderboard familiar [EDU-08]
+- [TST] Testes gamificação
+
+**Mobile:**
+- [MOB] Card dica diária no Home
+- [MOB] Ecrã desafios (Mais → Desafios): lista com progresso
+- [MOB] Mini-cursos: lista → conteúdo markdown renderizado
+- [MOB] Perfil: badges, XP, level, streaks
+- [MOB] Leaderboard familiar
+
+**Web:**
+- [WEB] Dica diária no dashboard
+- [WEB] Desafios e mini-cursos em /education
+- [WEB] Perfil com badges e stats
+- [WEB] Leaderboard familiar na /family
+
+---
+
+*Última actualização: 2026-03-29 v3.0*
