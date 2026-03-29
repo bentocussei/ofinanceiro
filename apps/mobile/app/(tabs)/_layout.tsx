@@ -38,20 +38,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Assistente',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="transactions"
         options={{
           title: 'Transacções',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="swap-vertical-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="reports"
-        options={{
-          title: 'Relatórios',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bar-chart-outline" size={size} color={color} />
           ),
         }}
       />
@@ -64,6 +64,8 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Reports moved to More menu */}
+      <Tabs.Screen name="reports" options={{ href: null }} />
     </Tabs>
   )
 }
