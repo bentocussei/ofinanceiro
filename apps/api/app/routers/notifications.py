@@ -1,4 +1,4 @@
-"""Notifications router: CRUD + mark read."""
+"""Notifications router: CRUD + mark read + scheduler trigger."""
 
 import uuid
 from datetime import UTC, datetime
@@ -11,6 +11,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.notification import Notification
 from app.models.user import User
+from app.services.notification_scheduler import run_notification_scheduler
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 
@@ -87,3 +88,14 @@ async def mark_all_read(
     )
     await db.flush()
     return {"success": True}
+
+
+@router.post("/check")
+async def trigger_notification_check(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Trigger notification checks for all users.
+    In production, this runs as a scheduled cron job.
+    """
+    return await run_notification_scheduler(db)
