@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useMemo, useEffect, useState } from "react"
 
+import { Button } from "@/components/ui/button"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { apiFetch } from "@/lib/api"
 import { formatKz, formatRelativeDate } from "@/lib/format"
@@ -16,15 +17,22 @@ interface Transaction {
   created_at: string
 }
 
+type ViewMode = "grouped" | "table"
+type TypeFilter = "all" | "expense" | "income" | "transfer"
+type PeriodFilter = "week" | "month" | "3months" | "year" | "all"
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>("grouped")
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("month")
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
     apiFetch<{ items: Transaction[]; cursor: string | null; has_more: boolean }>(
-      `/api/v1/transactions/?limit=30${cursorParam}`
+      `/api/v1/transactions/?limit=50${cursorParam}`
     )
       .then((data) => {
         setTransactions((prev) => (reset ? data.items : [...prev, ...data.items]))
@@ -38,26 +46,162 @@ export default function TransactionsPage() {
     fetchTransactions(true)
   }, [])
 
+  // Client-side filtering
+  const filtered = useMemo(() => {
+    let result = transactions
+
+    if (typeFilter !== "all") {
+      result = result.filter((t) => t.type === typeFilter)
+    }
+
+    if (periodFilter !== "all") {
+      const cutoff = new Date()
+      if (periodFilter === "week") cutoff.setDate(cutoff.getDate() - 7)
+      else if (periodFilter === "month") cutoff.setMonth(cutoff.getMonth() - 1)
+      else if (periodFilter === "3months") cutoff.setMonth(cutoff.getMonth() - 3)
+      else if (periodFilter === "year") cutoff.setFullYear(cutoff.getFullYear() - 1)
+      const cutoffStr = cutoff.toISOString().split("T")[0]
+      result = result.filter((t) => t.transaction_date >= cutoffStr)
+    }
+
+    return result
+  }, [transactions, typeFilter, periodFilter])
+
   // Group by date
-  const grouped = transactions.reduce<Record<string, Transaction[]>>((acc, txn) => {
+  const grouped = filtered.reduce<Record<string, Transaction[]>>((acc, txn) => {
     const date = txn.transaction_date
     if (!acc[date]) acc[date] = []
     acc[date].push(txn)
     return acc
   }, {})
 
+  const typeOptions: { value: TypeFilter; label: string }[] = [
+    { value: "all", label: "Todas" },
+    { value: "expense", label: "Despesas" },
+    { value: "income", label: "Receitas" },
+    { value: "transfer", label: "Transferências" },
+  ]
+
+  const periodOptions: { value: PeriodFilter; label: string }[] = [
+    { value: "week", label: "7 dias" },
+    { value: "month", label: "Mês" },
+    { value: "3months", label: "3 meses" },
+    { value: "year", label: "Ano" },
+    { value: "all", label: "Tudo" },
+  ]
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Transacções</h2>
-        <CreateTransactionDialog onCreated={() => fetchTransactions(true)} />
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex border rounded-lg overflow-hidden">
+            <button
+              className={`px-3 py-1.5 text-xs ${viewMode === "grouped" ? "bg-foreground text-background" : "hover:bg-accent"}`}
+              onClick={() => setViewMode("grouped")}
+            >
+              Agrupado
+            </button>
+            <button
+              className={`px-3 py-1.5 text-xs ${viewMode === "table" ? "bg-foreground text-background" : "hover:bg-accent"}`}
+              onClick={() => setViewMode("table")}
+            >
+              Planilha
+            </button>
+          </div>
+          <CreateTransactionDialog onCreated={() => fetchTransactions(true)} />
+        </div>
       </div>
 
-      {transactions.length === 0 ? (
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {typeOptions.map((opt) => (
+          <button
+            key={opt.value}
+            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              typeFilter === opt.value
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:bg-accent"
+            }`}
+            onClick={() => setTypeFilter(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        <span className="w-px h-6 bg-border self-center mx-1" />
+
+        {periodOptions.map((opt) => (
+          <button
+            key={opt.value}
+            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              periodFilter === opt.value
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:bg-accent"
+            }`}
+            onClick={() => setPeriodFilter(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <p className="text-center text-muted-foreground py-16">
-          Nenhuma transacção registada
+          {typeFilter !== "all" || periodFilter !== "all"
+            ? "Nenhuma transacção encontrada com estes filtros"
+            : "Nenhuma transacção registada"}
         </p>
+      ) : viewMode === "table" ? (
+        /* Table/Spreadsheet View */
+        <div className="rounded-lg border bg-card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Data</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Descrição</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Tipo</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((txn) => (
+                <tr key={txn.id} className="hover:bg-accent/50 transition-colors">
+                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                    {formatRelativeDate(txn.transaction_date)}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {txn.description || "Sem descrição"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        txn.type === "income"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : txn.type === "expense"
+                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      }`}
+                    >
+                      {txn.type === "income" ? "Receita" : txn.type === "expense" ? "Despesa" : "Transf."}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-4 py-2.5 text-right font-mono font-semibold ${
+                      txn.type === "income" ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {txn.type === "income" ? "+" : "-"}
+                    {formatKz(txn.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
+        /* Grouped View */
         <div className="space-y-4">
           {Object.entries(grouped).map(([date, items]) => {
             const dayTotal = items.reduce(
@@ -71,16 +215,14 @@ export default function TransactionsPage() {
                     {formatRelativeDate(date)}
                   </span>
                   <span
-                    className={`text-xs font-mono ${
-                      dayTotal >= 0 ? "text-green-500" : "text-red-500"
-                    }`}
+                    className={`text-xs font-mono ${dayTotal >= 0 ? "text-green-500" : "text-red-500"}`}
                   >
                     {formatKz(Math.abs(dayTotal))}
                   </span>
                 </div>
                 <div className="rounded-lg border bg-card divide-y">
                   {items.map((txn) => (
-                    <div key={txn.id} className="flex items-center justify-between px-4 py-3">
+                    <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer">
                       <span className="text-sm">{txn.description || "Sem descrição"}</span>
                       <span
                         className={`font-mono font-semibold text-sm ${
@@ -96,16 +238,16 @@ export default function TransactionsPage() {
               </div>
             )
           })}
-
-          {hasMore && (
-            <button
-              onClick={() => fetchTransactions(false)}
-              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Carregar mais
-            </button>
-          )}
         </div>
+      )}
+
+      {hasMore && (
+        <button
+          onClick={() => fetchTransactions(false)}
+          className="w-full py-3 mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Carregar mais
+        </button>
       )}
     </div>
   )
