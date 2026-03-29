@@ -20,6 +20,7 @@ from app.models.enums import (
 )
 from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.goal import Goal, GoalContribution
+from app.models.notification import Notification
 from app.models.transaction import Transaction
 from app.models.user import User
 
@@ -50,5 +51,6 @@ __all__ = [
     "FamilyMember",
     "Goal",
     "GoalContribution",
+    "Notification",
     "Transaction",
 ]
