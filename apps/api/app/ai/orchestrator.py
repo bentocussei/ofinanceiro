@@ -10,6 +10,7 @@ from app.ai.agents.base import AgentContext, AgentResponse
 from app.ai.agents.budget_agent import BudgetAgent
 from app.ai.agents.family_agent import FamilyAgent
 from app.ai.agents.goals_agent import GoalsAgent
+from app.ai.agents.report_agent import ReportAgent
 from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
 from app.ai.llm.base import LLMMessage
@@ -35,8 +36,8 @@ class ChatOrchestrator:
             "BUDGET": BudgetAgent(router),
             "GOALS": GoalsAgent(router),
             "FAMILY": FamilyAgent(router),
+            "REPORT": ReportAgent(router),
             # Remaining agents added in their respective phases:
-            # "REPORT": ReportAgent(router),     — Phase 6
             # "DEBT": DebtAgent(router),         — Phase 7
             # "INVESTMENT": InvestmentAgent(router), — Phase 7
             # "NEWS": NewsAgent(router),         — Phase 7

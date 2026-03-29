@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
 
+    # Stripe (Billing)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+
     # AI
     anthropic_api_key: str = ""
     openai_api_key: str = ""

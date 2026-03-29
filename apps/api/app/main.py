@@ -8,6 +8,7 @@ from app.config import settings
 from app.routers import (
     accounts,
     auth,
+    billing,
     budgets,
     categories,
     chat,
@@ -18,7 +19,9 @@ from app.routers import (
     insights,
     notifications,
     ocr,
+    onboarding,
     reports,
+    score,
     transactions,
     voice,
 )
@@ -58,9 +61,12 @@ app.include_router(budgets.router)
 app.include_router(goals.router)
 app.include_router(families.router)
 app.include_router(reports.router)
+app.include_router(score.router)
 app.include_router(chat.router)
 app.include_router(voice.router)
 app.include_router(ocr.router)
 app.include_router(imports.router)
 app.include_router(insights.router)
 app.include_router(notifications.router)
+app.include_router(billing.router)
+app.include_router(onboarding.router)
