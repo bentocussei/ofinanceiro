@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -41,7 +42,10 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold tracking-tight mb-6">Contas</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold tracking-tight">Contas</h2>
+        <CreateAccountDialog onCreated={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
+      </div>
 
       {summary && (
         <>

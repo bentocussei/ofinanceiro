@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { apiFetch } from "@/lib/api"
 import { formatKz, formatRelativeDate } from "@/lib/format"
 
@@ -47,7 +48,10 @@ export default function TransactionsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold tracking-tight mb-6">Transacções</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold tracking-tight">Transacções</h2>
+        <CreateTransactionDialog onCreated={() => fetchTransactions(true)} />
+      </div>
 
       {transactions.length === 0 ? (
         <p className="text-center text-muted-foreground py-16">
