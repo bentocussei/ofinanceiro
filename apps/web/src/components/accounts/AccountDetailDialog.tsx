@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
@@ -23,7 +26,25 @@ interface Account {
   balance: number
   icon: string | null
   institution: string | null
+  iban?: string | null
+  nib?: string | null
+  swift_code?: string | null
+  account_holder?: string | null
+  usage_type?: string | null
+  credit_limit?: number | null
+  low_balance_alert?: number | null
 }
+
+const USAGE_TYPES = [
+  { value: "PERSONAL", label: "Pessoal" },
+  { value: "SALARY", label: "Salário" },
+  { value: "SAVINGS", label: "Poupança" },
+  { value: "BUSINESS", label: "Negócio" },
+  { value: "INVESTMENT", label: "Investimento" },
+  { value: "JOINT", label: "Conjunta" },
+]
+
+const USAGE_LABELS: Record<string, string> = Object.fromEntries(USAGE_TYPES.map((u) => [u.value, u.label]))
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Banco",
@@ -53,6 +74,13 @@ export function AccountDetailDialog({
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState("")
   const [editInstitution, setEditInstitution] = useState("")
+  const [editIban, setEditIban] = useState("")
+  const [editNib, setEditNib] = useState("")
+  const [editSwiftCode, setEditSwiftCode] = useState("")
+  const [editAccountHolder, setEditAccountHolder] = useState("")
+  const [editUsageType, setEditUsageType] = useState("PERSONAL")
+  const [editCreditLimit, setEditCreditLimit] = useState("")
+  const [editLowBalanceAlert, setEditLowBalanceAlert] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
@@ -61,6 +89,13 @@ export function AccountDetailDialog({
     if (!account) return
     setEditName(account.name)
     setEditInstitution(account.institution || "")
+    setEditIban(account.iban || "")
+    setEditNib(account.nib || "")
+    setEditSwiftCode(account.swift_code || "")
+    setEditAccountHolder(account.account_holder || "")
+    setEditUsageType(account.usage_type || "PERSONAL")
+    setEditCreditLimit(account.credit_limit ? String(account.credit_limit / 100) : "")
+    setEditLowBalanceAlert(account.low_balance_alert ? String(account.low_balance_alert / 100) : "")
     setIsEditing(true)
     setError("")
   }
@@ -75,6 +110,15 @@ export function AccountDetailDialog({
       if (editInstitution.trim() !== (account.institution || "")) {
         updates.institution = editInstitution.trim() || null
       }
+      if (editIban.trim() !== (account.iban || "")) updates.iban = editIban.trim() || null
+      if (editNib.trim() !== (account.nib || "")) updates.nib = editNib.trim() || null
+      if (editSwiftCode.trim() !== (account.swift_code || "")) updates.swift_code = editSwiftCode.trim() || null
+      if (editAccountHolder.trim() !== (account.account_holder || "")) updates.account_holder = editAccountHolder.trim() || null
+      if (editUsageType !== (account.usage_type || "PERSONAL")) updates.usage_type = editUsageType
+      const newCreditLimit = editCreditLimit ? Math.round(parseFloat(editCreditLimit) * 100) : null
+      if (newCreditLimit !== (account.credit_limit || null)) updates.credit_limit = newCreditLimit
+      const newLowBalanceAlert = editLowBalanceAlert ? Math.round(parseFloat(editLowBalanceAlert) * 100) : null
+      if (newLowBalanceAlert !== (account.low_balance_alert || null)) updates.low_balance_alert = newLowBalanceAlert
 
       if (Object.keys(updates).length > 0) {
         await apiFetch(`/api/v1/accounts/${account.id}`, {
@@ -148,11 +192,44 @@ export function AccountDetailDialog({
               </div>
               <div>
                 <Label>Instituição</Label>
-                <Input
-                  value={editInstitution}
-                  onChange={(e) => setEditInstitution(e.target.value)}
-                  placeholder="Ex: BAI, BFA"
-                />
+                <Input value={editInstitution} onChange={(e) => setEditInstitution(e.target.value)} placeholder="Ex: BAI, BFA" />
+              </div>
+              <div>
+                <Label>Uso da conta</Label>
+                <Select value={editUsageType} onValueChange={(v) => { if (v) setEditUsageType(v) }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {USAGE_TYPES.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Titular da conta</Label>
+                <Input value={editAccountHolder} onChange={(e) => setEditAccountHolder(e.target.value)} placeholder="Nome do titular" />
+              </div>
+              <div>
+                <Label>IBAN</Label>
+                <Input value={editIban} onChange={(e) => setEditIban(e.target.value)} placeholder="AO06..." className="font-mono" />
+              </div>
+              <div>
+                <Label>NIB</Label>
+                <Input value={editNib} onChange={(e) => setEditNib(e.target.value)} placeholder="0000.0000.0000.0000.0000.0" className="font-mono" />
+              </div>
+              <div>
+                <Label>Código SWIFT</Label>
+                <Input value={editSwiftCode} onChange={(e) => setEditSwiftCode(e.target.value)} placeholder="Ex: BAIAAOLU" className="font-mono" />
+              </div>
+              {account.type === "credit_card" && (
+                <div>
+                  <Label>Limite de crédito (Kz)</Label>
+                  <Input type="number" value={editCreditLimit} onChange={(e) => setEditCreditLimit(e.target.value)} className="font-mono" />
+                </div>
+              )}
+              <div>
+                <Label>Alerta de saldo baixo (Kz)</Label>
+                <Input type="number" value={editLowBalanceAlert} onChange={(e) => setEditLowBalanceAlert(e.target.value)} className="font-mono" placeholder="0" />
               </div>
             </>
           )}

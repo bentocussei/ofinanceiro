@@ -78,6 +78,8 @@ export function BudgetDetailDialog({
   const [status, setStatus] = useState<BudgetStatus | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState("")
+  const [editAlertThreshold, setEditAlertThreshold] = useState("80")
+  const [editAlertEnabled, setEditAlertEnabled] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
@@ -98,6 +100,8 @@ export function BudgetDetailDialog({
   const startEdit = () => {
     if (!item) return
     setEditName(item.name || "")
+    setEditAlertThreshold(String((item as any).alert_threshold ?? 80))
+    setEditAlertEnabled((item as any).alert_enabled ?? true)
     setIsEditing(true)
     setError("")
   }
@@ -109,6 +113,8 @@ export function BudgetDetailDialog({
     try {
       const updates: Record<string, unknown> = {}
       if (editName.trim() !== (item.name || "")) updates.name = editName.trim()
+      updates.alert_threshold = parseInt(editAlertThreshold) || 80
+      updates.alert_enabled = editAlertEnabled
 
       if (Object.keys(updates).length > 0) {
         await apiFetch(`/api/v1/budgets/${item.id}`, {
@@ -165,13 +171,38 @@ export function BudgetDetailDialog({
           {/* Name */}
           <div className="text-center py-2">
             {isEditing ? (
-              <div>
-                <Label>Nome</Label>
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nome do orçamento"
-                />
+              <div className="space-y-3">
+                <div>
+                  <Label>Nome</Label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nome do orçamento"
+                  />
+                </div>
+                <div>
+                  <Label>Limite de alerta (%)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={editAlertThreshold}
+                    onChange={(e) => setEditAlertThreshold(e.target.value)}
+                    placeholder="80"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="flex-1">Alertas activados</Label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={editAlertEnabled}
+                    onClick={() => setEditAlertEnabled(!editAlertEnabled)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${editAlertEnabled ? "bg-primary" : "bg-muted"}`}
+                  >
+                    <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${editAlertEnabled ? "translate-x-4" : "translate-x-0"}`} />
+                  </button>
+                </div>
               </div>
             ) : (
               <h3 className="text-lg font-semibold">{item.name || "Orçamento"}</h3>

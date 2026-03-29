@@ -13,8 +13,16 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
+
+interface AccountOption {
+  id: string
+  name: string
+}
 
 interface Goal {
   id: string
@@ -24,6 +32,9 @@ interface Goal {
   current_amount: number
   monthly_contribution: number | null
   status: string
+  description?: string | null
+  savings_account_id?: string | null
+  contribution_frequency?: string | null
 }
 
 interface GoalProgress {
@@ -52,11 +63,21 @@ export function GoalDetailDialog({
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState("")
   const [editTarget, setEditTarget] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editSavingsAccountId, setEditSavingsAccountId] = useState("")
+  const [editContributionFrequency, setEditContributionFrequency] = useState("monthly")
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [contributeAmount, setContributeAmount] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isContributing, setIsContributing] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => {})
+  }, [])
 
   const fetchProgress = () => {
     if (item) {
@@ -82,6 +103,9 @@ export function GoalDetailDialog({
     if (!item) return
     setEditName(item.name)
     setEditTarget(String(item.target_amount / 100))
+    setEditDescription(item.description || "")
+    setEditSavingsAccountId(item.savings_account_id || "")
+    setEditContributionFrequency(item.contribution_frequency || "monthly")
     setIsEditing(true)
     setError("")
   }
@@ -95,6 +119,9 @@ export function GoalDetailDialog({
       if (editName.trim() !== item.name) updates.name = editName.trim()
       const newTarget = Math.round(parseFloat(editTarget) * 100)
       if (newTarget > 0 && newTarget !== item.target_amount) updates.target_amount = newTarget
+      if (editDescription.trim() !== (item.description || "")) updates.description = editDescription.trim() || null
+      if (editSavingsAccountId !== (item.savings_account_id || "")) updates.savings_account_id = editSavingsAccountId || null
+      if (editContributionFrequency !== (item.contribution_frequency || "monthly")) updates.contribution_frequency = editContributionFrequency
 
       if (Object.keys(updates).length > 0) {
         await apiFetch(`/api/v1/goals/${item.id}`, {
@@ -181,6 +208,40 @@ export function GoalDetailDialog({
                 <div>
                   <Label>Valor alvo (Kz)</Label>
                   <Input type="number" value={editTarget} onChange={(e) => setEditTarget(e.target.value)} className="font-mono" />
+                </div>
+                <div>
+                  <Label>Frequência da contribuição</Label>
+                  <Select value={editContributionFrequency} onValueChange={(v) => { if (v) setEditContributionFrequency(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="biweekly">Quinzenal</SelectItem>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="quarterly">Trimestral</SelectItem>
+                      <SelectItem value="annually">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Conta de poupança (opcional)</Label>
+                  <Select value={editSavingsAccountId} onValueChange={(v) => setEditSavingsAccountId(v || "")}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma</SelectItem>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Descrição (opcional)</Label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
+                    placeholder="Descreva o objectivo desta meta..."
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  />
                 </div>
               </div>
             ) : (

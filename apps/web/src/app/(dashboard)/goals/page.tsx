@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
@@ -43,8 +46,20 @@ export default function GoalsPage() {
   const [createName, setCreateName] = useState("")
   const [createTarget, setCreateTarget] = useState("")
   const [createMonthly, setCreateMonthly] = useState("")
+  const [createDescription, setCreateDescription] = useState("")
+  const [createSavingsAccountId, setCreateSavingsAccountId] = useState("")
+  const [createContributionFrequency, setCreateContributionFrequency] = useState("monthly")
   const [contributeAmount, setContributeAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  interface AccountOption { id: string; name: string }
+  const [goalAccounts, setGoalAccounts] = useState<AccountOption[]>([])
+
+  useEffect(() => {
+    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+      .then((data) => setGoalAccounts(data.accounts || []))
+      .catch(() => {})
+  }, [])
 
   const fetchGoals = () => {
     apiFetch<Goal[]>("/api/v1/goals/").then(setGoals).catch(() => {})
@@ -71,12 +86,18 @@ export default function GoalsPage() {
           name: createName.trim(),
           target_amount: Math.round(parseFloat(createTarget) * 100),
           monthly_contribution: createMonthly ? Math.round(parseFloat(createMonthly) * 100) : undefined,
+          description: createDescription.trim() || undefined,
+          savings_account_id: createSavingsAccountId || undefined,
+          contribution_frequency: createContributionFrequency,
         }),
       })
       setCreateOpen(false)
       setCreateName("")
       setCreateTarget("")
       setCreateMonthly("")
+      setCreateDescription("")
+      setCreateSavingsAccountId("")
+      setCreateContributionFrequency("monthly")
       fetchGoals()
     } catch {}
     setIsSubmitting(false)
@@ -127,7 +148,41 @@ export default function GoalsPage() {
             <div className="space-y-4 py-2">
               <div><Label>Nome</Label><Input placeholder="Ex: Férias Cabo Verde" value={createName} onChange={(e) => setCreateName(e.target.value)} /></div>
               <div><Label>Valor alvo (Kz)</Label><Input type="number" placeholder="0" value={createTarget} onChange={(e) => setCreateTarget(e.target.value)} className="font-mono" /></div>
-              <div><Label>Contribuição mensal (Kz, opcional)</Label><Input type="number" placeholder="0" value={createMonthly} onChange={(e) => setCreateMonthly(e.target.value)} className="font-mono" /></div>
+              <div><Label>Contribuição (Kz, opcional)</Label><Input type="number" placeholder="0" value={createMonthly} onChange={(e) => setCreateMonthly(e.target.value)} className="font-mono" /></div>
+              <div>
+                <Label>Frequência da contribuição</Label>
+                <Select value={createContributionFrequency} onValueChange={(v) => { if (v) setCreateContributionFrequency(v) }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Semanal</SelectItem>
+                    <SelectItem value="biweekly">Quinzenal</SelectItem>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="quarterly">Trimestral</SelectItem>
+                    <SelectItem value="annually">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Conta de poupança (opcional)</Label>
+                <Select value={createSavingsAccountId} onValueChange={(v) => setCreateSavingsAccountId(v || "")}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
+                    {goalAccounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Descrição (opcional)</Label>
+                <textarea
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
+                  placeholder="Descreva o objectivo desta meta..."
+                  value={createDescription}
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                />
+              </div>
               <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>{isSubmitting ? "A criar..." : "Criar meta"}</Button>
             </div>
           </DialogContent>
