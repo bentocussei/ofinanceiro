@@ -29,7 +29,17 @@ export default function CreateGoalScreen() {
   const [type, setType] = useState('savings')
   const [targetAmount, setTargetAmount] = useState('')
   const [monthlyContribution, setMonthlyContribution] = useState('')
+  const [contributionFrequency, setContributionFrequency] = useState('monthly')
+  const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const CONTRIBUTION_FREQUENCIES = [
+    { value: 'weekly', label: 'Semanal' },
+    { value: 'biweekly', label: 'Quinzenal' },
+    { value: 'monthly', label: 'Mensal' },
+    { value: 'quarterly', label: 'Trimestral' },
+    { value: 'yearly', label: 'Anual' },
+  ]
 
   const handleSubmit = async () => {
     if (!name.trim()) { Alert.alert('Erro', 'O nome é obrigatório'); return }
@@ -42,6 +52,8 @@ export default function CreateGoalScreen() {
         type,
         target_amount: Math.round(parseFloat(targetAmount) * 100),
         monthly_contribution: monthlyContribution ? Math.round(parseFloat(monthlyContribution) * 100) : undefined,
+        contribution_frequency: contributionFrequency,
+        description: description.trim() || undefined,
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       router.back()
@@ -97,7 +109,18 @@ export default function CreateGoalScreen() {
           onChangeText={setTargetAmount}
         />
 
-        <Text style={[styles.label, isDark && styles.textMuted]}>Contribuição mensal (Kz, opcional)</Text>
+        <Text style={[styles.label, isDark && styles.textMuted]}>Descrição (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark, { height: 80, textAlignVertical: 'top' }]}
+          placeholder="Descreva o objectivo desta meta..."
+          placeholderTextColor="#999"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Valor da contribuição (Kz, opcional)</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="0"
@@ -106,6 +129,19 @@ export default function CreateGoalScreen() {
           value={monthlyContribution}
           onChangeText={setMonthlyContribution}
         />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Frequência da contribuição</Text>
+        <View style={styles.typeGrid}>
+          {CONTRIBUTION_FREQUENCIES.map((f) => (
+            <Pressable
+              key={f.value}
+              style={[styles.typeChip, isDark && styles.typeChipDark, contributionFrequency === f.value && styles.typeSelected]}
+              onPress={() => setContributionFrequency(f.value)}
+            >
+              <Text style={[styles.typeLabel, contributionFrequency === f.value && styles.typeLabelSelected]}>{f.label}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         <Pressable
           style={[styles.submitBtn, isSubmitting && styles.submitDisabled]}

@@ -24,6 +24,13 @@ const ACCOUNT_TYPES = [
   { value: 'loan', label: 'Empréstimo' },
 ]
 
+const USAGE_TYPES = [
+  { value: 'personal', label: 'Pessoal' },
+  { value: 'business', label: 'Negócio' },
+  { value: 'joint', label: 'Conjunta' },
+  { value: 'savings', label: 'Poupança' },
+]
+
 interface Props {
   onCreated?: () => void
 }
@@ -37,6 +44,11 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
   const [type, setType] = useState('bank')
   const [institution, setInstitution] = useState('')
   const [balance, setBalance] = useState('')
+  const [iban, setIban] = useState('')
+  const [nib, setNib] = useState('')
+  const [swift, setSwift] = useState('')
+  const [usageType, setUsageType] = useState('personal')
+  const [creditLimit, setCreditLimit] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const reset = () => {
@@ -44,6 +56,11 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
     setType('bank')
     setInstitution('')
     setBalance('')
+    setIban('')
+    setNib('')
+    setSwift('')
+    setUsageType('personal')
+    setCreditLimit('')
   }
 
   const handleSubmit = useCallback(async () => {
@@ -61,6 +78,11 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         institution: institution.trim() || undefined,
         balance: balanceCentavos,
         icon: type,
+        iban: iban.trim() || undefined,
+        nib: nib.trim() || undefined,
+        swift: swift.trim() || undefined,
+        usage_type: usageType,
+        credit_limit: type === 'credit_card' && creditLimit ? Math.round(parseFloat(creditLimit) * 100) : undefined,
       })
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       reset()
@@ -71,7 +93,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
     } finally {
       setIsSubmitting(false)
     }
-  }, [name, type, institution, balance])
+  }, [name, type, institution, balance, iban, nib, swift, usageType, creditLimit])
 
   const inputStyle = [styles.input, isDark && styles.inputDark]
   const labelStyle = [styles.label, isDark && styles.textLight]
@@ -149,6 +171,80 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
           value={balance}
           onChangeText={setBalance}
         />
+
+        {/* Utilização */}
+        <Text style={labelStyle}>Utilização</Text>
+        <View style={styles.typeGrid}>
+          {USAGE_TYPES.map((u) => (
+            <Pressable
+              key={u.value}
+              style={[
+                styles.typeOption,
+                isDark && styles.typeOptionDark,
+                usageType === u.value && styles.typeSelected,
+              ]}
+              onPress={() => setUsageType(u.value)}
+            >
+              <Text
+                style={[
+                  styles.typeLabel,
+                  isDark && styles.textMuted,
+                  usageType === u.value && styles.typeLabelSelected,
+                ]}
+              >
+                {u.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* IBAN */}
+        <Text style={labelStyle}>IBAN (opcional)</Text>
+        <TextInput
+          style={inputStyle}
+          placeholder="AO00 0000 0000 0000 0000 0000 0"
+          placeholderTextColor="#999"
+          value={iban}
+          onChangeText={setIban}
+          autoCapitalize="characters"
+        />
+
+        {/* NIB */}
+        <Text style={labelStyle}>NIB (opcional)</Text>
+        <TextInput
+          style={inputStyle}
+          placeholder="0000 0000 0000 0000 0000 0"
+          placeholderTextColor="#999"
+          value={nib}
+          onChangeText={setNib}
+          keyboardType="numeric"
+        />
+
+        {/* SWIFT */}
+        <Text style={labelStyle}>SWIFT/BIC (opcional)</Text>
+        <TextInput
+          style={inputStyle}
+          placeholder="Ex: BAIAAOLU"
+          placeholderTextColor="#999"
+          value={swift}
+          onChangeText={setSwift}
+          autoCapitalize="characters"
+        />
+
+        {/* Limite de crédito (apenas para cartão de crédito) */}
+        {type === 'credit_card' && (
+          <>
+            <Text style={labelStyle}>Limite de crédito (Kz)</Text>
+            <TextInput
+              style={inputStyle}
+              placeholder="0"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={creditLimit}
+              onChangeText={setCreditLimit}
+            />
+          </>
+        )}
 
         {/* Submit */}
         <Pressable

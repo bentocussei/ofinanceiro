@@ -37,6 +37,7 @@ export default function CreateBudgetScreen() {
   const [method, setMethod] = useState('category')
   const [totalLimit, setTotalLimit] = useState('')
   const [items, setItems] = useState<{ category_id: string; limit: string; name: string; icon: string | null }[]>([])
+  const [alertThreshold, setAlertThreshold] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function CreateBudgetScreen() {
         period_end: end.toISOString().split('T')[0],
         total_limit: totalLimit ? Math.round(parseFloat(totalLimit) * 100) : undefined,
         items: budgetItems,
+        alert_threshold: alertThreshold ? parseInt(alertThreshold) : undefined,
       })
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -186,6 +188,17 @@ export default function CreateBudgetScreen() {
             </View>
           </>
         )}
+
+        {/* Limiar de alerta */}
+        <Text style={[styles.label, isDark && styles.textMuted]}>Limiar de alerta (%, opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="Ex: 80 (alerta ao atingir 80% do limite)"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          value={alertThreshold}
+          onChangeText={setAlertThreshold}
+        />
 
         {/* Submit */}
         <Pressable

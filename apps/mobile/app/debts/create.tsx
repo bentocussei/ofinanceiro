@@ -10,11 +10,24 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDebtsStore } from '../../stores/debts'
 
 const DEBT_TYPES = [
-  { value: 'personal_loan', label: 'Emprestimo pessoal' },
-  { value: 'credit_card', label: 'Cartao de credito' },
+  { value: 'personal_loan', label: 'Empréstimo pessoal' },
+  { value: 'credit_card', label: 'Cartão de crédito' },
   { value: 'mortgage', label: 'Hipoteca' },
-  { value: 'car_loan', label: 'Automovel' },
+  { value: 'car_loan', label: 'Automóvel' },
   { value: 'student_loan', label: 'Estudantil' },
+  { value: 'other', label: 'Outro' },
+]
+
+const NATURES = [
+  { value: 'formal', label: 'Formal' },
+  { value: 'informal', label: 'Informal' },
+]
+
+const CREDITOR_TYPES = [
+  { value: 'bank', label: 'Banco' },
+  { value: 'institution', label: 'Instituição' },
+  { value: 'person', label: 'Pessoa' },
+  { value: 'company', label: 'Empresa' },
   { value: 'other', label: 'Outro' },
 ]
 
@@ -30,6 +43,8 @@ export default function CreateDebtScreen() {
   const [currentBalance, setCurrentBalance] = useState('')
   const [interestRate, setInterestRate] = useState('')
   const [monthlyPayment, setMonthlyPayment] = useState('')
+  const [nature, setNature] = useState('formal')
+  const [creditorType, setCreditorType] = useState('bank')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -47,6 +62,8 @@ export default function CreateDebtScreen() {
         current_balance: Math.round(parseFloat(currentBalance) * 100),
         interest_rate: interestRate ? parseFloat(interestRate) : undefined,
         monthly_payment: monthlyPayment ? Math.round(parseFloat(monthlyPayment) * 100) : undefined,
+        nature,
+        creditor_type: creditorType,
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       router.back()
@@ -87,6 +104,32 @@ export default function CreateDebtScreen() {
               onPress={() => setType(t.value)}
             >
               <Text style={[styles.typeLabel, type === t.value && styles.typeLabelSelected]}>{t.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Natureza</Text>
+        <View style={styles.typeGrid}>
+          {NATURES.map((n) => (
+            <Pressable
+              key={n.value}
+              style={[styles.typeChip, isDark && styles.typeChipDark, nature === n.value && styles.typeSelected]}
+              onPress={() => setNature(n.value)}
+            >
+              <Text style={[styles.typeLabel, nature === n.value && styles.typeLabelSelected]}>{n.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Tipo de credor</Text>
+        <View style={styles.typeGrid}>
+          {CREDITOR_TYPES.map((ct) => (
+            <Pressable
+              key={ct.value}
+              style={[styles.typeChip, isDark && styles.typeChipDark, creditorType === ct.value && styles.typeSelected]}
+              onPress={() => setCreditorType(ct.value)}
+            >
+              <Text style={[styles.typeLabel, creditorType === ct.value && styles.typeLabelSelected]}>{ct.label}</Text>
             </Pressable>
           ))}
         </View>
