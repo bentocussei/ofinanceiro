@@ -20,8 +20,12 @@ export default function MoreScreen() {
         <MenuItem icon="pie-chart-outline" label="Orçamentos" isDark={isDark} onPress={() => router.push('/budget')} />
         <MenuItem icon="bar-chart-outline" label="Relatórios" isDark={isDark} onPress={() => router.push('/(tabs)/reports')} />
         <MenuItem icon="flag-outline" label="Metas" isDark={isDark} onPress={() => router.push('/goals')} />
-        <MenuItem icon="card-outline" label="Dívidas" isDark={isDark} />
+        <MenuItem icon="card-outline" label="Dívidas" isDark={isDark} onPress={() => router.push('/debts')} />
+        <MenuItem icon="trending-up-outline" label="Investimentos" isDark={isDark} onPress={() => router.push('/investments')} />
         <MenuItem icon="people-outline" label="Família" isDark={isDark} onPress={() => router.push('/family')} />
+        <MenuItem icon="newspaper-outline" label="Notícias" isDark={isDark} onPress={() => router.push('/news')} />
+        <MenuItem icon="school-outline" label="Educação" isDark={isDark} onPress={() => router.push('/education')} />
+        <MenuItem icon="notifications-outline" label="Notificações" isDark={isDark} onPress={() => router.push('/notifications')} />
         <MenuItem icon="settings-outline" label="Configurações" isDark={isDark} />
 
         <Pressable style={styles.logoutRow} onPress={logout}>
