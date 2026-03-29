@@ -1,6 +1,6 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import * as Haptics from 'expo-haptics'
-import { forwardRef, useCallback, useMemo, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Pressable,
@@ -12,21 +12,8 @@ import {
 } from 'react-native'
 
 import { useAccountsStore } from '../../stores/accounts'
+import { useCategoriesStore } from '../../stores/categories'
 import { useTransactionsStore } from '../../stores/transactions'
-
-const QUICK_CATEGORIES = [
-  { icon: '🍽️', label: 'Alimentação' },
-  { icon: '🚗', label: 'Transporte' },
-  { icon: '🏠', label: 'Casa' },
-  { icon: '💊', label: 'Saúde' },
-  { icon: '👶', label: 'Filhos' },
-  { icon: '📱', label: 'Comunicações' },
-  { icon: '🎉', label: 'Lazer' },
-  { icon: '👔', label: 'Pessoal' },
-  { icon: '💸', label: 'Transferências' },
-  { icon: '💵', label: 'Salário' },
-  { icon: '📦', label: 'Outros' },
-]
 
 interface Props {
   onCreated?: () => void
@@ -36,13 +23,21 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
   const isDark = useColorScheme() === 'dark'
   const snapPoints = useMemo(() => ['90%'], [])
   const { accounts } = useAccountsStore()
+  const { categories, fetchCategories, getParentCategories } = useCategoriesStore()
   const { createTransaction } = useTransactionsStore()
 
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'expense' | 'income'>('expense')
   const [description, setDescription] = useState('')
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const parentCategories = getParentCategories(type)
 
   const activeAccount = selectedAccount || accounts[0]?.id
 
@@ -51,6 +46,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
     setType('expense')
     setDescription('')
     setSelectedAccount(null)
+    setSelectedCategory(null)
   }
 
   const handleSubmit = useCallback(async () => {
@@ -71,6 +67,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
         amount: amountCentavos,
         type,
         description: description.trim() || undefined,
+        category_id: selectedCategory || undefined,
       })
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       reset()
@@ -169,13 +166,32 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
           </>
         )}
 
-        {/* Quick Categories */}
-        <Text style={[styles.label, isDark && styles.textMuted]}>Categoria</Text>
+        {/* Categories from API */}
+        <Text style={[styles.label, isDark && styles.textMuted]}>Categoria (opcional)</Text>
         <View style={styles.categoryGrid}>
-          {QUICK_CATEGORIES.map((cat) => (
-            <Pressable key={cat.label} style={[styles.categoryChip, isDark && styles.categoryChipDark]}>
-              <Text style={styles.categoryIcon}>{cat.icon}</Text>
-              <Text style={[styles.categoryLabel, isDark && styles.textMuted]}>{cat.label}</Text>
+          {parentCategories.map((cat) => (
+            <Pressable
+              key={cat.id}
+              style={[
+                styles.categoryChip,
+                isDark && styles.categoryChipDark,
+                selectedCategory === cat.id && styles.categoryChipSelected,
+              ]}
+              onPress={() => {
+                setSelectedCategory(selectedCategory === cat.id ? null : cat.id)
+                fetchCategories()
+              }}
+            >
+              <Text style={styles.categoryIcon}>{cat.icon || '📦'}</Text>
+              <Text
+                style={[
+                  styles.categoryLabel,
+                  isDark && styles.textMuted,
+                  selectedCategory === cat.id && styles.categoryLabelSelected,
+                ]}
+              >
+                {cat.name}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -248,8 +264,10 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1, borderColor: '#e5e5e5', minWidth: 70,
   },
   categoryChipDark: { borderColor: '#333' },
+  categoryChipSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
   categoryIcon: { fontSize: 20, marginBottom: 2 },
   categoryLabel: { fontSize: 10, color: '#666' },
+  categoryLabelSelected: { color: '#3b82f6', fontWeight: '600' },
   submitBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   submitExpense: { backgroundColor: '#ef4444' },
   submitIncome: { backgroundColor: '#22c55e' },

@@ -34,15 +34,18 @@ interface Props {
 export function CreateTransactionDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [categories, setCategories] = useState<{ id: string; name: string; icon: string | null; type: string; parent_id: string | null }[]>([])
   const [type, setType] = useState<"expense" | "income">("expense")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [accountId, setAccountId] = useState("")
+  const [categoryId, setCategoryId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => {
     if (open) {
+      apiFetch<{ id: string; name: string; icon: string | null; type: string; parent_id: string | null }[]>("/api/v1/categories/").then(setCategories).catch(() => {})
       apiFetch<Account[]>("/api/v1/accounts/").then((data) => {
         setAccounts(data)
         if (data.length > 0 && !accountId) setAccountId(data[0].id)
@@ -90,6 +93,7 @@ export function CreateTransactionDialog({ onCreated }: Props) {
           amount: amountCentavos,
           type,
           description: description.trim() || undefined,
+          category_id: categoryId || undefined,
         }),
       })
       reset()
@@ -167,6 +171,25 @@ export function CreateTransactionDialog({ onCreated }: Props) {
                     {acc.icon || "💰"} {acc.name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Category */}
+          <div>
+            <Label>Categoria (opcional)</Label>
+            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Auto-categorizar" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories
+                  .filter((c) => !c.parent_id && (c.type === type || c.type === "both"))
+                  .map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.icon || "📦"} {cat.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
