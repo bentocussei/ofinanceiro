@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { accountsApi } from "@/lib/api/accounts"
 
 const ACCOUNT_TYPES = [
   { value: "bank", label: "Banco" },
@@ -88,22 +88,19 @@ export function CreateAccountDialog({ onCreated }: Props) {
       const balanceCentavos = balance
         ? Math.round(parseFloat(balance.replace(/[^\d]/g, "")) * 100)
         : 0
-      await apiFetch("/api/v1/accounts/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          institution: institution.trim() || undefined,
-          balance: balanceCentavos,
-          icon: type,
-          iban: iban.trim() || undefined,
-          nib: nib.trim() || undefined,
-          swift_code: swiftCode.trim() || undefined,
-          account_holder: accountHolder.trim() || undefined,
-          usage_type: usageType,
-          credit_limit: type === "credit_card" && creditLimit ? Math.round(parseFloat(creditLimit) * 100) : undefined,
-          low_balance_alert: lowBalanceAlert ? Math.round(parseFloat(lowBalanceAlert) * 100) : undefined,
-        }),
+      await accountsApi.create({
+        name: name.trim(),
+        type,
+        institution: institution.trim() || undefined,
+        balance: balanceCentavos,
+        icon: type,
+        iban: iban.trim() || undefined,
+        nib: nib.trim() || undefined,
+        swift_code: swiftCode.trim() || undefined,
+        account_holder: accountHolder.trim() || undefined,
+        usage_type: usageType,
+        credit_limit: type === "credit_card" && creditLimit ? Math.round(parseFloat(creditLimit) * 100) : undefined,
+        low_balance_alert: lowBalanceAlert ? Math.round(parseFloat(lowBalanceAlert) * 100) : undefined,
       })
       reset()
       setOpen(false)

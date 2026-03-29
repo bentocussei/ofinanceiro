@@ -16,33 +16,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { goalsApi, type Goal, type GoalProgress } from "@/lib/api/goals"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface AccountOption {
-  id: string
-  name: string
-}
-
-interface Goal {
-  id: string
-  name: string
-  type: string
-  target_amount: number
-  current_amount: number
-  monthly_contribution: number | null
-  status: string
-  description?: string | null
-  savings_account_id?: string | null
-  contribution_frequency?: string | null
-}
-
-interface GoalProgress {
-  percentage: number
-  remaining: number
-  months_remaining: number | null
-  contributions: { amount: number; note: string | null; contributed_at: string }[]
-}
 
 interface Props {
   item: Goal | null
@@ -66,7 +42,7 @@ export function GoalDetailDialog({
   const [editDescription, setEditDescription] = useState("")
   const [editSavingsAccountId, setEditSavingsAccountId] = useState("")
   const [editContributionFrequency, setEditContributionFrequency] = useState("monthly")
-  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([])
   const [contributeAmount, setContributeAmount] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -74,14 +50,14 @@ export function GoalDetailDialog({
   const [error, setError] = useState("")
 
   useEffect(() => {
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
   }, [])
 
   const fetchProgress = () => {
     if (item) {
-      apiFetch<GoalProgress>(`/api/v1/goals/${item.id}/progress`)
+      goalsApi.progress(item.id)
         .then(setProgress)
         .catch(() => {})
     }
@@ -124,10 +100,7 @@ export function GoalDetailDialog({
       if (editContributionFrequency !== (item.contribution_frequency || "monthly")) updates.contribution_frequency = editContributionFrequency
 
       if (Object.keys(updates).length > 0) {
-        await apiFetch(`/api/v1/goals/${item.id}`, {
-          method: "PUT",
-          body: JSON.stringify(updates),
-        })
+        await goalsApi.update(item.id, updates)
       }
       setIsEditing(false)
       onUpdated?.()
@@ -143,10 +116,7 @@ export function GoalDetailDialog({
     setIsContributing(true)
     setError("")
     try {
-      await apiFetch(`/api/v1/goals/${item.id}/contribute`, {
-        method: "POST",
-        body: JSON.stringify({ amount: Math.round(parseFloat(contributeAmount) * 100) }),
-      })
+      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100))
       setContributeAmount("")
       fetchProgress()
       onUpdated?.()
@@ -166,7 +136,7 @@ export function GoalDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/goals/${item.id}`, { method: "DELETE" })
+            await goalsApi.remove(item.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Meta eliminada com sucesso")

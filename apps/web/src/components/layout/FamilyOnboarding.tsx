@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { familiesApi } from "@/lib/api/families"
 import { setContext } from "@/lib/context"
 
 export function FamilyOnboarding({ onCreated }: { onCreated: () => void }) {
@@ -30,10 +30,7 @@ export function FamilyOnboarding({ onCreated }: { onCreated: () => void }) {
     if (!createName.trim()) return
     setIsSubmitting(true)
     try {
-      const family = await apiFetch<{ id: string }>("/api/v1/families/", {
-        method: "POST",
-        body: JSON.stringify({ name: createName.trim() }),
-      })
+      const family = await familiesApi.create(createName.trim())
       setContext(`family:${family.id}`)
       setCreateOpen(false)
       setCreateName("")
@@ -49,10 +46,7 @@ export function FamilyOnboarding({ onCreated }: { onCreated: () => void }) {
     if (!joinCode.trim()) return
     setIsSubmitting(true)
     try {
-      const family = await apiFetch<{ family_id: string }>("/api/v1/families/join", {
-        method: "POST",
-        body: JSON.stringify({ invite_code: joinCode.trim() }),
-      })
+      const family = await familiesApi.join(joinCode.trim())
       setContext(`family:${family.family_id}`)
       setJoinOpen(false)
       setJoinCode("")

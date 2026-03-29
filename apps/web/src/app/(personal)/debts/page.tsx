@@ -16,27 +16,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { debtsApi, type Debt, type DebtSimulation } from "@/lib/api/debts"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface Debt {
-  id: string
-  name: string
-  type: string
-  original_amount: number
-  remaining_balance: number
-  interest_rate: number
-  minimum_payment: number
-  due_day: number
-  status: string
-}
-
-interface DebtSimulation {
-  total_interest: number
-  total_paid: number
-  months_to_payoff: number
-  schedule: { month: number; payment: number; principal: number; interest: number; balance: number }[]
-}
 
 export default function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([])
@@ -63,7 +45,7 @@ export default function DebtsPage() {
   const [debtAccounts, setDebtAccounts] = useState<AccountOption[]>([])
 
   useEffect(() => {
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setDebtAccounts(data.accounts || []))
       .catch(() => {})
   }, [])
@@ -78,7 +60,7 @@ export default function DebtsPage() {
   const [simulation, setSimulation] = useState<DebtSimulation | null>(null)
 
   const fetchDebts = () => {
-    apiFetch<Debt[]>("/api/v1/debts/").then(setDebts).catch(() => {})
+    debtsApi.list().then(setDebts).catch(() => {})
   }
 
   useEffect(() => { fetchDebts() }, [])
@@ -90,20 +72,17 @@ export default function DebtsPage() {
     if (!name.trim() || !originalAmount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/debts/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          original_amount: Math.round(parseFloat(originalAmount) * 100),
-          interest_rate: parseFloat(interestRate) || 0,
-          minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
-          due_day: parseInt(dueDay) || 1,
-          nature,
-          creditor_type: creditorType,
-          auto_pay: autoPay,
-          linked_account_id: linkedAccountId || undefined,
-        }),
+      await debtsApi.create({
+        name: name.trim(),
+        type,
+        original_amount: Math.round(parseFloat(originalAmount) * 100),
+        interest_rate: parseFloat(interestRate) || 0,
+        minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
+        due_day: parseInt(dueDay) || 1,
+        nature,
+        creditor_type: creditorType,
+        auto_pay: autoPay,
+        linked_account_id: linkedAccountId || undefined,
       })
       setCreateOpen(false)
       setName("")
@@ -119,10 +98,7 @@ export default function DebtsPage() {
   const handlePay = async (debtId: string) => {
     if (!payAmount) return
     try {
-      await apiFetch(`/api/v1/debts/${debtId}/payment`, {
-        method: "POST",
-        body: JSON.stringify({ amount: Math.round(parseFloat(payAmount) * 100) }),
-      })
+      await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100))
       setPayOpen(null)
       setPayAmount("")
       fetchDebts()
@@ -135,7 +111,7 @@ export default function DebtsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/debts/${id}`, { method: "DELETE" }).catch(() => {})
+          await debtsApi.remove(id).catch(() => {})
           fetchDebts()
           toast.success("Dívida eliminada com sucesso")
         },
@@ -150,12 +126,11 @@ export default function DebtsPage() {
   const handleSimulate = async () => {
     if (!simBalance || !simRate || !simPayment) return
     try {
-      const params = new URLSearchParams({
-        current_balance: String(Math.round(parseFloat(simBalance) * 100)),
-        interest_rate: String(parseFloat(simRate)),
-        monthly_payment: String(Math.round(parseFloat(simPayment) * 100)),
+      const result = await debtsApi.simulate({
+        current_balance: Math.round(parseFloat(simBalance) * 100),
+        interest_rate: parseFloat(simRate),
+        monthly_payment: Math.round(parseFloat(simPayment) * 100),
       })
-      const result = await apiFetch<DebtSimulation>(`/api/v1/debts/simulate?${params}`)
       setSimulation(result)
     } catch { /* handled by apiFetch */ }
   }
@@ -360,7 +335,7 @@ export default function DebtsPage() {
                     <p className="font-mono font-bold text-xs">{formatKz(simulation.total_paid)}</p>
                   </div>
                 </div>
-                {simulation.schedule.length > 0 && (
+                {simulation.schedule && simulation.schedule.length > 0 && (
                   <div className="max-h-48 overflow-y-auto">
                     <table className="w-full text-xs">
                       <thead>

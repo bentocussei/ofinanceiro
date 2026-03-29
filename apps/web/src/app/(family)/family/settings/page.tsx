@@ -8,16 +8,8 @@ import { AlertTriangle, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { familiesApi, type Family } from "@/lib/api/families"
 import { getContextHeader, setContext } from "@/lib/context"
-
-interface Family {
-  id: string
-  name: string
-  currency: string | null
-  month_start_day: number | null
-  contribution_model: string | null
-}
 
 export default function FamilySettingsPage() {
   const router = useRouter()
@@ -29,7 +21,8 @@ export default function FamilySettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const fetchFamily = () => {
-    apiFetch<Family>("/api/v1/families/me", { headers: getContextHeader() })
+    const ctx = { headers: getContextHeader() }
+    familiesApi.me(ctx)
       .then((f) => {
         if (f) {
           setFamily(f)
@@ -50,16 +43,13 @@ export default function FamilySettingsPage() {
     if (!family || !name.trim()) return
     setIsSaving(true)
     try {
-      await apiFetch(`/api/v1/families/${family.id}`, {
-        method: "PUT",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          currency,
-          month_start_day: parseInt(monthStartDay) || 1,
-          contribution_model: contributionModel,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await familiesApi.update(family.id, {
+        name: name.trim(),
+        currency,
+        month_start_day: parseInt(monthStartDay) || 1,
+        contribution_model: contributionModel,
+      }, ctx)
       toast.success("Configurações guardadas")
       fetchFamily()
     } catch {
@@ -75,10 +65,8 @@ export default function FamilySettingsPage() {
         label: "Sair",
         onClick: async () => {
           try {
-            await apiFetch("/api/v1/families/leave", {
-              method: "POST",
-              headers: getContextHeader(),
-            })
+            const ctx = { headers: getContextHeader() }
+            await familiesApi.leave(ctx)
             setContext("personal")
             toast.success("Saiu da família")
             router.push("/dashboard")
@@ -102,10 +90,8 @@ export default function FamilySettingsPage() {
         label: "Eliminar",
         onClick: async () => {
           try {
-            await apiFetch(`/api/v1/families/${family.id}`, {
-              method: "DELETE",
-              headers: getContextHeader(),
-            })
+            const ctx = { headers: getContextHeader() }
+            await familiesApi.remove(family.id, ctx)
             setContext("personal")
             toast.success("Família eliminada")
             router.push("/dashboard")

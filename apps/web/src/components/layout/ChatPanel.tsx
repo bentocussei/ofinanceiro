@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Banknote, BarChart3, Bot, ClipboardList, MessageCircle, X } from "lucide-react"
-import { apiFetch } from "@/lib/api"
+import { chatApi } from "@/lib/api/chat"
 
 interface ChatMessage {
   id: string
@@ -52,21 +52,14 @@ export function ChatPanel() {
 
       try {
         const history = messages.slice(-20).map((m) => ({
-          role: m.role,
+          role: m.role as "user" | "assistant",
           content: m.content,
         }))
 
-        const response = await apiFetch<{
-          content: string
-          agent: string
-          session_id: string
-        }>("/api/v1/chat/message", {
-          method: "POST",
-          body: JSON.stringify({
-            message: text,
-            session_id: sessionId,
-            conversation_history: history,
-          }),
+        const response = await chatApi.send({
+          message: text,
+          session_id: sessionId ?? undefined,
+          conversation_history: history,
         })
 
         const assistantMsg: ChatMessage = {

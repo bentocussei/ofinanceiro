@@ -13,23 +13,10 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { recurringRulesApi, type RecurringRule } from "@/lib/api/recurring-rules"
+import { accountsApi } from "@/lib/api/accounts"
+import { categoriesApi } from "@/lib/api/categories"
 import { formatKz } from "@/lib/format"
-
-interface RecurringRule {
-  id: string
-  account_id: string | null
-  category_id: string | null
-  type: string
-  amount: number
-  description: string
-  frequency: string
-  day_of_month: number | null
-  start_date: string | null
-  next_due: string | null
-  account_name?: string | null
-  category_name?: string | null
-}
 
 interface AccountOption {
   id: string
@@ -72,15 +59,15 @@ export default function RecurringRulesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchItems = () => {
-    apiFetch<RecurringRule[]>("/api/v1/recurring-rules/").then(setItems).catch(() => {})
+    recurringRulesApi.list().then(setItems).catch(() => {})
   }
 
   useEffect(() => {
     fetchItems()
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
-    apiFetch<CategoryOption[]>("/api/v1/categories/")
+    categoriesApi.list()
       .then(setCategories)
       .catch(() => {})
   }, [])
@@ -100,18 +87,15 @@ export default function RecurringRulesPage() {
     if (!description.trim() || !amount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/recurring-rules/", {
-        method: "POST",
-        body: JSON.stringify({
-          account_id: accountId || undefined,
-          category_id: categoryId || undefined,
-          type,
-          amount: Math.round(parseFloat(amount) * 100),
-          description: description.trim(),
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
-          start_date: startDate || undefined,
-        }),
+      await recurringRulesApi.create({
+        account_id: accountId || undefined,
+        category_id: categoryId || undefined,
+        type,
+        amount: Math.round(parseFloat(amount) * 100),
+        description: description.trim(),
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        start_date: startDate || undefined,
       })
       setCreateOpen(false)
       resetForm()
@@ -140,18 +124,15 @@ export default function RecurringRulesPage() {
     if (!editItem || !description.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch(`/api/v1/recurring-rules/${editItem.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          account_id: accountId || null,
-          category_id: categoryId || null,
-          type,
-          amount: Math.round(parseFloat(amount) * 100),
-          description: description.trim(),
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : null,
-          start_date: startDate || null,
-        }),
+      await recurringRulesApi.update(editItem.id, {
+        account_id: accountId || undefined,
+        category_id: categoryId || undefined,
+        type,
+        amount: Math.round(parseFloat(amount) * 100),
+        description: description.trim(),
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        start_date: startDate || undefined,
       })
       setEditOpen(false)
       resetForm()
@@ -170,7 +151,7 @@ export default function RecurringRulesPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/recurring-rules/${id}`, { method: "DELETE" }).catch(() => {})
+          await recurringRulesApi.remove(id).catch(() => {})
           fetchItems()
           toast.success("Regra recorrente eliminada com sucesso")
         },

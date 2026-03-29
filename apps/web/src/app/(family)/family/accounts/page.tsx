@@ -21,27 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Account {
-  id: string
-  name: string
-  type: string
-  currency: string
-  balance: number
-  icon: string | null
-  institution: string | null
-  is_shared: boolean
-}
-
-interface Summary {
-  total_assets: number
-  total_liabilities: number
-  net_worth: number
-  accounts: Account[]
-}
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Banco",
@@ -54,14 +36,15 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function FamilyAccountsPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState("")
   const [type, setType] = useState("bank")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchAccounts = () => {
-    apiFetch<Summary>("/api/v1/accounts/summary", { headers: getContextHeader() })
+    const ctx = { headers: getContextHeader() }
+    accountsApi.summary(ctx)
       .then(setSummary)
       .catch(() => {})
   }
@@ -74,11 +57,8 @@ export default function FamilyAccountsPage() {
     if (!name.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/accounts/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({ name: name.trim(), type, is_shared: true }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await accountsApi.create({ name: name.trim(), type, is_shared: true }, ctx)
       setCreateOpen(false)
       setName("")
       setType("bank")

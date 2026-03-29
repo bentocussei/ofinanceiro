@@ -13,22 +13,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { billsApi, type Bill } from "@/lib/api/bills"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Bill {
-  id: string
-  name: string
-  amount: number
-  category: string | null
-  due_day: number
-  frequency: string
-  status: string
-  auto_pay: boolean
-  reminder_days: number | null
-  next_due_date: string | null
-}
 
 const FREQUENCY_OPTIONS = [
   { value: "monthly", label: "Mensal" },
@@ -63,7 +50,8 @@ export default function FamilyBillsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchItems = () => {
-    apiFetch<Bill[]>("/api/v1/bills/", { headers: getContextHeader() }).then(setItems).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    billsApi.list(ctx).then(setItems).catch(() => {})
   }
 
   useEffect(() => { fetchItems() }, [])
@@ -82,19 +70,16 @@ export default function FamilyBillsPage() {
     if (!name.trim() || !amount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/bills/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          amount: Math.round(parseFloat(amount) * 100),
-          category: category.trim() || undefined,
-          due_day: parseInt(dueDay) || 1,
-          frequency,
-          auto_pay: autoPay,
-          reminder_days: reminderDays ? parseInt(reminderDays) : undefined,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await billsApi.create({
+        name: name.trim(),
+        amount: Math.round(parseFloat(amount) * 100),
+        category: category.trim() || undefined,
+        due_day: parseInt(dueDay) || 1,
+        frequency,
+        auto_pay: autoPay,
+        reminder_days: reminderDays ? parseInt(reminderDays) : undefined,
+      }, ctx)
       setCreateOpen(false)
       resetForm()
       fetchItems()
@@ -121,19 +106,16 @@ export default function FamilyBillsPage() {
     if (!editItem || !name.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch(`/api/v1/bills/${editItem.id}`, {
-        method: "PUT",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          amount: Math.round(parseFloat(amount) * 100),
-          category: category.trim() || null,
-          due_day: parseInt(dueDay) || 1,
-          frequency,
-          auto_pay: autoPay,
-          reminder_days: reminderDays ? parseInt(reminderDays) : null,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await billsApi.update(editItem.id, {
+        name: name.trim(),
+        amount: Math.round(parseFloat(amount) * 100),
+        category: category.trim() || null,
+        due_day: parseInt(dueDay) || 1,
+        frequency,
+        auto_pay: autoPay,
+        reminder_days: reminderDays ? parseInt(reminderDays) : null,
+      }, ctx)
       setEditOpen(false)
       resetForm()
       setEditItem(null)
@@ -147,7 +129,8 @@ export default function FamilyBillsPage() {
 
   const handleMarkPaid = async (id: string) => {
     try {
-      await apiFetch(`/api/v1/bills/${id}/pay`, { method: "POST", headers: getContextHeader() })
+      const ctx = { headers: getContextHeader() }
+      await billsApi.pay(id, ctx)
       fetchItems()
       toast.success("Marcado como paga")
     } catch {
@@ -161,7 +144,8 @@ export default function FamilyBillsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/bills/${id}`, { method: "DELETE", headers: getContextHeader() }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await billsApi.remove(id, ctx).catch(() => {})
           fetchItems()
           toast.success("Conta a pagar eliminada com sucesso")
         },

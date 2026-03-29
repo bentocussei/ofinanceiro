@@ -6,18 +6,8 @@ import { Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
-import { apiFetch } from "@/lib/api"
+import { transactionsApi, type Transaction } from "@/lib/api/transactions"
 import { formatKz, formatRelativeDate } from "@/lib/format"
-
-interface Transaction {
-  id: string
-  amount: number
-  type: string
-  description: string | null
-  merchant: string | null
-  transaction_date: string
-  created_at: string
-}
 
 type ViewMode = "grouped" | "table"
 type TypeFilter = "all" | "expense" | "income" | "transfer"
@@ -34,9 +24,7 @@ export default function TransactionsPage() {
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
-    apiFetch<{ items: Transaction[]; cursor: string | null; has_more: boolean }>(
-      `/api/v1/transactions/?limit=50${cursorParam}`
-    )
+    transactionsApi.list(`limit=50${cursorParam}`)
       .then((data) => {
         setTransactions((prev) => (reset ? data.items : [...prev, ...data.items]))
         setCursor(data.cursor)

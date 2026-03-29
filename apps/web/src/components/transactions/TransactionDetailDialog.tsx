@@ -12,17 +12,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { transactionsApi, type Transaction } from "@/lib/api/transactions"
 import { formatKz, formatRelativeDate } from "@/lib/format"
-
-interface Transaction {
-  id: string
-  amount: number
-  type: string
-  description: string | null
-  merchant: string | null
-  transaction_date: string
-}
 
 interface Props {
   transaction: Transaction | null
@@ -69,10 +60,7 @@ export function TransactionDetailDialog({
       }
 
       if (Object.keys(updates).length > 0) {
-        await apiFetch(`/api/v1/transactions/${transaction.id}`, {
-          method: "PUT",
-          body: JSON.stringify(updates),
-        })
+        await transactionsApi.update(transaction.id, updates)
       }
       setIsEditing(false)
       onUpdated?.()
@@ -92,7 +80,7 @@ export function TransactionDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/transactions/${transaction.id}`, { method: "DELETE" })
+            await transactionsApi.remove(transaction.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Transacção eliminada com sucesso")

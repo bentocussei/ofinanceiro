@@ -13,19 +13,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { incomeSourcesApi, type IncomeSource } from "@/lib/api/income-sources"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface IncomeSource {
-  id: string
-  name: string
-  type: string
-  expected_amount: number
-  frequency: string
-  day_of_month: number | null
-  account_id: string | null
-  account_name?: string | null
-}
 
 interface AccountOption {
   id: string
@@ -70,11 +60,11 @@ export default function IncomeSourcesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchItems = () => {
-    apiFetch<IncomeSource[]>("/api/v1/income-sources/").then(setItems).catch(() => {})
+    incomeSourcesApi.list().then(setItems).catch(() => {})
   }
 
   const fetchAccounts = () => {
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
   }
@@ -97,16 +87,13 @@ export default function IncomeSourcesPage() {
     if (!name.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/income-sources/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
-          account_id: accountId || undefined,
-        }),
+      await incomeSourcesApi.create({
+        name: name.trim(),
+        type,
+        expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        account_id: accountId || undefined,
       })
       setCreateOpen(false)
       resetForm()
@@ -133,16 +120,13 @@ export default function IncomeSourcesPage() {
     if (!editItem || !name.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch(`/api/v1/income-sources/${editItem.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : null,
-          account_id: accountId || null,
-        }),
+      await incomeSourcesApi.update(editItem.id, {
+        name: name.trim(),
+        type,
+        expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        account_id: accountId || undefined,
       })
       setEditOpen(false)
       resetForm()
@@ -161,7 +145,7 @@ export default function IncomeSourcesPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/income-sources/${id}`, { method: "DELETE" }).catch(() => {})
+          await incomeSourcesApi.remove(id).catch(() => {})
           fetchItems()
           toast.success("Rendimento eliminado com sucesso")
         },

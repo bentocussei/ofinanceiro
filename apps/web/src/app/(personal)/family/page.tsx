@@ -13,30 +13,7 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
-
-interface FamilyMember {
-  id: string
-  user_id: string
-  role: string
-  display_name: string | null
-  is_active: boolean
-  relation?: string | null
-  can_add_transactions?: boolean
-  can_edit_budgets?: boolean
-  can_view_all?: boolean
-  can_invite?: boolean
-}
-
-interface Family {
-  id: string
-  name: string
-  admin_user_id: string
-  invite_code: string | null
-  members: FamilyMember[]
-  currency?: string | null
-  month_start_day?: number | null
-}
+import { familiesApi, type Family, type FamilyMember } from "@/lib/api/families"
 
 const RELATION_OPTIONS = [
   { value: "SPOUSE", label: "Cônjuge" },
@@ -83,7 +60,7 @@ export default function FamilyPage() {
   const [familyMonthStartDay, setFamilyMonthStartDay] = useState("1")
 
   const fetchFamily = () => {
-    apiFetch<Family | null>("/api/v1/families/me").then(setFamily).catch(() => {})
+    familiesApi.me().then(setFamily).catch(() => {})
   }
 
   useEffect(() => { fetchFamily() }, [])
@@ -92,10 +69,7 @@ export default function FamilyPage() {
     if (!createName.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/families/", {
-        method: "POST",
-        body: JSON.stringify({ name: createName.trim() }),
-      })
+      await familiesApi.create(createName.trim())
       setCreateOpen(false)
       setCreateName("")
       fetchFamily()
@@ -107,10 +81,7 @@ export default function FamilyPage() {
     if (!joinCode.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/families/join", {
-        method: "POST",
-        body: JSON.stringify({ invite_code: joinCode.trim() }),
-      })
+      await familiesApi.join(joinCode.trim())
       setJoinOpen(false)
       setJoinCode("")
       fetchFamily()
@@ -132,7 +103,7 @@ export default function FamilyPage() {
       action: {
         label: "Remover",
         onClick: async () => {
-          await apiFetch(`/api/v1/families/members/${memberId}`, { method: "DELETE" }).catch(() => {})
+          await familiesApi.removeMember(memberId).catch(() => {})
           fetchFamily()
           toast.success("Membro removido com sucesso")
         },
@@ -157,15 +128,12 @@ export default function FamilyPage() {
   const handleSaveMemberDetail = async () => {
     if (!selectedMember) return
     try {
-      await apiFetch(`/api/v1/families/members/${selectedMember.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          relation: memberRelation || null,
-          can_add_transactions: memberCanAddTransactions,
-          can_edit_budgets: memberCanEditBudgets,
-          can_view_all: memberCanViewAll,
-          can_invite: memberCanInvite,
-        }),
+      await familiesApi.updateMember(selectedMember.id, {
+        relation: memberRelation || null,
+        can_add_transactions: memberCanAddTransactions,
+        can_edit_budgets: memberCanEditBudgets,
+        can_view_all: memberCanViewAll,
+        can_invite: memberCanInvite,
       })
       setMemberDetailOpen(false)
       fetchFamily()
@@ -186,12 +154,9 @@ export default function FamilyPage() {
   const handleSaveFamilySettings = async () => {
     if (!family) return
     try {
-      await apiFetch(`/api/v1/families/${family.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          currency: familyCurrency,
-          month_start_day: parseInt(familyMonthStartDay) || 1,
-        }),
+      await familiesApi.update(family.id, {
+        currency: familyCurrency,
+        month_start_day: parseInt(familyMonthStartDay) || 1,
       })
       setSettingsOpen(false)
       fetchFamily()
@@ -203,10 +168,7 @@ export default function FamilyPage() {
 
   const handleChangeRole = async (memberId: string, currentRole: string) => {
     const newRole = currentRole === "adult" ? "dependent" : "adult"
-    await apiFetch(`/api/v1/families/members/${memberId}/role`, {
-      method: "PUT",
-      body: JSON.stringify({ role: newRole }),
-    }).catch(() => {})
+    await familiesApi.changeMemberRole(memberId, newRole).catch(() => {})
     fetchFamily()
   }
 
@@ -254,7 +216,7 @@ export default function FamilyPage() {
   }
 
   // Has family
-  const activeMembers = family.members.filter((m) => m.is_active)
+  const activeMembers = (family.members ?? []).filter((m) => m.is_active)
 
   return (
     <div>

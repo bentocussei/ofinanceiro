@@ -13,24 +13,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { debtsApi, type Debt } from "@/lib/api/debts"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Debt {
-  id: string
-  name: string
-  type: string
-  nature: string
-  creditor: string | null
-  creditor_type: string | null
-  original_amount: number
-  remaining_balance: number
-  interest_rate: number
-  minimum_payment: number
-  due_day: number
-  status: string
-}
 
 const TYPE_OPTIONS = [
   { value: "MORTGAGE", label: "Hipoteca" },
@@ -79,7 +64,8 @@ export default function FamilyDebtsPage() {
   const [payAmount, setPayAmount] = useState("")
 
   const fetchDebts = () => {
-    apiFetch<Debt[]>("/api/v1/debts/", { headers: getContextHeader() }).then(setDebts).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    debtsApi.list(ctx).then(setDebts).catch(() => {})
   }
 
   useEffect(() => { fetchDebts() }, [])
@@ -103,21 +89,17 @@ export default function FamilyDebtsPage() {
     if (!name.trim() || !originalAmount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/debts/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          nature,
-          creditor: creditor.trim() || undefined,
-          creditor_type: creditorType,
-          original_amount: Math.round(parseFloat(originalAmount) * 100),
-          interest_rate: parseFloat(interestRate) || 0,
-          minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
-          due_day: parseInt(dueDay) || 1,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await debtsApi.create({
+        name: name.trim(),
+        type,
+        nature,
+        creditor_type: creditorType,
+        original_amount: Math.round(parseFloat(originalAmount) * 100),
+        interest_rate: parseFloat(interestRate) || 0,
+        minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
+        due_day: parseInt(dueDay) || 1,
+      }, ctx)
       setCreateOpen(false)
       resetForm()
       fetchDebts()
@@ -131,11 +113,8 @@ export default function FamilyDebtsPage() {
   const handlePay = async (debtId: string) => {
     if (!payAmount) return
     try {
-      await apiFetch(`/api/v1/debts/${debtId}/payment`, {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({ amount: Math.round(parseFloat(payAmount) * 100) }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100), ctx)
       setPayOpen(null)
       setPayAmount("")
       fetchDebts()
@@ -151,7 +130,8 @@ export default function FamilyDebtsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/debts/${id}`, { method: "DELETE", headers: getContextHeader() }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await debtsApi.remove(id, ctx).catch(() => {})
           fetchDebts()
           toast.success("Dívida eliminada com sucesso")
         },

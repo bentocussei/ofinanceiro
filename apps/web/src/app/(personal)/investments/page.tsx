@@ -13,19 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { investmentsApi, type Investment } from "@/lib/api/investments"
 import { formatKz } from "@/lib/format"
-
-interface Investment {
-  id: string
-  name: string
-  type: string
-  invested_amount: number
-  current_value: number
-  annual_return_rate: number
-  start_date: string
-  status: string
-}
 
 interface PerformanceSummary {
   total_invested: number
@@ -56,7 +45,7 @@ export default function InvestmentsPage() {
   const [simResult, setSimResult] = useState<{ final_value: number; total_invested: number; total_interest: number } | null>(null)
 
   const fetchInvestments = () => {
-    apiFetch<Investment[]>("/api/v1/investments/").then(setInvestments).catch(() => {})
+    investmentsApi.list().then(setInvestments).catch(() => {})
   }
 
   useEffect(() => { fetchInvestments() }, [])
@@ -75,14 +64,11 @@ export default function InvestmentsPage() {
     if (!name.trim() || !investedAmount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/investments/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          invested_amount: Math.round(parseFloat(investedAmount) * 100),
-          annual_return_rate: parseFloat(annualRate) || 0,
-        }),
+      await investmentsApi.create({
+        name: name.trim(),
+        type,
+        invested_amount: Math.round(parseFloat(investedAmount) * 100),
+        annual_return_rate: parseFloat(annualRate) || 0,
       })
       setCreateOpen(false)
       setName("")
@@ -99,7 +85,7 @@ export default function InvestmentsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/investments/${id}`, { method: "DELETE" }).catch(() => {})
+          await investmentsApi.remove(id).catch(() => {})
           fetchInvestments()
           toast.success("Investimento eliminado com sucesso")
         },

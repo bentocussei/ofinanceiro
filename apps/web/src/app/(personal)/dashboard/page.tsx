@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
+import { transactionsApi } from "@/lib/api/transactions"
+import { budgetsApi } from "@/lib/api/budgets"
+import { goalsApi } from "@/lib/api/goals"
 import { formatKz } from "@/lib/format"
 import {
   ArrowDownRight,
@@ -19,20 +22,6 @@ import {
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface AccountSummary {
-  total_assets: number
-  total_liabilities: number
-  net_worth: number
-  accounts: {
-    id: string
-    name: string
-    type: string
-    balance: number
-    icon: string | null
-    institution?: string | null
-  }[]
-}
 
 interface Transaction {
   id: string
@@ -77,29 +66,27 @@ export default function DashboardPage() {
   const [spending, setSpending] = useState<SpendingCategory[]>([])
 
   useEffect(() => {
-    apiFetch<AccountSummary>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then(setSummary)
       .catch(() => {})
 
-    apiFetch<{ items: Transaction[] }>("/api/v1/transactions/?limit=5")
-      .then((d) => setTransactions(d.items))
+    transactionsApi.list("limit=5")
+      .then((d) => setTransactions(d.items as Transaction[]))
       .catch(() => {})
 
-    apiFetch<{ items: BudgetItem[] }>("/api/v1/budgets/?limit=4")
-      .then((d) => setBudgets(d.items ?? []))
+    budgetsApi.list("limit=4")
+      .then((d) => setBudgets(((d as unknown as { items: BudgetItem[] }).items) ?? []))
       .catch(() => {})
 
-    apiFetch<{ items: GoalItem[] }>("/api/v1/goals/?limit=3&status=active")
-      .then((d) => setGoals(d.items ?? []))
+    goalsApi.list("limit=3&status=active")
+      .then((d) => setGoals(((d as unknown as { items: GoalItem[] }).items) ?? []))
       .catch(() => {})
 
-    apiFetch<{ income: number; expense: number; by_category: SpendingCategory[] }>(
-      "/api/v1/transactions/monthly-summary"
-    )
+    transactionsApi.monthlySummary()
       .then((d) => {
         setMonthIncome(d.income ?? 0)
         setMonthExpense(d.expense ?? 0)
-        setSpending((d.by_category ?? []).slice(0, 5))
+        setSpending(((d.by_category ?? []) as unknown as SpendingCategory[]).slice(0, 5))
       })
       .catch(() => {})
   }, [])

@@ -1,20 +1,15 @@
 "use client"
 
-import { Lock, Mail, Phone, Plus, Tag, Trash2, User, Wallet, X } from "lucide-react"
+import { Lock, Mail, Phone, Plus, Tag as TagIcon, Trash2, User, Wallet, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { tagsApi, type Tag } from "@/lib/api/tags"
+import { usersApi } from "@/lib/api/users"
 import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
-
-interface UserTag {
-  id: string
-  name: string
-  color: string
-}
 
 export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -29,23 +24,20 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
 
   // Tags
-  const [tags, setTags] = useState<UserTag[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
   const [newTagName, setNewTagName] = useState("")
   const [newTagColor, setNewTagColor] = useState("#3b82f6")
 
   const TAG_COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"]
 
   const fetchTags = () => {
-    apiFetch<UserTag[]>("/api/v1/tags/").then(setTags).catch(() => {})
+    tagsApi.list().then(setTags).catch(() => {})
   }
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return
     try {
-      await apiFetch("/api/v1/tags/", {
-        method: "POST",
-        body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
-      })
+      await tagsApi.create({ name: newTagName.trim(), color: newTagColor })
       setNewTagName("")
       setNewTagColor("#3b82f6")
       fetchTags()
@@ -60,7 +52,7 @@ export default function SettingsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/tags/${id}`, { method: "DELETE" }).catch(() => {})
+          await tagsApi.remove(id).catch(() => {})
           fetchTags()
           toast.success("Etiqueta eliminada")
         },
@@ -87,14 +79,11 @@ export default function SettingsPage() {
 
   async function handleProfileSave() {
     try {
-      await apiFetch("/api/v1/users/me", {
-        method: "PUT",
-        body: JSON.stringify({
-          name,
-          email: email || undefined,
-          currency_default: currency,
-          salary_day: parseInt(salaryDay, 10),
-        }),
+      await usersApi.updateProfile({
+        name,
+        email: email || undefined,
+        currency_default: currency,
+        salary_day: parseInt(salaryDay, 10),
       })
       toast.success("Alterações guardadas com sucesso.")
     } catch {
@@ -112,13 +101,7 @@ export default function SettingsPage() {
       return
     }
     try {
-      await apiFetch("/api/v1/users/me/password", {
-        method: "PUT",
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
-        }),
-      })
+      await usersApi.changePassword(currentPassword, newPassword)
       toast.success("Senha alterada com sucesso.")
       setCurrentPassword("")
       setNewPassword("")
@@ -261,7 +244,7 @@ export default function SettingsPage() {
           <section className="rounded-xl bg-card shadow-sm p-5">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Tag className="h-5 w-5 text-primary" />
+                <TagIcon className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h2 className="text-[15px] font-semibold">Etiquetas</h2>

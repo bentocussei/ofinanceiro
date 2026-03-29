@@ -4,33 +4,24 @@ import { Bell, Check, CheckCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
-
-interface Notification {
-  id: string
-  type: string
-  title: string
-  body: string
-  is_read: boolean
-  created_at: string
-}
+import { notificationsApi, type Notification } from "@/lib/api/notifications"
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
   const fetchNotifications = () => {
-    apiFetch<Notification[]>("/api/v1/notifications/").then(setNotifications).catch(() => {})
+    notificationsApi.list().then(setNotifications).catch(() => {})
   }
 
   useEffect(() => { fetchNotifications() }, [])
 
   const markRead = async (id: string) => {
-    await apiFetch(`/api/v1/notifications/${id}/read`, { method: "PUT" }).catch(() => {})
+    await notificationsApi.markRead(id).catch(() => {})
     fetchNotifications()
   }
 
   const markAllRead = async () => {
-    await apiFetch("/api/v1/notifications/read-all", { method: "PUT" }).catch(() => {})
+    await notificationsApi.markAllRead().catch(() => {})
     fetchNotifications()
   }
 

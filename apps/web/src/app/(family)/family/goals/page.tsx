@@ -14,18 +14,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { goalsApi, type Goal } from "@/lib/api/goals"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Goal {
-  id: string
-  name: string
-  target_amount: number
-  current_amount: number
-  status: string
-  contributions?: { member_name: string; amount: number }[]
-}
 
 export default function FamilyGoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -35,8 +26,9 @@ export default function FamilyGoalsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchGoals = () => {
-    apiFetch<{ items: Goal[] }>("/api/v1/goals/", { headers: getContextHeader() })
-      .then((d) => setGoals(d.items ?? []))
+    const ctx = { headers: getContextHeader() }
+    goalsApi.list(undefined, ctx)
+      .then((items) => setGoals(items ?? []))
       .catch(() => {})
   }
 
@@ -48,15 +40,12 @@ export default function FamilyGoalsPage() {
     if (!goalName.trim() || !targetAmount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/goals/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: goalName.trim(),
-          target_amount: Math.round(parseFloat(targetAmount) * 100),
-          type: "savings",
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await goalsApi.create({
+        name: goalName.trim(),
+        target_amount: Math.round(parseFloat(targetAmount) * 100),
+        type: "savings",
+      }, ctx)
       setCreateOpen(false)
       setGoalName("")
       setTargetAmount("")

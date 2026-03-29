@@ -21,29 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { familiesApi, type Family, type FamilyMember } from "@/lib/api/families"
 import { getContextHeader } from "@/lib/context"
-
-interface FamilyMember {
-  id: string
-  user_id: string
-  role: string
-  display_name: string | null
-  is_active: boolean
-  relation?: string | null
-  can_add_transactions?: boolean
-  can_edit_budgets?: boolean
-  can_view_all?: boolean
-  can_invite?: boolean
-}
-
-interface Family {
-  id: string
-  name: string
-  admin_user_id: string
-  invite_code: string | null
-  members: FamilyMember[]
-}
 
 const RELATION_OPTIONS = [
   { value: "SPOUSE", label: "Cônjuge" },
@@ -84,7 +63,8 @@ export default function FamilyMembersPage() {
   const [memberCanInvite, setMemberCanInvite] = useState(false)
 
   const fetchFamily = () => {
-    apiFetch<Family | null>("/api/v1/families/me", { headers: getContextHeader() })
+    const ctx = { headers: getContextHeader() }
+    familiesApi.me(ctx)
       .then(setFamily)
       .catch(() => {})
   }
@@ -108,10 +88,8 @@ export default function FamilyMembersPage() {
       action: {
         label: "Remover",
         onClick: async () => {
-          await apiFetch(`/api/v1/families/members/${memberId}`, {
-            method: "DELETE",
-            headers: getContextHeader(),
-          }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await familiesApi.removeMember(memberId, ctx).catch(() => {})
           fetchFamily()
           toast.success("Membro removido com sucesso")
         },
@@ -136,17 +114,14 @@ export default function FamilyMembersPage() {
   const handleSaveMemberDetail = async () => {
     if (!selectedMember) return
     try {
-      await apiFetch(`/api/v1/families/members/${selectedMember.id}`, {
-        method: "PUT",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          relation: memberRelation || null,
-          can_add_transactions: memberCanAddTransactions,
-          can_edit_budgets: memberCanEditBudgets,
-          can_view_all: memberCanViewAll,
-          can_invite: memberCanInvite,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await familiesApi.updateMember(selectedMember.id, {
+        relation: memberRelation || null,
+        can_add_transactions: memberCanAddTransactions,
+        can_edit_budgets: memberCanEditBudgets,
+        can_view_all: memberCanViewAll,
+        can_invite: memberCanInvite,
+      }, ctx)
       setMemberDetailOpen(false)
       fetchFamily()
       toast.success("Membro actualizado com sucesso")
@@ -157,17 +132,14 @@ export default function FamilyMembersPage() {
 
   const handleChangeRole = async (memberId: string, currentRole: string) => {
     const newRole = currentRole === "adult" ? "dependent" : "adult"
-    await apiFetch(`/api/v1/families/members/${memberId}/role`, {
-      method: "PUT",
-      headers: getContextHeader(),
-      body: JSON.stringify({ role: newRole }),
-    }).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    await familiesApi.changeMemberRole(memberId, newRole, ctx).catch(() => {})
     fetchFamily()
   }
 
   if (!family) return null
 
-  const activeMembers = family.members.filter((m) => m.is_active)
+  const activeMembers = (family.members ?? []).filter((m) => m.is_active)
 
   return (
     <div>

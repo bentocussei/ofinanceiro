@@ -3,38 +3,17 @@
 import { useEffect, useState } from "react"
 import { BarChart3, Users } from "lucide-react"
 
-import { apiFetch } from "@/lib/api"
+import { reportsApi, type ReportSummary } from "@/lib/api/reports"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 
-interface CategorySpending {
-  category_name: string
-  total: number
-  count: number
-}
-
-interface MemberSpending {
-  member_name: string
-  income: number
-  expense: number
-}
-
-interface Summary {
-  income: number
-  expense: number
-  balance: number
-  by_category: CategorySpending[]
-  by_member: MemberSpending[]
-}
-
 export default function FamilyReportsPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<ReportSummary | null>(null)
   const [period, setPeriod] = useState<"month" | "3months" | "year">("month")
 
   const fetchReport = () => {
-    apiFetch<Summary>(`/api/v1/transactions/monthly-summary?period=${period}`, {
-      headers: getContextHeader(),
-    })
+    const ctx = { headers: getContextHeader() }
+    reportsApi.monthlySummary(period, ctx)
       .then(setSummary)
       .catch(() => {})
   }
@@ -135,8 +114,8 @@ export default function FamilyReportsPage() {
                       <span className="text-sm font-medium">{m.member_name}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-xs font-mono text-income">+{formatKz(m.income)}</span>
-                      <span className="text-xs font-mono text-expense">-{formatKz(m.expense)}</span>
+                      <span className="text-xs font-mono text-income">+{formatKz(m.income ?? 0)}</span>
+                      <span className="text-xs font-mono text-expense">-{formatKz(m.expense ?? 0)}</span>
                     </div>
                   </div>
                 ))}

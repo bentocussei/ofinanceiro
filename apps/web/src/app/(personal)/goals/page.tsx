@@ -15,25 +15,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { goalsApi, type Goal, type GoalProgress } from "@/lib/api/goals"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface Goal {
-  id: string
-  name: string
-  type: string
-  target_amount: number
-  current_amount: number
-  monthly_contribution: number | null
-  status: string
-}
-
-interface GoalProgress {
-  percentage: number
-  remaining: number
-  months_remaining: number | null
-  contributions: { amount: number; note: string | null; contributed_at: string }[]
-}
 
 
 export default function GoalsPage() {
@@ -56,20 +40,20 @@ export default function GoalsPage() {
   const [goalAccounts, setGoalAccounts] = useState<AccountOption[]>([])
 
   useEffect(() => {
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setGoalAccounts(data.accounts || []))
       .catch(() => {})
   }, [])
 
   const fetchGoals = () => {
-    apiFetch<Goal[]>("/api/v1/goals/").then(setGoals).catch(() => {})
+    goalsApi.list().then(setGoals).catch(() => {})
   }
 
   useEffect(() => { fetchGoals() }, [])
 
   useEffect(() => {
     if (selectedGoal) {
-      apiFetch<GoalProgress>(`/api/v1/goals/${selectedGoal}/progress`)
+      goalsApi.progress(selectedGoal)
         .then(setProgress).catch(() => {})
     } else {
       setProgress(null)
@@ -80,16 +64,13 @@ export default function GoalsPage() {
     if (!createName.trim() || !createTarget) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/goals/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: createName.trim(),
-          target_amount: Math.round(parseFloat(createTarget) * 100),
-          monthly_contribution: createMonthly ? Math.round(parseFloat(createMonthly) * 100) : undefined,
-          description: createDescription.trim() || undefined,
-          savings_account_id: createSavingsAccountId || undefined,
-          contribution_frequency: createContributionFrequency,
-        }),
+      await goalsApi.create({
+        name: createName.trim(),
+        target_amount: Math.round(parseFloat(createTarget) * 100),
+        monthly_contribution: createMonthly ? Math.round(parseFloat(createMonthly) * 100) : undefined,
+        description: createDescription.trim() || undefined,
+        savings_account_id: createSavingsAccountId || undefined,
+        contribution_frequency: createContributionFrequency,
       })
       setCreateOpen(false)
       setCreateName("")
@@ -106,14 +87,11 @@ export default function GoalsPage() {
   const handleContribute = async (goalId: string) => {
     if (!contributeAmount) return
     try {
-      await apiFetch(`/api/v1/goals/${goalId}/contribute`, {
-        method: "POST",
-        body: JSON.stringify({ amount: Math.round(parseFloat(contributeAmount) * 100) }),
-      })
+      await goalsApi.contribute(goalId, Math.round(parseFloat(contributeAmount) * 100))
       setContributeAmount("")
       fetchGoals()
       // Refresh progress
-      const p = await apiFetch<GoalProgress>(`/api/v1/goals/${goalId}/progress`)
+      const p = await goalsApi.progress(goalId)
       setProgress(p)
     } catch {}
   }
@@ -124,7 +102,7 @@ export default function GoalsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/goals/${id}`, { method: "DELETE" }).catch(() => {})
+          await goalsApi.remove(id).catch(() => {})
           setSelectedGoal(null)
           fetchGoals()
           toast.success("Meta eliminada com sucesso")
@@ -280,7 +258,7 @@ export default function GoalsPage() {
         item={detailGoal}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onUpdated={() => { fetchGoals(); if (detailGoal && selectedGoal === detailGoal.id) { apiFetch<GoalProgress>(`/api/v1/goals/${detailGoal.id}/progress`).then(setProgress).catch(() => {}) } }}
+        onUpdated={() => { fetchGoals(); if (detailGoal && selectedGoal === detailGoal.id) { goalsApi.progress(detailGoal.id).then(setProgress).catch(() => {}) } }}
         onDeleted={() => { setSelectedGoal(null); fetchGoals() }}
       />
     </div>

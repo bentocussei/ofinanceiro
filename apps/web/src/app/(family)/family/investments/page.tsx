@@ -10,21 +10,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { investmentsApi, type Investment } from "@/lib/api/investments"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Investment {
-  id: string
-  name: string
-  type: string
-  institution: string | null
-  invested_amount: number
-  current_value: number
-  annual_return_rate: number
-  start_date: string
-  status: string
-}
 
 const TYPE_OPTIONS = [
   { value: "fixed_income", label: "Renda fixa" },
@@ -51,7 +39,8 @@ export default function FamilyInvestmentsPage() {
   const [annualRate, setAnnualRate] = useState("")
 
   const fetchInvestments = () => {
-    apiFetch<Investment[]>("/api/v1/investments/", { headers: getContextHeader() }).then(setInvestments).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    investmentsApi.list(ctx).then(setInvestments).catch(() => {})
   }
 
   useEffect(() => { fetchInvestments() }, [])
@@ -80,18 +69,15 @@ export default function FamilyInvestmentsPage() {
     if (!name.trim() || !investedAmount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/investments/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          institution: institution.trim() || undefined,
-          invested_amount: Math.round(parseFloat(investedAmount) * 100),
-          current_value: currentValue ? Math.round(parseFloat(currentValue) * 100) : undefined,
-          annual_return_rate: parseFloat(annualRate) || 0,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await investmentsApi.create({
+        name: name.trim(),
+        type,
+        institution: institution.trim() || undefined,
+        invested_amount: Math.round(parseFloat(investedAmount) * 100),
+        current_value: currentValue ? Math.round(parseFloat(currentValue) * 100) : undefined,
+        annual_return_rate: parseFloat(annualRate) || 0,
+      }, ctx)
       setCreateOpen(false)
       resetForm()
       fetchInvestments()
@@ -108,7 +94,8 @@ export default function FamilyInvestmentsPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/investments/${id}`, { method: "DELETE", headers: getContextHeader() }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await investmentsApi.remove(id, ctx).catch(() => {})
           fetchInvestments()
           toast.success("Investimento eliminado com sucesso")
         },

@@ -6,24 +6,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
-
-interface NewsItem {
-  id: string
-  title: string
-  summary: string
-  source: string
-  url: string
-  published_at: string
-  category: string
-}
-
-interface ExchangeRate {
-  currency: string
-  buy: number
-  sell: number
-  updated_at: string
-}
+import { newsApi, type NewsItem, type ExchangeRate } from "@/lib/api/news"
 
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([])
@@ -33,8 +16,8 @@ export default function NewsPage() {
   const fetchData = async () => {
     setIsLoading(true)
     await Promise.all([
-      apiFetch<NewsItem[]>("/api/v1/news/").then(setNews).catch(() => {}),
-      apiFetch<ExchangeRate[]>("/api/v1/news/exchange-rates").then(setRates).catch(() => {}),
+      newsApi.list().then(setNews).catch(() => {}),
+      newsApi.exchangeRates().then(setRates).catch(() => {}),
     ])
     setIsLoading(false)
   }

@@ -1,15 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { apiFetch } from "@/lib/api"
+import { familiesApi, type Family } from "@/lib/api/families"
 import { ChatPanel } from "@/components/layout/ChatPanel"
 import { FamilySidebar } from "@/components/layout/FamilySidebar"
 import { FamilyOnboarding } from "@/components/layout/FamilyOnboarding"
-
-interface Family {
-  id: string
-  name: string
-}
 
 export default function FamilyLayout({
   children,
@@ -20,7 +15,7 @@ export default function FamilyLayout({
   const [loading, setLoading] = useState(true)
 
   const fetchFamily = () => {
-    apiFetch<Family | null>("/api/v1/families/me")
+    familiesApi.me()
       .then((f) => {
         setFamily(f)
         setLoading(false)

@@ -11,19 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { apiFetch } from "@/lib/api"
+import { investmentsApi, type Investment } from "@/lib/api/investments"
 import { formatKz } from "@/lib/format"
-
-interface Investment {
-  id: string
-  name: string
-  type: string
-  invested_amount: number
-  current_value: number
-  annual_return_rate: number
-  start_date: string
-  status: string
-}
 
 interface Props {
   item: Investment | null
@@ -61,7 +50,7 @@ export function InvestmentDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/investments/${item.id}`, { method: "DELETE" })
+            await investmentsApi.remove(item.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Investimento eliminado com sucesso")

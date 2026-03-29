@@ -16,29 +16,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { debtsApi, type Debt } from "@/lib/api/debts"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface AccountOption {
-  id: string
-  name: string
-}
-
-interface Debt {
-  id: string
-  name: string
-  type: string
-  original_amount: number
-  remaining_balance: number
-  interest_rate: number
-  minimum_payment: number
-  due_day: number
-  status: string
-  nature?: string | null
-  creditor_type?: string | null
-  auto_pay?: boolean
-  linked_account_id?: string | null
-}
 
 const NATURE_OPTIONS = [
   { value: "FORMAL", label: "Formal" },
@@ -85,10 +65,10 @@ export function DebtDetailDialog({
   const [isPaying, setIsPaying] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
-  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([])
 
   useState(() => {
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+    accountsApi.summary()
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
   })
@@ -98,10 +78,7 @@ export function DebtDetailDialog({
     setIsPaying(true)
     setError("")
     try {
-      await apiFetch(`/api/v1/debts/${item.id}/pay`, {
-        method: "POST",
-        body: JSON.stringify({ amount: Math.round(parseFloat(payAmount) * 100) }),
-      })
+      await debtsApi.payment(item.id, Math.round(parseFloat(payAmount) * 100))
       setPayAmount("")
       onUpdated?.()
     } catch (err: any) {
@@ -120,7 +97,7 @@ export function DebtDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/debts/${item.id}`, { method: "DELETE" })
+            await debtsApi.remove(item.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Dívida eliminada com sucesso")

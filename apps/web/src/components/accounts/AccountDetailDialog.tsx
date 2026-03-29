@@ -16,24 +16,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { accountsApi, type Account } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface Account {
-  id: string
-  name: string
-  type: string
-  balance: number
-  icon: string | null
-  institution: string | null
-  iban?: string | null
-  nib?: string | null
-  swift_code?: string | null
-  account_holder?: string | null
-  usage_type?: string | null
-  credit_limit?: number | null
-  low_balance_alert?: number | null
-}
 
 const USAGE_TYPES = [
   { value: "PERSONAL", label: "Pessoal" },
@@ -121,10 +105,7 @@ export function AccountDetailDialog({
       if (newLowBalanceAlert !== (account.low_balance_alert || null)) updates.low_balance_alert = newLowBalanceAlert
 
       if (Object.keys(updates).length > 0) {
-        await apiFetch(`/api/v1/accounts/${account.id}`, {
-          method: "PUT",
-          body: JSON.stringify(updates),
-        })
+        await accountsApi.update(account.id, updates)
       }
       setIsEditing(false)
       onUpdated?.()
@@ -144,7 +125,7 @@ export function AccountDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/accounts/${account.id}`, { method: "DELETE" })
+            await accountsApi.remove(account.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Conta eliminada com sucesso")

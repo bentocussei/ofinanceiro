@@ -3,20 +3,9 @@
 import { useEffect, useState } from "react"
 import { ArrowLeftRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
+import { transactionsApi, type Transaction } from "@/lib/api/transactions"
 import { formatKz, formatRelativeDate } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Transaction {
-  id: string
-  amount: number
-  type: string
-  description: string | null
-  merchant: string | null
-  transaction_date: string
-  member_name?: string | null
-  category_name?: string | null
-}
 
 type TypeFilter = "all" | "expense" | "income" | "transfer"
 
@@ -28,10 +17,8 @@ export default function FamilyTransactionsPage() {
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
-    apiFetch<{ items: Transaction[]; cursor: string | null; has_more: boolean }>(
-      `/api/v1/transactions/?limit=50${cursorParam}`,
-      { headers: getContextHeader() }
-    )
+    const ctx = { headers: getContextHeader() }
+    transactionsApi.list(`limit=50${cursorParam}`, ctx)
       .then((data) => {
         setTransactions((prev) => (reset ? data.items : [...prev, ...data.items]))
         setCursor(data.cursor)

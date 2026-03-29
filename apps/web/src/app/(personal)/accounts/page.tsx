@@ -7,25 +7,8 @@ import { IconDisplay } from "@/components/common/IconDisplay"
 import { AccountDetailDialog } from "@/components/accounts/AccountDetailDialog"
 import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
 import { TransferDialog } from "@/components/accounts/TransferDialog"
-import { apiFetch } from "@/lib/api"
+import { accountsApi, type Account, type AccountSummary } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
-
-interface Account {
-  id: string
-  name: string
-  type: string
-  currency: string
-  balance: number
-  icon: string | null
-  institution: string | null
-}
-
-interface Summary {
-  total_assets: number
-  total_liabilities: number
-  net_worth: number
-  accounts: Account[]
-}
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Banco",
@@ -38,13 +21,13 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function AccountsPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
 
-  const refresh = () => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)
+  const refresh = () => accountsApi.summary().then(setSummary)
 
   useEffect(() => {
-    apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary).catch(() => {})
+    accountsApi.summary().then(setSummary).catch(() => {})
   }, [])
 
   return (
@@ -52,8 +35,8 @@ export default function AccountsPage() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Contas</h2>
         <div className="flex gap-2">
-          <TransferDialog onTransferred={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
-          <CreateAccountDialog onCreated={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
+          <TransferDialog onTransferred={() => accountsApi.summary().then(setSummary)} />
+          <CreateAccountDialog onCreated={() => accountsApi.summary().then(setSummary)} />
         </div>
       </div>
 

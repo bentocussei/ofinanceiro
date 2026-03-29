@@ -16,38 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { budgetsApi, type Budget, type BudgetStatus } from "@/lib/api/budgets"
 import { formatKz } from "@/lib/format"
-
-interface Budget {
-  id: string
-  name: string | null
-  method: string
-  period_start: string
-  period_end: string
-  is_active: boolean
-}
-
-interface BudgetItemStatus {
-  category_id: string
-  category_name: string
-  category_icon: string | null
-  limit_amount: number
-  spent: number
-  remaining: number
-  percentage: number
-}
-
-interface BudgetStatus {
-  budget_id: string
-  name: string | null
-  days_remaining: number
-  total_limit: number | null
-  total_spent: number
-  total_remaining: number
-  percentage: number
-  items: BudgetItemStatus[]
-}
 
 function getProgressColor(pct: number): string {
   if (pct >= 100) return "bg-red-500"
@@ -77,10 +47,10 @@ export default function BudgetPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchBudgets = () => {
-    apiFetch<Budget[]>("/api/v1/budgets/").then((data) => {
+    budgetsApi.list().then((data) => {
       setBudgets(data)
       data.forEach((b) => {
-        apiFetch<BudgetStatus>(`/api/v1/budgets/${b.id}/status`)
+        budgetsApi.status(b.id)
           .then((s) => setStatuses((prev) => ({ ...prev, [b.id]: s })))
           .catch(() => {})
       })
@@ -96,17 +66,14 @@ export default function BudgetPage() {
 
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/budgets/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: createName.trim() || `${start.toLocaleDateString("pt-AO", { month: "long", year: "numeric" })}`,
-          method: "category",
-          period_start: start.toISOString().split("T")[0],
-          period_end: end.toISOString().split("T")[0],
-          total_limit: createLimit ? Math.round(parseFloat(createLimit) * 100) : undefined,
-          alert_threshold: parseInt(createAlertThreshold) || 80,
-          alert_enabled: createAlertEnabled,
-        }),
+      await budgetsApi.create({
+        name: createName.trim() || `${start.toLocaleDateString("pt-AO", { month: "long", year: "numeric" })}`,
+        method: "category",
+        period_start: start.toISOString().split("T")[0],
+        period_end: end.toISOString().split("T")[0],
+        total_limit: createLimit ? Math.round(parseFloat(createLimit) * 100) : undefined,
+        alert_threshold: parseInt(createAlertThreshold) || 80,
+        alert_enabled: createAlertEnabled,
       })
       setCreateOpen(false)
       setCreateName("")
@@ -124,7 +91,7 @@ export default function BudgetPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/budgets/${id}`, { method: "DELETE" }).catch(() => {})
+          await budgetsApi.remove(id).catch(() => {})
           fetchBudgets()
           toast.success("Orçamento eliminado com sucesso")
         },

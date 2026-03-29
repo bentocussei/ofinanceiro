@@ -13,38 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { budgetsApi, type Budget, type BudgetStatus } from "@/lib/api/budgets"
 import { formatKz } from "@/lib/format"
-
-interface Budget {
-  id: string
-  name: string | null
-  method: string
-  period_start: string
-  period_end: string
-  is_active: boolean
-}
-
-interface BudgetItemStatus {
-  category_id: string
-  category_name: string
-  category_icon: string | null
-  limit_amount: number
-  spent: number
-  remaining: number
-  percentage: number
-}
-
-interface BudgetStatus {
-  budget_id: string
-  name: string | null
-  days_remaining: number
-  total_limit: number | null
-  total_spent: number
-  total_remaining: number
-  percentage: number
-  items: BudgetItemStatus[]
-}
 
 interface Props {
   item: Budget | null
@@ -86,7 +56,7 @@ export function BudgetDetailDialog({
 
   useEffect(() => {
     if (item && open) {
-      apiFetch<BudgetStatus>(`/api/v1/budgets/${item.id}/status`)
+      budgetsApi.status(item.id)
         .then(setStatus)
         .catch(() => {})
     }
@@ -117,10 +87,7 @@ export function BudgetDetailDialog({
       updates.alert_enabled = editAlertEnabled
 
       if (Object.keys(updates).length > 0) {
-        await apiFetch(`/api/v1/budgets/${item.id}`, {
-          method: "PUT",
-          body: JSON.stringify(updates),
-        })
+        await budgetsApi.update(item.id, updates)
       }
       setIsEditing(false)
       onUpdated?.()
@@ -140,7 +107,7 @@ export function BudgetDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await apiFetch(`/api/v1/budgets/${item.id}`, { method: "DELETE" })
+            await budgetsApi.remove(item.id)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Orçamento eliminado com sucesso")

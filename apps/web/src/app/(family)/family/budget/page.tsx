@@ -14,26 +14,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { budgetsApi, type Budget } from "@/lib/api/budgets"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface Budget {
-  id: string
-  name: string | null
-  method: string
-  period_start: string
-  period_end: string
-  is_active: boolean
-  items?: BudgetItem[]
-}
-
-interface BudgetItem {
-  id: string
-  category_name: string
-  limit_amount: number
-  spent_amount: number
-}
 
 export default function FamilyBudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -42,8 +25,9 @@ export default function FamilyBudgetPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchBudgets = () => {
-    apiFetch<{ items: Budget[] }>("/api/v1/budgets/", { headers: getContextHeader() })
-      .then((d) => setBudgets(d.items ?? []))
+    const ctx = { headers: getContextHeader() }
+    budgetsApi.list(undefined, ctx)
+      .then((items) => setBudgets(items ?? []))
       .catch(() => {})
   }
 
@@ -55,11 +39,8 @@ export default function FamilyBudgetPage() {
     if (!budgetName.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/budgets/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({ name: budgetName.trim() }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await budgetsApi.create({ name: budgetName.trim() }, ctx)
       setCreateOpen(false)
       setBudgetName("")
       fetchBudgets()

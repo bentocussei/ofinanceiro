@@ -4,34 +4,28 @@ import { Bell, Check, CheckCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
+import { notificationsApi, type Notification } from "@/lib/api/notifications"
 import { getContextHeader } from "@/lib/context"
-
-interface Notification {
-  id: string
-  type: string
-  title: string
-  body: string
-  is_read: boolean
-  created_at: string
-}
 
 export default function FamilyNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
   const fetchNotifications = () => {
-    apiFetch<Notification[]>("/api/v1/notifications/", { headers: getContextHeader() }).then(setNotifications).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    notificationsApi.list(ctx).then(setNotifications).catch(() => {})
   }
 
   useEffect(() => { fetchNotifications() }, [])
 
   const markRead = async (id: string) => {
-    await apiFetch(`/api/v1/notifications/${id}/read`, { method: "PUT", headers: getContextHeader() }).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    await notificationsApi.markRead(id, ctx).catch(() => {})
     fetchNotifications()
   }
 
   const markAllRead = async () => {
-    await apiFetch("/api/v1/notifications/read-all", { method: "PUT", headers: getContextHeader() }).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    await notificationsApi.markAllRead(ctx).catch(() => {})
     fetchNotifications()
   }
 

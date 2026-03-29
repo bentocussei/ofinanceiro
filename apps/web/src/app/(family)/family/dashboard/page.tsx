@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
-import { apiFetch } from "@/lib/api"
+import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
+import { transactionsApi, type Transaction } from "@/lib/api/transactions"
+import { goalsApi, type Goal } from "@/lib/api/goals"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 import {
@@ -15,71 +17,39 @@ import {
   Wallet,
 } from "lucide-react"
 
-interface FamilySummary {
-  total_assets: number
-  total_liabilities: number
-  net_worth: number
-  accounts: {
-    id: string
-    name: string
-    type: string
-    balance: number
-  }[]
-}
-
-interface Transaction {
-  id: string
-  amount: number
-  type: string
-  description: string | null
-  transaction_date: string
-  category_name?: string | null
-  member_name?: string | null
-}
-
-interface GoalItem {
-  id: string
-  name: string
-  target_amount: number
-  current_amount: number
-}
-
 interface MemberSpending {
   member_name: string
   amount: number
 }
 
 export default function FamilyDashboardPage() {
-  const [summary, setSummary] = useState<FamilySummary | null>(null)
+  const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [goals, setGoals] = useState<GoalItem[]>([])
+  const [goals, setGoals] = useState<Goal[]>([])
   const [monthIncome, setMonthIncome] = useState(0)
   const [monthExpense, setMonthExpense] = useState(0)
   const [memberSpending, setMemberSpending] = useState<MemberSpending[]>([])
 
   useEffect(() => {
-    const headers = getContextHeader()
+    const ctx = { headers: getContextHeader() }
 
-    apiFetch<FamilySummary>("/api/v1/accounts/summary", { headers })
+    accountsApi.summary(ctx)
       .then(setSummary)
       .catch(() => {})
 
-    apiFetch<{ items: Transaction[] }>("/api/v1/transactions/?limit=5", { headers })
+    transactionsApi.list("limit=5", ctx)
       .then((d) => setTransactions(d.items))
       .catch(() => {})
 
-    apiFetch<{ items: GoalItem[] }>("/api/v1/goals/?limit=3&status=active", { headers })
-      .then((d) => setGoals(d.items ?? []))
+    goalsApi.list("limit=3&status=active", ctx)
+      .then((items) => setGoals(items ?? []))
       .catch(() => {})
 
-    apiFetch<{ income: number; expense: number; by_member: MemberSpending[] }>(
-      "/api/v1/transactions/monthly-summary",
-      { headers }
-    )
+    transactionsApi.monthlySummary(undefined, ctx)
       .then((d) => {
         setMonthIncome(d.income ?? 0)
         setMonthExpense(d.expense ?? 0)
-        setMemberSpending((d.by_member ?? []).slice(0, 5))
+        setMemberSpending(((d.by_member ?? []) as MemberSpending[]).slice(0, 5))
       })
       .catch(() => {})
   }, [])

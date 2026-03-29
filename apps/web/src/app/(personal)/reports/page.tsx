@@ -14,24 +14,8 @@ import {
 } from "recharts"
 
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
+import { reportsApi, type CategorySpending, type ReportSummary } from "@/lib/api/reports"
 import { formatKz } from "@/lib/format"
-
-interface CategorySpending {
-  category_id: string
-  category_name: string
-  category_icon: string | null
-  total: number
-  count: number
-}
-
-interface Summary {
-  income: number
-  expense: number
-  balance: number
-  income_count: number
-  expense_count: number
-}
 
 const COLORS = [
   "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6",
@@ -43,7 +27,7 @@ type Period = "month" | "3months" | "year"
 
 export default function ReportsPage() {
   const [spending, setSpending] = useState<CategorySpending[]>([])
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<ReportSummary | null>(null)
   const [period, setPeriod] = useState<Period>("month")
 
   const fetchData = (p: Period) => {
@@ -56,13 +40,11 @@ export default function ReportsPage() {
     const dateFrom = from.toISOString().split("T")[0]
     const dateTo = now.toISOString().split("T")[0]
 
-    apiFetch<CategorySpending[]>(
-      `/api/v1/reports/spending-by-category?date_from=${dateFrom}&date_to=${dateTo}`
-    ).then(setSpending).catch(() => {})
+    reportsApi.spendingByCategory(dateFrom, dateTo)
+      .then(setSpending).catch(() => {})
 
-    apiFetch<Summary>(
-      `/api/v1/reports/income-expense-summary?date_from=${dateFrom}&date_to=${dateTo}`
-    ).then(setSummary).catch(() => {})
+    reportsApi.incomeExpenseSummary(dateFrom, dateTo)
+      .then(setSummary).catch(() => {})
   }
 
   useEffect(() => {

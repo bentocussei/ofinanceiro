@@ -13,18 +13,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { incomeSourcesApi, type IncomeSource } from "@/lib/api/income-sources"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface IncomeSource {
-  id: string
-  name: string
-  type: string
-  expected_amount: number
-  frequency: string
-  day_of_month: number | null
-}
 
 const TYPE_OPTIONS = [
   { value: "SALARY", label: "Salário" },
@@ -60,7 +51,8 @@ export default function FamilyIncomeSourcesPage() {
   const [dayOfMonth, setDayOfMonth] = useState("")
 
   const fetchItems = () => {
-    apiFetch<IncomeSource[]>("/api/v1/income-sources/", { headers: getContextHeader() }).then(setItems).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    incomeSourcesApi.list(ctx).then(setItems).catch(() => {})
   }
 
   useEffect(() => { fetchItems() }, [])
@@ -77,17 +69,14 @@ export default function FamilyIncomeSourcesPage() {
     if (!name.trim()) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/income-sources/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await incomeSourcesApi.create({
+        name: name.trim(),
+        type,
+        expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+      }, ctx)
       setCreateOpen(false)
       resetForm()
       fetchItems()
@@ -104,7 +93,8 @@ export default function FamilyIncomeSourcesPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/income-sources/${id}`, { method: "DELETE", headers: getContextHeader() }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await incomeSourcesApi.remove(id, ctx).catch(() => {})
           fetchItems()
           toast.success("Rendimento eliminado com sucesso")
         },

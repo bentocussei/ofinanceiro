@@ -14,36 +14,21 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiFetch } from "@/lib/api"
+import { expenseSplitsApi, type ExpenseSplit } from "@/lib/api/expense-splits"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 
-interface Split {
-  id: string
-  description: string
-  total_amount: number
-  status: string
-  created_at: string
-  items: SplitItem[]
-}
-
-interface SplitItem {
-  id: string
-  member_name: string
-  amount: number
-  is_settled: boolean
-}
-
 export default function FamilyExpenseSplitsPage() {
-  const [splits, setSplits] = useState<Split[]>([])
+  const [splits, setSplits] = useState<ExpenseSplit[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchSplits = () => {
-    apiFetch<{ items: Split[] }>("/api/v1/expense-splits/", { headers: getContextHeader() })
-      .then((d) => setSplits(d.items ?? []))
+    const ctx = { headers: getContextHeader() }
+    expenseSplitsApi.list(ctx)
+      .then((items) => setSplits(items ?? []))
       .catch(() => {})
   }
 
@@ -55,14 +40,11 @@ export default function FamilyExpenseSplitsPage() {
     if (!description.trim() || !amount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/expense-splits/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          description: description.trim(),
-          total_amount: Math.round(parseFloat(amount) * 100),
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await expenseSplitsApi.create({
+        description: description.trim(),
+        total_amount: Math.round(parseFloat(amount) * 100),
+      }, ctx)
       setCreateOpen(false)
       setDescription("")
       setAmount("")
@@ -76,10 +58,8 @@ export default function FamilyExpenseSplitsPage() {
 
   const handleSettle = async (splitId: string, itemId: string) => {
     try {
-      await apiFetch(`/api/v1/expense-splits/${splitId}/parts/${itemId}/settle`, {
-        method: "PUT",
-        headers: getContextHeader(),
-      })
+      const ctx = { headers: getContextHeader() }
+      await expenseSplitsApi.settlePart(splitId, itemId, ctx)
       fetchSplits()
       toast.success("Parcela marcada como paga")
     } catch {
@@ -145,7 +125,7 @@ export default function FamilyExpenseSplitsPage() {
                   <span className="text-sm font-mono font-semibold">{formatKz(split.total_amount)}</span>
                 </div>
                 <div className="space-y-2">
-                  {split.items.map((item) => (
+                  {(split.items ?? split.parts).map((item) => (
                     <div key={item.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{item.member_name}</span>

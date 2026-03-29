@@ -11,13 +11,8 @@ import {
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { apiFetch } from "@/lib/api"
+import { familiesApi, type Family } from "@/lib/api/families"
 import { getContext, setContext } from "@/lib/context"
-
-interface Family {
-  id: string
-  name: string
-}
 
 export function ContextSwitcher({ collapsed = false }: { collapsed?: boolean }) {
   const router = useRouter()
@@ -31,7 +26,7 @@ export function ContextSwitcher({ collapsed = false }: { collapsed?: boolean }) 
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    apiFetch<Family | null>("/api/v1/families/me")
+    familiesApi.me()
       .then((f) => setFamily(f))
       .catch(() => {})
   }, [])
@@ -53,10 +48,7 @@ export function ContextSwitcher({ collapsed = false }: { collapsed?: boolean }) 
     if (!createName.trim()) return
     setLoading(true)
     try {
-      const newFamily = await apiFetch<Family>("/api/v1/families/", {
-        method: "POST",
-        body: JSON.stringify({ name: createName.trim() }),
-      })
+      const newFamily = await familiesApi.create(createName.trim())
       setFamily(newFamily)
       setCreateName("")
       setShowCreate(false)
@@ -73,11 +65,8 @@ export function ContextSwitcher({ collapsed = false }: { collapsed?: boolean }) 
     if (!joinCode.trim()) return
     setLoading(true)
     try {
-      await apiFetch("/api/v1/families/join", {
-        method: "POST",
-        body: JSON.stringify({ invite_code: joinCode.trim() }),
-      })
-      const f = await apiFetch<Family | null>("/api/v1/families/me")
+      await familiesApi.join(joinCode.trim())
+      const f = await familiesApi.me()
       if (f) {
         setFamily(f)
         toast.success(`Juntou-se à família "${f.name}"`)

@@ -6,49 +6,23 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
-
-interface DailyTip {
-  id: string
-  title: string
-  content: string
-  category: string
-}
-
-interface Challenge {
-  id: string
-  title: string
-  description: string
-  xp_reward: number
-  status: "pending" | "in_progress" | "completed"
-  difficulty: string
-}
-
-interface UserProfile {
-  level: number
-  total_xp: number
-  xp_to_next_level: number
-  current_streak: number
-  longest_streak: number
-  badges: { id: string; name: string; description: string; earned_at: string }[]
-}
-
-interface EducationData {
-  daily_tip: DailyTip | null
-  challenges: Challenge[]
-  profile: UserProfile | null
-}
+import {
+  educationApi,
+  type DailyTip,
+  type Challenge,
+  type EducationProfile,
+} from "@/lib/api/education"
 
 export default function EducationPage() {
   const [tip, setTip] = useState<DailyTip | null>(null)
   const [challenges, setChallenges] = useState<Challenge[]>([])
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<EducationProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      const data = await apiFetch<EducationData>("/api/v1/education/")
+      const data = await educationApi.overview()
       setTip(data.daily_tip)
       setChallenges(data.challenges)
       setProfile(data.profile)
@@ -60,7 +34,7 @@ export default function EducationPage() {
 
   const handleCompleteChallenge = async (challengeId: string) => {
     try {
-      await apiFetch(`/api/v1/education/challenges/${challengeId}/complete`, { method: "POST" })
+      await educationApi.completeChallenge(challengeId)
       fetchData()
     } catch { /* handled by apiFetch */ }
   }

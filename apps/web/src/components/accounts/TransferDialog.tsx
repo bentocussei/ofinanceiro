@@ -20,14 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
-
-interface Account {
-  id: string
-  name: string
-  icon: string | null
-  balance: number
-}
+import { accountsApi, type Account } from "@/lib/api/accounts"
 
 interface Props {
   onTransferred?: () => void
@@ -45,7 +38,7 @@ export function TransferDialog({ onTransferred }: Props) {
 
   useEffect(() => {
     if (open) {
-      apiFetch<Account[]>("/api/v1/accounts/").then(setAccounts).catch(() => {})
+      accountsApi.list().then(setAccounts).catch(() => {})
     }
   }, [open])
 
@@ -75,14 +68,11 @@ export function TransferDialog({ onTransferred }: Props) {
     setError("")
     try {
       const amountCentavos = Math.round(parseFloat(amount) * 100)
-      await apiFetch("/api/v1/accounts/transfer", {
-        method: "POST",
-        body: JSON.stringify({
-          from_account_id: fromId,
-          to_account_id: toId,
-          amount: amountCentavos,
-          description: description.trim() || undefined,
-        }),
+      await accountsApi.transfer({
+        from_account_id: fromId,
+        to_account_id: toId,
+        amount: amountCentavos,
+        description: description.trim() || undefined,
       })
       reset()
       setOpen(false)

@@ -20,13 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { IconDisplay } from "@/components/common/IconDisplay"
-import { apiFetch } from "@/lib/api"
-
-interface Account {
-  id: string
-  name: string
-  icon: string | null
-}
+import { accountsApi, type Account } from "@/lib/api/accounts"
+import { categoriesApi, type Category } from "@/lib/api/categories"
+import { transactionsApi } from "@/lib/api/transactions"
 
 interface Props {
   onCreated?: () => void
@@ -35,7 +31,7 @@ interface Props {
 export function CreateTransactionDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [categories, setCategories] = useState<{ id: string; name: string; icon: string | null; type: string; parent_id: string | null }[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [type, setType] = useState<"expense" | "income">("expense")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
@@ -48,8 +44,8 @@ export function CreateTransactionDialog({ onCreated }: Props) {
 
   useEffect(() => {
     if (open) {
-      apiFetch<{ id: string; name: string; icon: string | null; type: string; parent_id: string | null }[]>("/api/v1/categories/").then(setCategories).catch(() => {})
-      apiFetch<Account[]>("/api/v1/accounts/").then((data) => {
+      categoriesApi.list().then(setCategories).catch(() => {})
+      accountsApi.list().then((data) => {
         setAccounts(data)
         if (data.length > 0 && !accountId) setAccountId(data[0].id)
       }).catch(() => {})
@@ -89,17 +85,14 @@ export function CreateTransactionDialog({ onCreated }: Props) {
     setError("")
     try {
       const amountCentavos = Math.round(parseFloat(amount) * 100)
-      await apiFetch("/api/v1/transactions/", {
-        method: "POST",
-        body: JSON.stringify({
-          account_id: accountId,
-          amount: amountCentavos,
-          type,
-          description: description.trim() || undefined,
-          category_id: categoryId || undefined,
-          is_private: isPrivate || undefined,
-          needs_review: needsReview || undefined,
-        }),
+      await transactionsApi.create({
+        account_id: accountId,
+        amount: amountCentavos,
+        type,
+        description: description.trim() || undefined,
+        category_id: categoryId || undefined,
+        is_private: isPrivate || undefined,
+        needs_review: needsReview || undefined,
       })
       reset()
       setOpen(false)

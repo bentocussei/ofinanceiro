@@ -13,22 +13,10 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { apiFetch } from "@/lib/api"
+import { recurringRulesApi, type RecurringRule } from "@/lib/api/recurring-rules"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
-
-interface RecurringRule {
-  id: string
-  account_id: string | null
-  type: string
-  amount: number
-  description: string
-  frequency: string
-  day_of_month: number | null
-  start_date: string | null
-  next_due: string | null
-  account_name?: string | null
-}
 
 interface AccountOption {
   id: string
@@ -62,12 +50,14 @@ export default function FamilyRecurringRulesPage() {
   const [startDate, setStartDate] = useState("")
 
   const fetchItems = () => {
-    apiFetch<RecurringRule[]>("/api/v1/recurring-rules/", { headers: getContextHeader() }).then(setItems).catch(() => {})
+    const ctx = { headers: getContextHeader() }
+    recurringRulesApi.list(ctx).then(setItems).catch(() => {})
   }
 
   useEffect(() => {
     fetchItems()
-    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary", { headers: getContextHeader() })
+    const ctx = { headers: getContextHeader() }
+    accountsApi.summary(ctx)
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
   }, [])
@@ -86,19 +76,16 @@ export default function FamilyRecurringRulesPage() {
     if (!description.trim() || !amount) return
     setIsSubmitting(true)
     try {
-      await apiFetch("/api/v1/recurring-rules/", {
-        method: "POST",
-        headers: getContextHeader(),
-        body: JSON.stringify({
-          account_id: accountId || undefined,
-          type,
-          amount: Math.round(parseFloat(amount) * 100),
-          description: description.trim(),
-          frequency,
-          day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
-          start_date: startDate || undefined,
-        }),
-      })
+      const ctx = { headers: getContextHeader() }
+      await recurringRulesApi.create({
+        account_id: accountId || undefined,
+        type,
+        amount: Math.round(parseFloat(amount) * 100),
+        description: description.trim(),
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        start_date: startDate || undefined,
+      }, ctx)
       setCreateOpen(false)
       resetForm()
       fetchItems()
@@ -115,7 +102,8 @@ export default function FamilyRecurringRulesPage() {
       action: {
         label: "Eliminar",
         onClick: async () => {
-          await apiFetch(`/api/v1/recurring-rules/${id}`, { method: "DELETE", headers: getContextHeader() }).catch(() => {})
+          const ctx = { headers: getContextHeader() }
+          await recurringRulesApi.remove(id, ctx).catch(() => {})
           fetchItems()
           toast.success("Regra recorrente eliminada com sucesso")
         },
