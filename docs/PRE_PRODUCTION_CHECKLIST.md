@@ -41,9 +41,9 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | 4 | **GoalsAgent** | ✅ Completo (3 tools) | Phase 3 | — |
 | 5 | **FamilyAgent** | ✅ Completo (3 tools) | Phase 4 | — |
 | 6 | **ReportAgent** | ✅ Completo (2 tools) | Phase 6 | — |
-| 7 | **DebtAgent** | ❌ Não implementado | Phase 7 | Resposta genérica via BaseAgent |
-| 8 | **InvestmentAgent** | ❌ Não implementado | Phase 7 | Resposta genérica via BaseAgent |
-| 9 | **NewsAgent** | ❌ Não implementado | Phase 7 | Resposta genérica via BaseAgent |
+| 7 | **DebtAgent** | ✅ Completo (2 tools) | Phase 7 | — |
+| 8 | **InvestmentAgent** | ✅ Completo (2 tools) | Phase 7 | — |
+| 9 | **NewsAgent** | ✅ Completo (2 tools) | Phase 7 | — |
 
 **Nota:** O orchestrator (`apps/api/app/ai/orchestrator.py`) faz fallback gracioso — agents não implementados recebem uma resposta genérica. Isto é by design, não um bug. Cada agent será implementado na sua fase respectiva.
 
