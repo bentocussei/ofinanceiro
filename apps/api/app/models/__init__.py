@@ -18,6 +18,7 @@ from app.models.enums import (
     SubscriptionPlan,
     TransactionType,
 )
+from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.goal import Goal, GoalContribution
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -44,6 +45,9 @@ __all__ = [
     "Budget",
     "BudgetItem",
     "Category",
+    "Family",
+    "FamilyInvite",
+    "FamilyMember",
     "Goal",
     "GoalContribution",
     "Transaction",

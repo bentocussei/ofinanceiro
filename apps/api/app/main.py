@@ -11,6 +11,7 @@ from app.routers import (
     budgets,
     categories,
     chat,
+    families,
     goals,
     health,
     reports,
@@ -50,5 +51,6 @@ app.include_router(transactions.router)
 app.include_router(categories.router)
 app.include_router(budgets.router)
 app.include_router(goals.router)
+app.include_router(families.router)
 app.include_router(reports.router)
 app.include_router(chat.router)
