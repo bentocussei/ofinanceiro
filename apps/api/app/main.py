@@ -12,11 +12,15 @@ from app.routers import (
     budgets,
     categories,
     chat,
+    debts,
+    education,
     families,
     goals,
     health,
     imports,
     insights,
+    investments,
+    news,
     notifications,
     ocr,
     onboarding,
@@ -70,3 +74,7 @@ app.include_router(insights.router)
 app.include_router(notifications.router)
 app.include_router(billing.router)
 app.include_router(onboarding.router)
+app.include_router(debts.router)
+app.include_router(investments.router)
+app.include_router(news.router)
+app.include_router(education.router)

@@ -8,8 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.agents.advisor_agent import AdvisorAgent
 from app.ai.agents.base import AgentContext, AgentResponse
 from app.ai.agents.budget_agent import BudgetAgent
+from app.ai.agents.debt_agent import DebtAgent
 from app.ai.agents.family_agent import FamilyAgent
 from app.ai.agents.goals_agent import GoalsAgent
+from app.ai.agents.investment_agent import InvestmentAgent
+from app.ai.agents.news_agent import NewsAgent
 from app.ai.agents.report_agent import ReportAgent
 from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
@@ -37,10 +40,9 @@ class ChatOrchestrator:
             "GOALS": GoalsAgent(router),
             "FAMILY": FamilyAgent(router),
             "REPORT": ReportAgent(router),
-            # Remaining agents added in their respective phases:
-            # "DEBT": DebtAgent(router),         — Phase 7
-            # "INVESTMENT": InvestmentAgent(router), — Phase 7
-            # "NEWS": NewsAgent(router),         — Phase 7
+            "DEBT": DebtAgent(router),
+            "INVESTMENT": InvestmentAgent(router),
+            "NEWS": NewsAgent(router),
         }
 
     async def process_message(

@@ -2,6 +2,7 @@ from app.models.account import Account
 from app.models.base import Base, BaseModel
 from app.models.budget import Budget, BudgetItem
 from app.models.category import Category
+from app.models.debt import Debt, DebtPayment
 from app.models.enums import (
     AccountType,
     BudgetMethod,
@@ -20,6 +21,7 @@ from app.models.enums import (
 )
 from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.goal import Goal, GoalContribution
+from app.models.investment import Investment
 from app.models.notification import Notification
 from app.models.subscription import Subscription
 from app.models.transaction import Transaction
@@ -47,11 +49,14 @@ __all__ = [
     "Budget",
     "BudgetItem",
     "Category",
+    "Debt",
+    "DebtPayment",
     "Family",
     "FamilyInvite",
     "FamilyMember",
     "Goal",
     "GoalContribution",
+    "Investment",
     "Notification",
     "Subscription",
     "Transaction",
