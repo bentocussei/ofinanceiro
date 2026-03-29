@@ -6,11 +6,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/auth/PhoneInput"
 import { register } from "@/lib/auth"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [phone, setPhone] = useState("")
+  const [countryCode, setCountryCode] = useState("AO")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -40,7 +42,7 @@ export default function RegisterPage() {
       return
     }
 
-    const success = await register(phone, name, password)
+    const success = await register(phone, name, password, countryCode)
     if (success) {
       router.push("/dashboard")
     } else {
@@ -67,14 +69,14 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Número de telefone</Label>
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="+244 9XX XXX XXX"
+          <Label>Número de telefone</Label>
+          <PhoneInput
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="tel"
+            onChange={(fullPhone, code) => {
+              setPhone(fullPhone)
+              setCountryCode(code)
+            }}
+            defaultCountry="AO"
           />
         </div>
 

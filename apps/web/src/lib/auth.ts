@@ -58,12 +58,13 @@ export async function login(phone: string, password: string): Promise<boolean> {
 export async function register(
   phone: string,
   name: string,
-  password: string
+  password: string,
+  country?: string,
 ): Promise<boolean> {
   try {
     const data = await apiFetch<AuthResponse>("/api/v1/auth/register", {
       method: "POST",
-      body: JSON.stringify({ phone, name, password }),
+      body: JSON.stringify({ phone, name, password, country: country || "AO" }),
     })
     storeTokens(data.access_token, data.refresh_token)
     return true

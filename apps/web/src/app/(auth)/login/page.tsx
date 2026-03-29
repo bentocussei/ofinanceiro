@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/auth/PhoneInput"
 import { login } from "@/lib/auth"
 
 export default function LoginPage() {
@@ -41,14 +42,11 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="phone">Número de telefone</Label>
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="+244 9XX XXX XXX"
+          <Label>Número de telefone</Label>
+          <PhoneInput
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="tel"
+            onChange={(fullPhone) => setPhone(fullPhone)}
+            defaultCountry="AO"
           />
         </div>
 

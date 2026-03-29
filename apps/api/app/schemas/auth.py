@@ -2,10 +2,11 @@ from pydantic import BaseModel, Field
 
 
 class RegisterRequest(BaseModel):
-    phone: str = Field(max_length=20, description="Número de telefone (+244...)")
+    phone: str = Field(max_length=20, description="Número de telefone com código do país (+244...)")
     name: str = Field(max_length=100)
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=6, max_length=128)
     email: str | None = Field(None, max_length=255)
+    country: str = Field("AO", max_length=2, description="Código ISO do país (AO, MZ, CV, etc.)")
 
 
 class LoginRequest(BaseModel):

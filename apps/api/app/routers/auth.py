@@ -33,18 +33,31 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     """Registar novo utilizador com telefone e password."""
-    existing = await get_user_by_phone(db, data.phone)
+    existing = await get_user_by_phone(db, phone)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "PHONE_EXISTS", "message": "Este número já está registado"},
         )
 
+    # Normalizar telefone: garantir que tem código do país
+    phone = data.phone.strip().replace(" ", "")
+    if not phone.startswith("+"):
+        # Se não tem +, é número local — adicionar dial code baseado no país
+        country_dials = {
+            "AO": "+244", "MZ": "+258", "CV": "+238", "GW": "+245",
+            "ST": "+239", "TL": "+670", "PT": "+351", "BR": "+55",
+            "ZA": "+27", "NA": "+264", "CD": "+243", "CG": "+242",
+        }
+        dial = country_dials.get(data.country.upper(), "+244")
+        phone = dial + phone
+
     user = User(
-        phone=data.phone,
+        phone=phone,
         name=data.name,
         email=data.email,
         password_hash=hash_password(data.password),
+        country=data.country.upper(),
     )
     db.add(user)
     await db.flush()
@@ -58,7 +71,8 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     """Login com telefone e password."""
-    user = await get_user_by_phone(db, data.phone)
+    phone = data.phone.strip().replace(" ", "")
+    user = await get_user_by_phone(db, phone)
     if not user or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
