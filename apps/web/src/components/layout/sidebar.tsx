@@ -240,31 +240,21 @@ export function Sidebar() {
               </Link>
             </div>
 
-            {/* Theme toggle */}
+            {/* Theme toggle — single cycle button */}
             <div className="border-t border-border p-1">
-              <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Tema
-              </p>
-              <div className="flex gap-1 px-2 pb-1">
-                {themeOptions.map((opt) => {
-                  const Icon = opt.icon
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTheme(opt.value)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                        theme === opt.value
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                      title={opt.label}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {opt.label}
-                    </button>
-                  )
-                })}
-              </div>
+              <button
+                onClick={() => {
+                  const order = ["system", "light", "dark"] as const
+                  const idx = order.indexOf(theme as typeof order[number])
+                  setTheme(order[(idx + 1) % 3])
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
+                {theme === "light" && <Sun className="h-4 w-4" />}
+                {theme === "dark" && <Moon className="h-4 w-4" />}
+                {theme === "system" && <Monitor className="h-4 w-4" />}
+                Tema: {theme === "light" ? "Claro" : theme === "dark" ? "Escuro" : "Sistema"}
+              </button>
             </div>
 
             {/* Logout */}

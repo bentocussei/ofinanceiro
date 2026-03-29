@@ -136,7 +136,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="space-y-8">
       <h1 className="text-2xl font-bold tracking-tight">Configuracoes</h1>
 
       {/* Profile */}
