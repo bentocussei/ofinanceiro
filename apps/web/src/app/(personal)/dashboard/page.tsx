@@ -74,12 +74,29 @@ export default function DashboardPage() {
       .then((d) => setTransactions(d.items as Transaction[]))
       .catch(() => {})
 
-    budgetsApi.list("limit=4")
-      .then((d) => setBudgets(((d as unknown as { items: BudgetItem[] }).items) ?? []))
+    budgetsApi.list()
+      .then(async (budgetList) => {
+        // Fetch status for each active budget to get spent amounts per category
+        const items: BudgetItem[] = []
+        for (const b of (budgetList ?? []).slice(0, 2)) {
+          try {
+            const st = await budgetsApi.status(b.id)
+            for (const item of (st.items ?? []).slice(0, 4)) {
+              items.push({
+                id: item.category_id,
+                category_name: item.category_name,
+                limit_amount: item.limit_amount,
+                spent_amount: item.spent,
+              })
+            }
+          } catch { /* skip */ }
+        }
+        setBudgets(items)
+      })
       .catch(() => {})
 
-    goalsApi.list("limit=3&status=active")
-      .then((d) => setGoals(((d as unknown as { items: GoalItem[] }).items) ?? []))
+    goalsApi.list("status=active")
+      .then((d) => setGoals((d ?? []).slice(0, 3) as GoalItem[]))
       .catch(() => {})
 
     transactionsApi.monthlySummary()

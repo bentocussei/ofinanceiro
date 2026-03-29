@@ -4,11 +4,14 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.models.category import Category
 from app.models.enums import TransactionType
+from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.transaction import (
     TransactionCreate,
@@ -55,6 +58,74 @@ async def list_transactions(
         "items": [TransactionResponse.model_validate(t) for t in transactions],
         "cursor": next_cursor,
         "has_more": next_cursor is not None,
+    }
+
+
+@router.get("/monthly-summary")
+async def monthly_summary(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Resumo do mês corrente: receitas, despesas e gastos por categoria."""
+    first_day = date.today().replace(day=1)
+    today = date.today()
+
+    # Income vs Expense totals
+    type_stmt = (
+        select(
+            Transaction.type,
+            func.sum(Transaction.amount).label("total"),
+        )
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.transaction_date >= first_day,
+            Transaction.transaction_date <= today,
+        )
+        .group_by(Transaction.type)
+    )
+    type_result = await db.execute(type_stmt)
+    totals = {"income": 0, "expense": 0}
+    for row in type_result.all():
+        if row.type in totals:
+            totals[row.type] = row.total
+
+    # Spending by category (expenses only)
+    cat_stmt = (
+        select(
+            Category.name,
+            func.sum(Transaction.amount).label("total"),
+            func.count(Transaction.id).label("count"),
+        )
+        .join(Category, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= first_day,
+            Transaction.transaction_date <= today,
+        )
+        .group_by(Category.name)
+        .order_by(func.sum(Transaction.amount).desc())
+        .limit(10)
+    )
+    cat_result = await db.execute(cat_stmt)
+    categories = cat_result.all()
+
+    total_expense = totals["expense"] or 1  # avoid division by zero
+    by_category = [
+        {
+            "category": row.name,
+            "amount": row.total,
+            "count": row.count,
+            "percentage": round((row.total / total_expense) * 100, 1),
+        }
+        for row in categories
+    ]
+
+    return {
+        "income": totals["income"],
+        "expense": totals["expense"],
+        "balance": totals["income"] - totals["expense"],
+        "by_category": by_category,
     }
 
 
