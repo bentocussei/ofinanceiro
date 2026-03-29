@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import { formatKz } from '../../lib/format'
 import { useBudgetsStore } from '../../stores/budgets'
 import { Category, useCategoriesStore } from '../../stores/categories'
@@ -154,7 +155,7 @@ export default function CreateBudgetScreen() {
                   <Ionicons name="close-circle" size={20} color="#ef4444" />
                 </Pressable>
                 <Text style={[styles.itemName, isDark && styles.textLight]}>
-                  {item.icon || '📦'} {item.name}
+                  <IconDisplay name={item.name} size={14} color={isDark ? '#fff' : '#000'} /> {item.name}
                 </Text>
                 <TextInput
                   style={[styles.itemInput, isDark && styles.inputDark]}
@@ -178,7 +179,7 @@ export default function CreateBudgetScreen() {
                     style={[styles.catChip, isDark && styles.catChipDark]}
                     onPress={() => addCategory(cat)}
                   >
-                    <Text style={styles.catIcon}>{cat.icon || '📦'}</Text>
+                    <IconDisplay name={cat.name} size={14} color={isDark ? '#999' : '#666'} />
                     <Text style={[styles.catLabel, isDark && styles.textMuted]}>{cat.name}</Text>
                   </Pressable>
                 ))}

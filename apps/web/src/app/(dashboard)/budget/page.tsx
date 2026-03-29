@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -141,7 +142,7 @@ export default function BudgetPage() {
 
       {budgets.length === 0 ? (
         <div className="text-center py-16">
-          <span className="text-5xl opacity-30">📊</span>
+          <IconDisplay name="financeiro" className="h-12 w-12 opacity-30" />
           <p className="text-muted-foreground mt-3">Nenhum orçamento criado</p>
           <p className="text-sm text-muted-foreground mt-1">
             Crie um orçamento para controlar os seus gastos
@@ -186,7 +187,7 @@ export default function BudgetPage() {
                         {status.items.map((item) => (
                           <div key={item.category_id}>
                             <div className="flex justify-between text-sm mb-1">
-                              <span>{item.category_icon || "📦"} {item.category_name}</span>
+                              <span className="flex items-center gap-1"><IconDisplay name={item.category_name} className="h-4 w-4 inline" /> {item.category_name}</span>
                               <span className="font-mono text-xs text-muted-foreground">
                                 {formatKz(item.spent)} / {formatKz(item.limit_amount)}
                               </span>

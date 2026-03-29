@@ -16,6 +16,7 @@ import {
 import { apiFetch } from '../../lib/api'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import CreateAccountSheet from '../../components/accounts/CreateAccountSheet'
 import TransferSheet from '../../components/accounts/TransferSheet'
 import FAB from '../../components/common/FAB'
@@ -32,15 +33,6 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   loan: 'Empréstimo',
 }
 
-const ACCOUNT_TYPE_ICONS: Record<string, string> = {
-  bank: '🏦',
-  digital_wallet: '📱',
-  cash: '💵',
-  savings: '🏦',
-  investment: '📈',
-  credit_card: '💳',
-  loan: '📋',
-}
 
 export default function AccountsScreen() {
   const colorScheme = useColorScheme()
@@ -84,7 +76,7 @@ export default function AccountsScreen() {
       style={[styles.accountRow, isDark && styles.rowDark]}
       onLongPress={() => handleAccountAction(item)}
     >
-      <Text style={styles.accountIcon}>{item.icon || ACCOUNT_TYPE_ICONS[item.type] || '💰'}</Text>
+      <View style={styles.accountIcon}><IconDisplay name={item.type} size={24} color={isDark ? '#fff' : '#000'} /></View>
       <View style={styles.accountInfo}>
         <Text style={[styles.accountName, isDark && styles.textLight]}>{item.name}</Text>
         <Text style={[styles.accountType, isDark && styles.textMuted]}>
@@ -189,7 +181,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0',
   },
   rowDark: { backgroundColor: '#1a1a1a', borderBottomColor: '#333' },
-  accountIcon: { fontSize: 24, marginRight: 12 },
+  accountIcon: { marginRight: 12 },
   accountInfo: { flex: 1 },
   accountName: { fontSize: 15, fontWeight: '500', color: '#000' },
   accountType: { fontSize: 12, color: '#999', marginTop: 2 },

@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
 
@@ -129,7 +130,7 @@ export default function ReportsScreen() {
                   <View style={styles.categoryInfo}>
                     <View style={[styles.colorDot, { backgroundColor: COLORS[i % COLORS.length] }]} />
                     <Text style={[styles.categoryName, isDark && styles.textLight]}>
-                      {cat.category_icon || '📦'} {cat.category_name}
+                      <IconDisplay name={cat.category_name} size={14} color={isDark ? '#fff' : '#000'} /> {cat.category_name}
                     </Text>
                   </View>
                   <View style={styles.categoryRight}>

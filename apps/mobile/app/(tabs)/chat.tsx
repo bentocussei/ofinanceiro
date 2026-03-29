@@ -17,9 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ChatMessage, useChatStore } from '../../stores/chat'
 
 const QUICK_ACTIONS = [
-  { label: 'Quanto tenho?', icon: '💰' },
-  { label: 'Últimas transacções', icon: '📋' },
-  { label: 'Gastos deste mês', icon: '📊' },
+  { label: 'Quanto tenho?', iconName: 'cash-outline' as const },
+  { label: 'Últimas transacções', iconName: 'document-text-outline' as const },
+  { label: 'Gastos deste mês', iconName: 'bar-chart-outline' as const },
 ]
 
 export default function ChatScreen() {
@@ -98,7 +98,7 @@ export default function ChatScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>🤖</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={48} color={isDark ? '#666' : '#ccc'} />
               <Text style={[styles.emptyTitle, isDark && styles.textLight]}>
                 Olá! Sou o teu assistente financeiro.
               </Text>
@@ -114,7 +114,7 @@ export default function ChatScreen() {
                     style={[styles.quickAction, isDark && styles.quickActionDark]}
                     onPress={() => handleQuickAction(action.label)}
                   >
-                    <Text style={styles.quickActionIcon}>{action.icon}</Text>
+                    <Ionicons name={action.iconName} size={18} color={isDark ? '#999' : '#666'} />
                     <Text style={[styles.quickActionText, isDark && styles.textMuted]}>
                       {action.label}
                     </Text>

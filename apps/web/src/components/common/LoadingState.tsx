@@ -1,3 +1,6 @@
+import React from "react"
+import { AlertTriangle } from "lucide-react"
+
 export function LoadingSkeleton({ lines = 3 }: { lines?: number }) {
   return (
     <div className="space-y-3 animate-pulse">
@@ -17,10 +20,10 @@ export function CardSkeleton() {
   )
 }
 
-export function EmptyState({ icon, message }: { icon: string; message: string }) {
+export function EmptyState({ icon, message }: { icon: React.ReactNode; message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <span className="text-5xl opacity-30">{icon}</span>
+      <div className="opacity-30">{icon}</div>
       <p className="text-muted-foreground text-center">{message}</p>
     </div>
   )
@@ -35,7 +38,7 @@ export function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <span className="text-5xl opacity-30">⚠️</span>
+      <div className="opacity-30"><AlertTriangle className="h-12 w-12" /></div>
       <p className="text-muted-foreground text-center">{message}</p>
       {onRetry && (
         <button

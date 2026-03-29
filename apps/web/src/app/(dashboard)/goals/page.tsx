@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -28,10 +29,6 @@ interface GoalProgress {
   contributions: { amount: number; note: string | null; contributed_at: string }[]
 }
 
-const ICONS: Record<string, string> = {
-  savings: "💰", emergency_fund: "🛡️", purchase: "🛒", travel: "✈️",
-  event: "🎉", education: "📚", custom: "🎯",
-}
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -122,7 +119,7 @@ export default function GoalsPage() {
 
       {goals.length === 0 ? (
         <div className="text-center py-16">
-          <span className="text-5xl opacity-30">🎯</span>
+          <IconDisplay name="custom" className="h-12 w-12 opacity-30" />
           <p className="text-muted-foreground mt-3">Nenhuma meta criada</p>
         </div>
       ) : (
@@ -139,10 +136,10 @@ export default function GoalsPage() {
                 onClick={() => setSelectedGoal(isSelected ? null : goal.id)}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl">{ICONS[goal.type] || "🎯"}</span>
+                  <IconDisplay name={goal.type} className="h-6 w-6" />
                   <div className="flex-1">
                     <h3 className="font-semibold">{goal.name}</h3>
-                    {isComplete && <span className="text-xs text-green-500">✅ Concluída</span>}
+                    {isComplete && <span className="text-xs text-green-500 flex items-center gap-1"><IconDisplay name="savings_goal" className="h-3 w-3 text-green-500" /> Concluída</span>}
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); handleDelete(goal.id) }} className="text-red-500 hover:text-red-600 text-xs">Eliminar</button>
                 </div>

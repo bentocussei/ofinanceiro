@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -112,7 +113,7 @@ export function AccountDetailDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {account.icon || "💰"} {account.name}
+            <span className="flex items-center gap-2"><IconDisplay name={account.type} className="h-5 w-5" /> {account.name}</span>
           </DialogTitle>
         </DialogHeader>
 

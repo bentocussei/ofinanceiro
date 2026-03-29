@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "recharts"
 
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -202,7 +203,7 @@ export default function ReportsPage() {
                       style={{ backgroundColor: COLORS[i % COLORS.length] }}
                     />
                     <span className="text-sm flex-1">
-                      {cat.category_icon || "📦"} {cat.category_name}
+                      <IconDisplay name={cat.category_name} className="h-4 w-4 inline" /> {cat.category_name}
                     </span>
                     <span className="text-xs text-muted-foreground">{pct}%</span>
                     <span className="text-sm font-mono font-semibold">
@@ -216,7 +217,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <span className="text-5xl opacity-30">📊</span>
+          <IconDisplay name="financeiro" className="h-12 w-12 opacity-30" />
           <p className="text-muted-foreground mt-3">
             Registe transacções para ver os relatórios
           </p>

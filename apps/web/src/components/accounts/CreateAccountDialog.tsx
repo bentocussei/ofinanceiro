@@ -19,16 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 
 const ACCOUNT_TYPES = [
-  { value: "bank", label: "Banco", icon: "🏦" },
-  { value: "digital_wallet", label: "Carteira digital", icon: "📱" },
-  { value: "cash", label: "Dinheiro", icon: "💵" },
-  { value: "savings", label: "Poupança", icon: "🏦" },
-  { value: "investment", label: "Investimento", icon: "📈" },
-  { value: "credit_card", label: "Cartão de crédito", icon: "💳" },
-  { value: "loan", label: "Empréstimo", icon: "📋" },
+  { value: "bank", label: "Banco" },
+  { value: "digital_wallet", label: "Carteira digital" },
+  { value: "cash", label: "Dinheiro" },
+  { value: "savings", label: "Poupança" },
+  { value: "investment", label: "Investimento" },
+  { value: "credit_card", label: "Cartão de crédito" },
+  { value: "loan", label: "Empréstimo" },
 ]
 
 interface Props {
@@ -71,7 +72,7 @@ export function CreateAccountDialog({ onCreated }: Props) {
           type,
           institution: institution.trim() || undefined,
           balance: balanceCentavos,
-          icon: ACCOUNT_TYPES.find((t) => t.value === type)?.icon,
+          icon: type,
         }),
       })
       reset()
@@ -114,7 +115,7 @@ export function CreateAccountDialog({ onCreated }: Props) {
               <SelectContent>
                 {ACCOUNT_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
-                    {t.icon} {t.label}
+                    <span className="flex items-center gap-2"><IconDisplay name={t.value} className="h-4 w-4" /> {t.label}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
