@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { GoalDetailDialog } from "@/components/goals/GoalDetailDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -33,6 +34,8 @@ interface GoalProgress {
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
+  const [detailGoal, setDetailGoal] = useState<Goal | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [progress, setProgress] = useState<GoalProgress | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [createName, setCreateName] = useState("")
@@ -141,7 +144,7 @@ export default function GoalsPage() {
                     <h3 className="font-semibold">{goal.name}</h3>
                     {isComplete && <span className="text-xs text-green-500 flex items-center gap-1"><IconDisplay name="savings_goal" className="h-3 w-3 text-green-500" /> Concluída</span>}
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(goal.id) }} className="text-red-500 hover:text-red-600 text-xs">Eliminar</button>
+                  <button onClick={(e) => { e.stopPropagation(); setDetailGoal(goal); setDetailOpen(true) }} className="text-blue-500 hover:text-blue-600 text-xs">Detalhe</button>
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-2">
@@ -202,6 +205,14 @@ export default function GoalsPage() {
           })}
         </div>
       )}
+
+      <GoalDetailDialog
+        item={detailGoal}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={() => { fetchGoals(); if (detailGoal && selectedGoal === detailGoal.id) { apiFetch<GoalProgress>(`/api/v1/goals/${detailGoal.id}/progress`).then(setProgress).catch(() => {}) } }}
+        onDeleted={() => { setSelectedGoal(null); fetchGoals() }}
+      />
     </div>
   )
 }

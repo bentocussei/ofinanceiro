@@ -5,6 +5,7 @@ import {
   TrendingUp, Plus, Trash2, Calculator, LineChart,
 } from "lucide-react"
 
+import { InvestmentDetailDialog } from "@/components/investments/InvestmentDetailDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -35,6 +36,8 @@ interface PerformanceSummary {
 export default function InvestmentsPage() {
   const [investments, setInvestments] = useState<Investment[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [detailInvestment, setDetailInvestment] = useState<Investment | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [simOpen, setSimOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -190,7 +193,7 @@ export default function InvestmentsPage() {
               : 0
 
             return (
-              <div key={inv.id} className="flex items-center justify-between px-4 py-3.5">
+              <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailInvestment(inv); setDetailOpen(true) }}>
                 <div className="flex items-center gap-3">
                   <TrendingUp className={`h-5 w-5 ${returnVal >= 0 ? "text-green-500" : "text-red-500"}`} />
                   <div>
@@ -212,7 +215,7 @@ export default function InvestmentsPage() {
                       {returnVal >= 0 ? "+" : ""}{formatKz(returnVal)} ({returnPct}%)
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:text-red-600">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(inv.id) }} className="text-red-500 hover:text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -221,6 +224,14 @@ export default function InvestmentsPage() {
           })}
         </div>
       )}
+
+      <InvestmentDetailDialog
+        item={detailInvestment}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={fetchInvestments}
+        onDeleted={fetchInvestments}
+      />
 
       {/* Compound interest simulator dialog */}
       <Dialog open={simOpen} onOpenChange={setSimOpen}>

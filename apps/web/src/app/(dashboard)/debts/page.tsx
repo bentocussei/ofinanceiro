@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import {
-  CreditCard, Plus, Trash2, Calculator, Banknote,
+  CreditCard, Plus, Trash2, Calculator, Banknote, Eye,
 } from "lucide-react"
 
+import { DebtDetailDialog } from "@/components/debts/DebtDetailDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -36,6 +37,8 @@ interface DebtSimulation {
 export default function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [detailDebt, setDetailDebt] = useState<Debt | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [payOpen, setPayOpen] = useState<string | null>(null)
   const [simOpen, setSimOpen] = useState(false)
 
@@ -189,7 +192,7 @@ export default function DebtsPage() {
               : 0
 
             return (
-              <div key={debt.id} className="px-4 py-3.5">
+              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -208,11 +211,11 @@ export default function DebtsPage() {
                       <p className="text-xs text-muted-foreground font-mono">Min: {formatKz(debt.minimum_payment)}</p>
                     </div>
                     {debt.status !== "paid_off" && (
-                      <Button variant="outline" size="sm" onClick={() => { setPayOpen(debt.id); setPayAmount("") }}>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setPayOpen(debt.id); setPayAmount("") }}>
                         <Banknote className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(debt.id)} className="text-red-500 hover:text-red-600">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(debt.id) }} className="text-red-500 hover:text-red-600">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -240,6 +243,14 @@ export default function DebtsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DebtDetailDialog
+        item={detailDebt}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={fetchDebts}
+        onDeleted={fetchDebts}
+      />
 
       {/* Simulation dialog */}
       <Dialog open={simOpen} onOpenChange={setSimOpen}>
