@@ -1,6 +1,6 @@
 "use client"
 
-import { Lock, LogOut, Mail, Phone, User, Wallet } from "lucide-react"
+import { Lock, Mail, Phone, Trash2, User, Wallet } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -225,21 +225,23 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Account actions */}
+          {/* Danger zone */}
           <section className="rounded-xl bg-card shadow-sm p-5">
-            <h2 className="text-[15px] font-semibold mb-4">Conta</h2>
-            <div className="space-y-3">
-              <button
-                onClick={logout}
-                className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-sm text-destructive hover:bg-destructive/5 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <div className="text-left">
-                  <p className="font-medium">Terminar sessão</p>
-                  <p className="text-xs text-muted-foreground">Sair da sua conta neste dispositivo</p>
-                </div>
-              </button>
-            </div>
+            <h2 className="text-[15px] font-semibold mb-4">Zona de risco</h2>
+            <button
+              onClick={() => {
+                if (confirm("Tem a certeza que deseja eliminar a sua conta? Esta acção é irreversível. Os seus dados serão eliminados após 30 dias.")) {
+                  alert("Funcionalidade disponível em breve. Contacte o suporte para eliminar a conta.")
+                }
+              }}
+              className="flex w-full items-center gap-3 rounded-lg border border-destructive/30 p-3 text-sm text-destructive hover:bg-destructive/5 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              <div className="text-left">
+                <p className="font-medium">Eliminar conta</p>
+                <p className="text-xs text-muted-foreground">Remover permanentemente a conta e todos os dados (30 dias de graça)</p>
+              </div>
+            </button>
           </section>
         </div>
       </div>
