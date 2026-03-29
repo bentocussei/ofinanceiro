@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.enums import CurrencyCode, GoalStatus
+from app.models.enums import CurrencyCode, GoalStatus, RecurrenceFrequency
 
 
 class Goal(BaseModel):
@@ -42,7 +42,11 @@ class Goal(BaseModel):
         default=CurrencyCode.AOA,
     )
     target_date: Mapped[date | None] = mapped_column(Date)
-    monthly_contribution: Mapped[int | None] = mapped_column(Integer)
+    contribution_amount: Mapped[int | None] = mapped_column(Integer)
+    contribution_frequency: Mapped["RecurrenceFrequency"] = mapped_column(
+        ENUM(RecurrenceFrequency, name="recurrence_frequency", create_type=True),
+        default=RecurrenceFrequency.MONTHLY,
+    )
     auto_contribute: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_contribute_day: Mapped[int | None] = mapped_column(SmallInteger)
     status: Mapped[GoalStatus] = mapped_column(

@@ -37,7 +37,8 @@ async def create_goal(db: AsyncSession, user_id: uuid.UUID, data: GoalCreate) ->
         color=data.color,
         target_amount=data.target_amount,
         target_date=data.target_date,
-        monthly_contribution=data.monthly_contribution,
+        contribution_amount=data.contribution_amount,
+        contribution_frequency=data.contribution_frequency,
     )
     db.add(goal)
     await db.flush()
@@ -87,8 +88,8 @@ async def get_progress(db: AsyncSession, goal: Goal) -> GoalProgressResponse:
 
     months_remaining = None
     projected_completion = None
-    if goal.monthly_contribution and goal.monthly_contribution > 0 and remaining > 0:
-        months_remaining = -(-remaining // goal.monthly_contribution)  # Ceiling division
+    if goal.contribution_amount and goal.contribution_amount > 0 and remaining > 0:
+        months_remaining = -(-remaining // goal.contribution_amount)  # Ceiling division
         projected_completion = date.today() + timedelta(days=months_remaining * 30)
 
     # Get contribution history
@@ -109,7 +110,7 @@ async def get_progress(db: AsyncSession, goal: Goal) -> GoalProgressResponse:
         current_amount=goal.current_amount,
         remaining=remaining,
         percentage=percentage,
-        monthly_contribution=goal.monthly_contribution,
+        contribution_amount=goal.contribution_amount,
         months_remaining=months_remaining,
         projected_completion=projected_completion,
         contributions=[GoalContributionResponse.model_validate(c) for c in contributions],

@@ -4,13 +4,13 @@ import secrets
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, SmallInteger, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.enums import FamilyRelation, FamilyRole
+from app.models.enums import CurrencyCode, FamilyRelation, FamilyRole
 
 
 def generate_invite_code() -> str:
@@ -24,6 +24,11 @@ class Family(BaseModel):
     admin_user_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id")
     )
+    currency: Mapped[CurrencyCode] = mapped_column(
+        ENUM(CurrencyCode, name="currency_code", create_type=True),
+        default=CurrencyCode.AOA,
+    )
+    month_start_day: Mapped[int] = mapped_column(SmallInteger, default=1)
     contribution_model: Mapped[dict] = mapped_column(JSONB, default=lambda: {"type": "equal"})
     invite_code: Mapped[str | None] = mapped_column(String(20), unique=True, default=generate_invite_code)
 

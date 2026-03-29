@@ -25,6 +25,9 @@ class DebtCreate(BaseModel):
     monthly_payment: int | None = None
     payment_day: int | None = Field(None, ge=1, le=31)
     notes: str | None = None
+    nature: str | None = None
+    creditor_type: str | None = None
+    creditor_name: str | None = None
 
 
 class PaymentCreate(BaseModel):
@@ -47,6 +50,7 @@ async def list_debts(
             "original_amount": d.original_amount, "current_balance": d.current_balance,
             "interest_rate": d.interest_rate, "monthly_payment": d.monthly_payment,
             "payment_day": d.payment_day, "is_active": d.is_active,
+            "nature": d.nature, "creditor_type": d.creditor_type,
             "payments_count": len(d.payments),
         }
         for d in debts
@@ -59,15 +63,24 @@ async def create_debt(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    debt = Debt(
-        user_id=user.id, name=data.name, type=data.type, creditor=data.creditor,
-        original_amount=data.original_amount, current_balance=data.current_balance,
-        interest_rate=data.interest_rate, monthly_payment=data.monthly_payment,
-        payment_day=data.payment_day, notes=data.notes,
-    )
+    kwargs = {
+        "user_id": user.id, "name": data.name, "type": data.type,
+        "creditor": data.creditor or data.creditor_name,
+        "original_amount": data.original_amount, "current_balance": data.current_balance,
+        "interest_rate": data.interest_rate, "monthly_payment": data.monthly_payment,
+        "payment_day": data.payment_day, "notes": data.notes,
+    }
+    if data.nature:
+        kwargs["nature"] = data.nature
+    if data.creditor_type:
+        kwargs["creditor_type"] = data.creditor_type
+    debt = Debt(**kwargs)
     db.add(debt)
     await db.flush()
-    return {"id": str(debt.id), "name": debt.name}
+    return {
+        "id": str(debt.id), "name": debt.name,
+        "nature": debt.nature, "creditor_type": debt.creditor_type,
+    }
 
 
 @router.post("/{debt_id}/payment", status_code=201)

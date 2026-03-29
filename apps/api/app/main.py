@@ -15,6 +15,7 @@ from app.routers import (
     chat,
     debts,
     education,
+    expense_splits,
     families,
     finance_settings,
     goals,
@@ -31,6 +32,7 @@ from app.routers import (
     reports,
     score,
     snapshots,
+    tags,
     transactions,
     users,
     voice,
@@ -90,3 +92,5 @@ app.include_router(bills.router)
 app.include_router(recurring_rules.router)
 app.include_router(finance_settings.router)
 app.include_router(snapshots.router)
+app.include_router(expense_splits.router)
+app.include_router(tags.router)

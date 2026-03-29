@@ -170,6 +170,12 @@ class CreditorType(enum.StrEnum):
     OTHER = "other"
 
 
+class SplitType(enum.StrEnum):
+    EQUAL = "equal"
+    PERCENTAGE = "percentage"
+    FIXED = "fixed"
+
+
 class FamilyRelation(enum.StrEnum):
     SPOUSE = "spouse"
     FATHER = "father"

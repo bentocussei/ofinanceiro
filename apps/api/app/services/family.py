@@ -32,7 +32,12 @@ async def get_family(db: AsyncSession, family_id: uuid.UUID) -> Family | None:
 
 
 async def create_family(db: AsyncSession, user_id: uuid.UUID, data: FamilyCreate) -> Family:
-    family = Family(name=data.name, admin_user_id=user_id)
+    family = Family(
+        name=data.name,
+        admin_user_id=user_id,
+        currency=data.currency,
+        month_start_day=data.month_start_day,
+    )
     db.add(family)
     await db.flush()
 
