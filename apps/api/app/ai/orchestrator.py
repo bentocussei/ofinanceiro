@@ -4,6 +4,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.agents.advisor_agent import AdvisorAgent
 from app.ai.agents.base import AgentContext, AgentResponse
 from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
@@ -21,10 +22,15 @@ class ChatOrchestrator:
         # Register specialist agents
         self.agents = {
             "TRACKER": TrackerAgent(router),
-            # Future agents will be added here:
-            # "ADVISOR": AdvisorAgent(router),
-            # "BUDGET": BudgetAgent(router),
-            # "GOALS": GoalsAgent(router),
+            "ADVISOR": AdvisorAgent(router),
+            # Remaining agents added in their respective phases:
+            # "BUDGET": BudgetAgent(router),     — Phase 3
+            # "GOALS": GoalsAgent(router),       — Phase 3
+            # "FAMILY": FamilyAgent(router),     — Phase 4
+            # "REPORT": ReportAgent(router),     — Phase 6
+            # "DEBT": DebtAgent(router),         — Phase 7
+            # "INVESTMENT": InvestmentAgent(router), — Phase 7
+            # "NEWS": NewsAgent(router),         — Phase 7
         }
 
     async def process_message(

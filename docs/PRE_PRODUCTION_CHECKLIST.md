@@ -33,7 +33,7 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | # | Agent | Estado Actual | Fase Planeada | Fallback |
 |---|-------|--------------|---------------|----------|
 | 1 | **TrackerAgent** | ✅ Completo (4 tools) | Phase 2 Sem 12 | — |
-| 2 | **AdvisorAgent** | ❌ Não implementado | Phase 2 Sem 14 | Resposta genérica via BaseAgent |
+| 2 | **AdvisorAgent** | ✅ Completo (4 tools) | Phase 2 Sem 14 | — |
 | 3 | **BudgetAgent** | ❌ Não implementado | Phase 3 | Resposta genérica via BaseAgent |
 | 4 | **GoalsAgent** | ❌ Não implementado | Phase 3 | Resposta genérica via BaseAgent |
 | 5 | **FamilyAgent** | ❌ Não implementado | Phase 4 | Resposta genérica via BaseAgent |
