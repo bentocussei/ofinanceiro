@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -82,20 +83,31 @@ export function TransactionDetailDialog({
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!transaction) return
-    if (!confirm("Tem a certeza que deseja eliminar esta transacção?")) return
-
-    setIsDeleting(true)
-    try {
-      await apiFetch(`/api/v1/transactions/${transaction.id}`, { method: "DELETE" })
-      onOpenChange(false)
-      onDeleted?.()
-    } catch (err: any) {
-      setError(err.message || "Erro ao eliminar")
-    } finally {
-      setIsDeleting(false)
-    }
+    toast("Eliminar esta transacção?", {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          setIsDeleting(true)
+          try {
+            await apiFetch(`/api/v1/transactions/${transaction.id}`, { method: "DELETE" })
+            onOpenChange(false)
+            onDeleted?.()
+            toast.success("Transacção eliminada com sucesso")
+          } catch (err: any) {
+            setError(err.message || "Erro ao eliminar")
+          } finally {
+            setIsDeleting(false)
+          }
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   if (!transaction) return null

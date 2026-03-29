@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import {
   CreditCard, Plus, Trash2, Calculator, Banknote, Eye,
 } from "lucide-react"
@@ -108,10 +109,22 @@ export default function DebtsPage() {
     } catch { /* handled by apiFetch */ }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Eliminar esta divida?")) return
-    await apiFetch(`/api/v1/debts/${id}`, { method: "DELETE" }).catch(() => {})
-    fetchDebts()
+  const handleDelete = (id: string) => {
+    toast("Eliminar esta divida?", {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          await apiFetch(`/api/v1/debts/${id}`, { method: "DELETE" }).catch(() => {})
+          fetchDebts()
+          toast.success("Divida eliminada com sucesso")
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   const handleSimulate = async () => {

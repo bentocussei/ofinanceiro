@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import { GoalDetailDialog } from "@/components/goals/GoalDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -95,11 +96,23 @@ export default function GoalsPage() {
     } catch {}
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Eliminar esta meta?")) return
-    await apiFetch(`/api/v1/goals/${id}`, { method: "DELETE" }).catch(() => {})
-    setSelectedGoal(null)
-    fetchGoals()
+  const handleDelete = (id: string) => {
+    toast("Eliminar esta meta?", {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          await apiFetch(`/api/v1/goals/${id}`, { method: "DELETE" }).catch(() => {})
+          setSelectedGoal(null)
+          fetchGoals()
+          toast.success("Meta eliminada com sucesso")
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { Lock, Mail, Phone, Trash2, User, Wallet } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,12 +18,9 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("")
   const [currency, setCurrency] = useState("AOA")
   const [salaryDay, setSalaryDay] = useState("25")
-  const [profileMsg, setProfileMsg] = useState("")
-
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [passwordMsg, setPasswordMsg] = useState("")
 
   useEffect(() => {
     async function load() {
@@ -40,7 +38,6 @@ export default function SettingsPage() {
   }, [])
 
   async function handleProfileSave() {
-    setProfileMsg("")
     try {
       await apiFetch("/api/v1/users/me", {
         method: "PUT",
@@ -51,20 +48,19 @@ export default function SettingsPage() {
           salary_day: parseInt(salaryDay, 10),
         }),
       })
-      setProfileMsg("Alterações guardadas com sucesso.")
+      toast.success("Alterações guardadas com sucesso.")
     } catch {
-      setProfileMsg("Erro ao guardar. Tente novamente.")
+      toast.error("Erro ao guardar. Tente novamente.")
     }
   }
 
   async function handlePasswordChange() {
-    setPasswordMsg("")
     if (newPassword !== confirmPassword) {
-      setPasswordMsg("As senhas não coincidem.")
+      toast.error("As senhas não coincidem.")
       return
     }
     if (newPassword.length < 8) {
-      setPasswordMsg("A senha deve ter pelo menos 8 caracteres.")
+      toast.error("A senha deve ter pelo menos 8 caracteres.")
       return
     }
     try {
@@ -75,12 +71,12 @@ export default function SettingsPage() {
           new_password: newPassword,
         }),
       })
-      setPasswordMsg("Senha alterada com sucesso.")
+      toast.success("Senha alterada com sucesso.")
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } catch {
-      setPasswordMsg("Senha actual incorrecta.")
+      toast.error("Senha actual incorrecta.")
     }
   }
 
@@ -152,12 +148,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {profileMsg && (
-                <p className={`text-xs ${profileMsg.includes("sucesso") ? "text-green-600" : "text-destructive"}`}>
-                  {profileMsg}
-                </p>
-              )}
-
               <Button size="sm" onClick={handleProfileSave}>Guardar alterações</Button>
             </div>
           </section>
@@ -215,12 +205,6 @@ export default function SettingsPage() {
                 <Input id="s-confirm-pw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
 
-              {passwordMsg && (
-                <p className={`text-xs ${passwordMsg.includes("sucesso") ? "text-green-600" : "text-destructive"}`}>
-                  {passwordMsg}
-                </p>
-              )}
-
               <Button size="sm" onClick={handlePasswordChange}>Alterar senha</Button>
             </div>
           </section>
@@ -230,9 +214,19 @@ export default function SettingsPage() {
             <h2 className="text-[15px] font-semibold mb-4">Zona de risco</h2>
             <button
               onClick={() => {
-                if (confirm("Tem a certeza que deseja eliminar a sua conta? Esta acção é irreversível. Os seus dados serão eliminados após 30 dias.")) {
-                  alert("Funcionalidade disponível em breve. Contacte o suporte para eliminar a conta.")
-                }
+                toast("Tem a certeza que deseja eliminar a sua conta?", {
+                  description: "Esta acção é irreversível. Os seus dados serão eliminados após 30 dias.",
+                  action: {
+                    label: "Eliminar",
+                    onClick: () => {
+                      toast.info("Funcionalidade disponível em breve. Contacte o suporte para eliminar a conta.")
+                    },
+                  },
+                  cancel: {
+                    label: "Cancelar",
+                    onClick: () => {},
+                  },
+                })
               }}
               className="flex w-full items-center gap-3 rounded-lg border border-destructive/30 p-3 text-sm text-destructive hover:bg-destructive/5 transition-colors"
             >

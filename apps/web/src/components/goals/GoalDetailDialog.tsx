@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Pencil, Trash2, PiggyBank, Clock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -129,20 +130,31 @@ export function GoalDetailDialog({
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!item) return
-    if (!confirm(`Tem a certeza que deseja eliminar a meta "${item.name}"?`)) return
-
-    setIsDeleting(true)
-    try {
-      await apiFetch(`/api/v1/goals/${item.id}`, { method: "DELETE" })
-      onOpenChange(false)
-      onDeleted?.()
-    } catch (err: any) {
-      setError(err.message || "Erro ao eliminar")
-    } finally {
-      setIsDeleting(false)
-    }
+    toast(`Eliminar a meta "${item.name}"?`, {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          setIsDeleting(true)
+          try {
+            await apiFetch(`/api/v1/goals/${item.id}`, { method: "DELETE" })
+            onOpenChange(false)
+            onDeleted?.()
+            toast.success("Meta eliminada com sucesso")
+          } catch (err: any) {
+            setError(err.message || "Erro ao eliminar")
+          } finally {
+            setIsDeleting(false)
+          }
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   if (!item) return null

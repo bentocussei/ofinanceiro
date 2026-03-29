@@ -2,6 +2,7 @@
 
 import { Copy, LogIn, Plus, Shield, User, Users } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -92,10 +93,22 @@ export default function FamilyPage() {
     }
   }
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm("Remover este membro da família?")) return
-    await apiFetch(`/api/v1/families/members/${memberId}`, { method: "DELETE" }).catch(() => {})
-    fetchFamily()
+  const handleRemoveMember = (memberId: string) => {
+    toast("Remover este membro da família?", {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Remover",
+        onClick: async () => {
+          await apiFetch(`/api/v1/families/members/${memberId}`, { method: "DELETE" }).catch(() => {})
+          fetchFamily()
+          toast.success("Membro removido com sucesso")
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   const handleChangeRole = async (memberId: string, currentRole: string) => {

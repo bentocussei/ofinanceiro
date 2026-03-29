@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import {
   TrendingUp, Plus, Trash2, Calculator, LineChart,
 } from "lucide-react"
@@ -92,10 +93,22 @@ export default function InvestmentsPage() {
     setIsSubmitting(false)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Eliminar este investimento?")) return
-    await apiFetch(`/api/v1/investments/${id}`, { method: "DELETE" }).catch(() => {})
-    fetchInvestments()
+  const handleDelete = (id: string) => {
+    toast("Eliminar este investimento?", {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          await apiFetch(`/api/v1/investments/${id}`, { method: "DELETE" }).catch(() => {})
+          fetchInvestments()
+          toast.success("Investimento eliminado com sucesso")
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   const handleSimulate = () => {

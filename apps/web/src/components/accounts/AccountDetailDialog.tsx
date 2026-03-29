@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -90,20 +91,31 @@ export function AccountDetailDialog({
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!account) return
-    if (!confirm(`Tem a certeza que deseja eliminar a conta "${account.name}"?`)) return
-
-    setIsDeleting(true)
-    try {
-      await apiFetch(`/api/v1/accounts/${account.id}`, { method: "DELETE" })
-      onOpenChange(false)
-      onDeleted?.()
-    } catch (err: any) {
-      setError(err.message || "Erro ao eliminar. A conta pode ter transacções associadas.")
-    } finally {
-      setIsDeleting(false)
-    }
+    toast(`Eliminar a conta "${account.name}"?`, {
+      description: "Esta acção não pode ser revertida.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          setIsDeleting(true)
+          try {
+            await apiFetch(`/api/v1/accounts/${account.id}`, { method: "DELETE" })
+            onOpenChange(false)
+            onDeleted?.()
+            toast.success("Conta eliminada com sucesso")
+          } catch (err: any) {
+            setError(err.message || "Erro ao eliminar. A conta pode ter transacções associadas.")
+          } finally {
+            setIsDeleting(false)
+          }
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
   }
 
   if (!account) return null
