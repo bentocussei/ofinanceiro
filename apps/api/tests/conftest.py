@@ -1,3 +1,5 @@
+"""Test configuration — uses separate ofinanceiro_test database to avoid polluting main DB."""
+
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -5,17 +7,20 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.base import Base
 
-engine = create_async_engine(settings.database_url, echo=False, poolclass=NullPool)
+# IMPORTANT: Use separate test database — never touch the main DB
+TEST_DB_URL = "postgresql+asyncpg://ofinanceiro:ofinanceiro@localhost:5432/ofinanceiro_test"
+
+engine = create_async_engine(TEST_DB_URL, echo=False, poolclass=NullPool)
 test_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_database():
+    """Create all tables in TEST database before tests, drop after."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
