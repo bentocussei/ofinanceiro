@@ -27,6 +27,7 @@ from app.routers import (
     reports,
     score,
     transactions,
+    users,
     voice,
 )
 
@@ -78,3 +79,4 @@ app.include_router(debts.router)
 app.include_router(investments.router)
 app.include_router(news.router)
 app.include_router(education.router)
+app.include_router(users.router)

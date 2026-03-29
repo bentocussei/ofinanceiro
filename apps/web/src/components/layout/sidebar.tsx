@@ -6,6 +6,7 @@ import {
   CreditCard,
   GraduationCap,
   Home,
+  LogOut,
   Newspaper,
   PieChart,
   Bell,
@@ -17,7 +18,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { ElementType } from "react"
+import { useEffect, useState, type ElementType } from "react"
+import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
 
 const NAV_ITEMS: { href: string; label: string; icon: ElementType }[] = [
   { href: "/", label: "Início", icon: Home },
@@ -37,6 +39,11 @@ const NAV_ITEMS: { href: string; label: string; icon: ElementType }[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [user, setUser] = useState<UserProfile | null>(null)
+
+  useEffect(() => {
+    getCurrentUser().then(setUser)
+  }, [])
 
   return (
     <aside className="hidden md:flex md:w-64 flex-col border-r border-border bg-card h-full">
@@ -44,7 +51,7 @@ export function Sidebar() {
         <h1 className="text-xl font-bold tracking-tight">O Financeiro</h1>
       </div>
 
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -64,6 +71,29 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      <div className="border-t border-border p-3">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+            {user?.name?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">
+              {user?.name || "Utilizador"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user?.phone || ""}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Terminar sessao
+        </button>
+      </div>
     </aside>
   )
 }
