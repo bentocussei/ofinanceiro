@@ -1,6 +1,8 @@
 "use client"
 
+import { Lock, LogOut, Mail, Phone, User, Wallet } from "lucide-react"
 import { useEffect, useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,24 +13,16 @@ export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Profile form
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [profileMsg, setProfileMsg] = useState("")
-
-  // Preferences
   const [currency, setCurrency] = useState("AOA")
   const [salaryDay, setSalaryDay] = useState("25")
-  const [prefMsg, setPrefMsg] = useState("")
+  const [profileMsg, setProfileMsg] = useState("")
 
-  // Password
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [passwordMsg, setPasswordMsg] = useState("")
-
-  // Theme
-  const [theme, setTheme] = useState("system")
 
   useEffect(() => {
     async function load() {
@@ -40,74 +34,37 @@ export default function SettingsPage() {
         setCurrency(u.currency || "AOA")
         setSalaryDay(String(u.salary_day || 25))
       }
-      // Load theme from localStorage
-      const savedTheme = localStorage.getItem("theme") || "system"
-      setTheme(savedTheme)
-      applyTheme(savedTheme)
       setLoading(false)
     }
     load()
   }, [])
-
-  function applyTheme(t: string) {
-    const root = document.documentElement
-    if (t === "dark") {
-      root.classList.add("dark")
-    } else if (t === "light") {
-      root.classList.remove("dark")
-    } else {
-      // system
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        root.classList.add("dark")
-      } else {
-        root.classList.remove("dark")
-      }
-    }
-  }
-
-  function handleThemeChange(t: string) {
-    setTheme(t)
-    localStorage.setItem("theme", t)
-    applyTheme(t)
-  }
 
   async function handleProfileSave() {
     setProfileMsg("")
     try {
       await apiFetch("/api/v1/users/me", {
         method: "PUT",
-        body: JSON.stringify({ name, email: email || undefined }),
-      })
-      setProfileMsg("Perfil actualizado com sucesso.")
-    } catch {
-      setProfileMsg("Erro ao actualizar o perfil.")
-    }
-  }
-
-  async function handlePrefSave() {
-    setPrefMsg("")
-    try {
-      await apiFetch("/api/v1/users/me/preferences", {
-        method: "PUT",
         body: JSON.stringify({
-          currency,
+          name,
+          email: email || undefined,
+          currency_default: currency,
           salary_day: parseInt(salaryDay, 10),
         }),
       })
-      setPrefMsg("Preferencias actualizadas.")
+      setProfileMsg("Alterações guardadas com sucesso.")
     } catch {
-      setPrefMsg("Erro ao actualizar preferencias.")
+      setProfileMsg("Erro ao guardar. Tente novamente.")
     }
   }
 
   async function handlePasswordChange() {
     setPasswordMsg("")
     if (newPassword !== confirmPassword) {
-      setPasswordMsg("As senhas nao coincidem.")
+      setPasswordMsg("As senhas não coincidem.")
       return
     }
-    if (newPassword.length < 6) {
-      setPasswordMsg("A senha deve ter pelo menos 6 caracteres.")
+    if (newPassword.length < 8) {
+      setPasswordMsg("A senha deve ter pelo menos 8 caracteres.")
       return
     }
     try {
@@ -123,7 +80,7 @@ export default function SettingsPage() {
       setNewPassword("")
       setConfirmPassword("")
     } catch {
-      setPasswordMsg("Erro ao alterar a senha. Verifique a senha actual.")
+      setPasswordMsg("Senha actual incorrecta.")
     }
   }
 
@@ -136,163 +93,156 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold tracking-tight">Configuracoes</h1>
+    <div>
+      <h1 className="text-xl font-bold tracking-tight mb-6">Configurações</h1>
 
-      {/* Profile */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Perfil</h2>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="settings-name">Nome</Label>
-            <Input
-              id="settings-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-phone">Telefone</Label>
-            <Input
-              id="settings-phone"
-              value={user?.phone || ""}
-              disabled
-              className="opacity-60"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-email">Email (opcional)</Label>
-            <Input
-              id="settings-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@exemplo.com"
-            />
-          </div>
-          {profileMsg && (
-            <p className="text-sm text-muted-foreground">{profileMsg}</p>
-          )}
-          <Button onClick={handleProfileSave}>Guardar perfil</Button>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left column — Profile & Preferences */}
+        <div className="space-y-6">
+          <section className="rounded-xl bg-card shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-semibold">Perfil</h2>
+                <p className="text-xs text-muted-foreground">Informações da sua conta</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="s-name" className="text-xs">Nome</Label>
+                <Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="s-phone" className="text-xs">Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input id="s-phone" value={user?.phone || ""} disabled className="pl-9 opacity-60" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="s-email" className="text-xs">Email (opcional)</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input id="s-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" className="pl-9" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="s-currency" className="text-xs">Moeda</Label>
+                  <select
+                    id="s-currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+                  >
+                    <option value="AOA">Kwanza (Kz)</option>
+                    <option value="USD">Dólar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="s-salary" className="text-xs">Dia do salário</Label>
+                  <Input id="s-salary" type="number" min="1" max="31" value={salaryDay} onChange={(e) => setSalaryDay(e.target.value)} />
+                </div>
+              </div>
+
+              {profileMsg && (
+                <p className={`text-xs ${profileMsg.includes("sucesso") ? "text-green-600" : "text-destructive"}`}>
+                  {profileMsg}
+                </p>
+              )}
+
+              <Button size="sm" onClick={handleProfileSave}>Guardar alterações</Button>
+            </div>
+          </section>
+
+          {/* Plan */}
+          <section className="rounded-xl bg-card shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-semibold">Plano</h2>
+                <p className="text-xs text-muted-foreground">A sua subscrição actual</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div>
+                <p className="text-sm font-semibold capitalize">{user?.plan || "Gratuito"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {user?.plan === "free" || !user?.plan
+                    ? "50 transacções/mês, 5 perguntas IA/dia"
+                    : "Transacções e IA ilimitadas"}
+                </p>
+              </div>
+              <Button variant="outline" size="sm">Alterar plano</Button>
+            </div>
+          </section>
         </div>
-      </section>
 
-      {/* Preferences */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Preferencias</h2>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="settings-currency">Moeda</Label>
-            <select
-              id="settings-currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="AOA">Kwanza (AOA)</option>
-              <option value="USD">Dolar (USD)</option>
-              <option value="EUR">Euro (EUR)</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-salary-day">Dia do salario</Label>
-            <Input
-              id="settings-salary-day"
-              type="number"
-              min="1"
-              max="31"
-              value={salaryDay}
-              onChange={(e) => setSalaryDay(e.target.value)}
-            />
-          </div>
-          {prefMsg && (
-            <p className="text-sm text-muted-foreground">{prefMsg}</p>
-          )}
-          <Button onClick={handlePrefSave}>Guardar preferencias</Button>
+        {/* Right column — Security & Account */}
+        <div className="space-y-6">
+          <section className="rounded-xl bg-card shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <Lock className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-semibold">Segurança</h2>
+                <p className="text-xs text-muted-foreground">Alterar a sua senha de acesso</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="s-current-pw" className="text-xs">Senha actual</Label>
+                <Input id="s-current-pw" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-new-pw" className="text-xs">Nova senha</Label>
+                <Input id="s-new-pw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-confirm-pw" className="text-xs">Confirmar nova senha</Label>
+                <Input id="s-confirm-pw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              </div>
+
+              {passwordMsg && (
+                <p className={`text-xs ${passwordMsg.includes("sucesso") ? "text-green-600" : "text-destructive"}`}>
+                  {passwordMsg}
+                </p>
+              )}
+
+              <Button size="sm" onClick={handlePasswordChange}>Alterar senha</Button>
+            </div>
+          </section>
+
+          {/* Account actions */}
+          <section className="rounded-xl bg-card shadow-sm p-5">
+            <h2 className="text-[15px] font-semibold mb-4">Conta</h2>
+            <div className="space-y-3">
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-sm text-destructive hover:bg-destructive/5 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <div className="text-left">
+                  <p className="font-medium">Terminar sessão</p>
+                  <p className="text-xs text-muted-foreground">Sair da sua conta neste dispositivo</p>
+                </div>
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
-
-      {/* Theme */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Tema</h2>
-        <div className="flex gap-3">
-          {(["light", "dark", "system"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => handleThemeChange(t)}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                theme === t
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:bg-accent"
-              }`}
-            >
-              {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Sistema"}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Security */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Seguranca</h2>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="settings-current-pw">Senha actual</Label>
-            <Input
-              id="settings-current-pw"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-new-pw">Nova senha</Label>
-            <Input
-              id="settings-new-pw"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-confirm-pw">Confirmar nova senha</Label>
-            <Input
-              id="settings-confirm-pw"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-          {passwordMsg && (
-            <p className="text-sm text-muted-foreground">{passwordMsg}</p>
-          )}
-          <Button onClick={handlePasswordChange}>Alterar senha</Button>
-        </div>
-      </section>
-
-      {/* Plan */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Plano</h2>
-        <p className="text-sm text-muted-foreground">
-          Plano actual:{" "}
-          <span className="font-medium text-foreground">
-            {user?.plan || "Gratuito"}
-          </span>
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Para alterar o seu plano, entre em contacto com o suporte.
-        </p>
-      </section>
-
-      {/* Danger Zone */}
-      <section className="rounded-xl border border-destructive/30 bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold text-destructive">
-          Zona perigosa
-        </h2>
-        <Button variant="destructive" onClick={logout}>
-          Terminar sessao
-        </Button>
-      </section>
+      </div>
     </div>
   )
 }
