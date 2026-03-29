@@ -119,7 +119,7 @@ export default function DebtsPage() {
   const handlePay = async (debtId: string) => {
     if (!payAmount) return
     try {
-      await apiFetch(`/api/v1/debts/${debtId}/pay`, {
+      await apiFetch(`/api/v1/debts/${debtId}/payment`, {
         method: "POST",
         body: JSON.stringify({ amount: Math.round(parseFloat(payAmount) * 100) }),
       })
@@ -150,14 +150,12 @@ export default function DebtsPage() {
   const handleSimulate = async () => {
     if (!simBalance || !simRate || !simPayment) return
     try {
-      const result = await apiFetch<DebtSimulation>("/api/v1/debts/simulate", {
-        method: "POST",
-        body: JSON.stringify({
-          balance: Math.round(parseFloat(simBalance) * 100),
-          interest_rate: parseFloat(simRate),
-          monthly_payment: Math.round(parseFloat(simPayment) * 100),
-        }),
+      const params = new URLSearchParams({
+        current_balance: String(Math.round(parseFloat(simBalance) * 100)),
+        interest_rate: String(parseFloat(simRate)),
+        monthly_payment: String(Math.round(parseFloat(simPayment) * 100)),
       })
+      const result = await apiFetch<DebtSimulation>(`/api/v1/debts/simulate?${params}`)
       setSimulation(result)
     } catch { /* handled by apiFetch */ }
   }

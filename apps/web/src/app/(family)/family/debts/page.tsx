@@ -131,7 +131,7 @@ export default function FamilyDebtsPage() {
   const handlePay = async (debtId: string) => {
     if (!payAmount) return
     try {
-      await apiFetch(`/api/v1/debts/${debtId}/pay`, {
+      await apiFetch(`/api/v1/debts/${debtId}/payment`, {
         method: "POST",
         headers: getContextHeader(),
         body: JSON.stringify({ amount: Math.round(parseFloat(payAmount) * 100) }),

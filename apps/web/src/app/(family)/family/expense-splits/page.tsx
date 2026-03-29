@@ -76,8 +76,8 @@ export default function FamilyExpenseSplitsPage() {
 
   const handleSettle = async (splitId: string, itemId: string) => {
     try {
-      await apiFetch(`/api/v1/expense-splits/${splitId}/items/${itemId}/settle`, {
-        method: "POST",
+      await apiFetch(`/api/v1/expense-splits/${splitId}/parts/${itemId}/settle`, {
+        method: "PUT",
         headers: getContextHeader(),
       })
       fetchSplits()

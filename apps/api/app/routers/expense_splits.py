@@ -102,6 +102,56 @@ async def settle_expense_split(
     return _to_dict(split)
 
 
+@router.put("/{split_id}/parts/{part_id}/settle")
+async def settle_expense_split_part(
+    split_id: uuid.UUID,
+    part_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Marcar parcela individual como paga."""
+    family_id = await _get_user_family_id(db, user.id)
+    split = await _get_or_404(db, split_id, family_id)
+
+    part = next((p for p in split.parts if p.id == part_id), None) if hasattr(split, "parts") else None
+    if not part:
+        stmt = select(ExpenseSplitPart).where(
+            ExpenseSplitPart.id == part_id, ExpenseSplitPart.split_id == split_id
+        )
+        result = await db.execute(stmt)
+        part = result.scalar_one_or_none()
+
+    if not part:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "Parcela não encontrada"},
+        )
+
+    part.is_paid = True
+    part.paid_at = datetime.now(UTC)
+    await db.flush()
+
+    # Check if all parts are now paid → auto-settle the split
+    stmt = select(ExpenseSplitPart).where(
+        ExpenseSplitPart.split_id == split_id, ExpenseSplitPart.is_paid.is_(False)
+    )
+    result = await db.execute(stmt)
+    if not result.scalars().first():
+        split.is_settled = True
+        split.settled_at = datetime.now(UTC)
+        await db.flush()
+
+    # Reload full split
+    stmt = (
+        select(ExpenseSplit)
+        .where(ExpenseSplit.id == split_id)
+        .options(selectinload(ExpenseSplit.parts))
+    )
+    result = await db.execute(stmt)
+    split = result.scalar_one()
+    return _to_dict(split)
+
+
 @router.delete("/{split_id}", status_code=204)
 async def delete_expense_split(
     split_id: uuid.UUID,

@@ -70,7 +70,6 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Mais",
     items: [
-      { href: "/family", label: "Família", icon: Users },
       { href: "/reports", label: "Relatórios", icon: BarChart3 },
       { href: "/news", label: "Notícias", icon: Newspaper },
       { href: "/education", label: "Educação", icon: GraduationCap },

@@ -144,7 +144,7 @@ export default function BillsPage() {
 
   const handleMarkPaid = async (id: string) => {
     try {
-      await apiFetch(`/api/v1/bills/${id}/mark-paid`, { method: "POST" })
+      await apiFetch(`/api/v1/bills/${id}/pay`, { method: "POST" })
       fetchItems()
       toast.success("Marcado como pago")
     } catch {
