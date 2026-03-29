@@ -21,10 +21,10 @@ class Account(BaseModel):
     )
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[AccountType] = mapped_column(
-        ENUM(AccountType, name="account_type", create_type=False)
+        ENUM(AccountType, name="account_type", create_type=True)
     )
     currency: Mapped[CurrencyCode] = mapped_column(
-        ENUM(CurrencyCode, name="currency_code", create_type=False),
+        ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
     )
     # Balance in centavos (integer) to avoid float precision issues

@@ -18,14 +18,14 @@ class User(BaseModel):
     avatar_url: Mapped[str | None] = mapped_column(Text)
 
     currency_default: Mapped[CurrencyCode] = mapped_column(
-        ENUM(CurrencyCode, name="currency_code", create_type=False),
+        ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
     )
     country: Mapped[str] = mapped_column(String(2), default="AO")
     language: Mapped[str] = mapped_column(String(5), default="pt-AO")
 
     plan: Mapped[SubscriptionPlan] = mapped_column(
-        ENUM(SubscriptionPlan, name="subscription_plan", create_type=False),
+        ENUM(SubscriptionPlan, name="subscription_plan", create_type=True),
         default=SubscriptionPlan.FREE,
     )
     plan_expires_at: Mapped[datetime | None] = mapped_column()

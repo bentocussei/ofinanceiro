@@ -22,7 +22,7 @@ class Category(BaseModel):
     icon: Mapped[str | None] = mapped_column(String(10))
     color: Mapped[str | None] = mapped_column(String(7))
     type: Mapped[CategoryType] = mapped_column(
-        ENUM(CategoryType, name="category_type", create_type=False),
+        ENUM(CategoryType, name="category_type", create_type=True),
         default=CategoryType.EXPENSE,
     )
     is_system: Mapped[bool] = mapped_column(Boolean, default=False)

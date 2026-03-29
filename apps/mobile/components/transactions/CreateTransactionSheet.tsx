@@ -11,6 +11,7 @@ import {
   useColorScheme,
 } from 'react-native'
 
+import AmountInput from '../common/AmountInput'
 import { useAccountsStore } from '../../stores/accounts'
 import { useCategoriesStore } from '../../stores/categories'
 import { useTransactionsStore } from '../../stores/transactions'
@@ -114,17 +115,8 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
           </Pressable>
         </View>
 
-        {/* Amount */}
-        <Text style={[styles.label, isDark && styles.textMuted]}>Valor (Kz)</Text>
-        <TextInput
-          style={[styles.amountInput, isDark && styles.inputDark]}
-          placeholder="0"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-          autoFocus
-        />
+        {/* Amount — custom numeric keypad */}
+        <AmountInput value={amount} onChange={setAmount} />
 
         {/* Description */}
         <Text style={[styles.label, isDark && styles.textMuted]}>Descrição</Text>
