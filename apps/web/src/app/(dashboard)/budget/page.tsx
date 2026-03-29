@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { BudgetDetailDialog } from "@/components/budgets/BudgetDetailDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -64,6 +65,8 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [statuses, setStatuses] = useState<Record<string, BudgetStatus>>({})
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null)
+  const [detailBudget, setDetailBudget] = useState<Budget | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [createName, setCreateName] = useState("")
   const [createLimit, setCreateLimit] = useState("")
@@ -164,8 +167,8 @@ export default function BudgetPage() {
                     {status && (
                       <span className="text-xs text-muted-foreground">{status.days_remaining}d</span>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(budget.id) }} className="text-red-500 hover:text-red-600 text-xs">
-                      Eliminar
+                    <button onClick={(e) => { e.stopPropagation(); setDetailBudget(budget); setDetailOpen(true) }} className="text-blue-500 hover:text-blue-600 text-xs">
+                      Detalhe
                     </button>
                   </div>
                 </div>
@@ -206,6 +209,14 @@ export default function BudgetPage() {
           })}
         </div>
       )}
+
+      <BudgetDetailDialog
+        item={detailBudget}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={fetchBudgets}
+        onDeleted={fetchBudgets}
+      />
     </div>
   )
 }
