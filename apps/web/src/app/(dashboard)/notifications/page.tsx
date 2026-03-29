@@ -53,7 +53,7 @@ export default function NotificationsPage() {
           <p className="text-muted-foreground">Sem notificações</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card divide-y">
+        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
           {notifications.map((n) => (
             <div
               key={n.id}

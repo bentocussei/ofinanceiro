@@ -174,7 +174,7 @@ export default function FamilyPage() {
 
       {/* Invite code */}
       <div
-        className="rounded-lg border bg-card p-4 flex items-center justify-between mb-6 cursor-pointer hover:border-foreground/20 transition-colors"
+        className="rounded-xl bg-card p-4 shadow-sm flex items-center justify-between mb-6 cursor-pointer transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
         onClick={handleCopyCode}
       >
         <div>
@@ -188,8 +188,8 @@ export default function FamilyPage() {
       </div>
 
       {/* Members */}
-      <h3 className="text-sm font-semibold text-muted-foreground mb-3">{activeMembers.length} membros</h3>
-      <div className="rounded-lg border bg-card divide-y">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{activeMembers.length} membros</p>
+      <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
         {activeMembers.map((member) => {
           const RoleIcon = ROLE_ICONS[member.role] || User
           return (

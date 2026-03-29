@@ -169,22 +169,22 @@ export default function InvestmentsPage() {
 
       {/* Performance summary */}
       <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total investido</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total investido</p>
           <p className="text-xl font-mono font-bold mt-1">{formatKz(summary.total_invested)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Valor actual</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valor actual</p>
           <p className="text-xl font-mono font-bold mt-1">{formatKz(summary.total_current_value)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Retorno total</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Retorno total</p>
           <p className={`text-xl font-mono font-bold mt-1 ${summary.total_return >= 0 ? "text-green-500" : "text-red-500"}`}>
             {formatKz(summary.total_return)}
           </p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Rentabilidade</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rentabilidade</p>
           <p className={`text-xl font-mono font-bold mt-1 ${summary.return_percentage >= 0 ? "text-green-500" : "text-red-500"}`}>
             {summary.return_percentage}%
           </p>
@@ -198,7 +198,7 @@ export default function InvestmentsPage() {
           <p className="text-muted-foreground mt-3">Nenhum investimento registado</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card divide-y">
+        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
           {investments.map((inv) => {
             const returnVal = inv.current_value - inv.invested_amount
             const returnPct = inv.invested_amount > 0

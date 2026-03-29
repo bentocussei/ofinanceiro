@@ -181,12 +181,12 @@ export default function DebtsPage() {
 
       {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-2 mb-8">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Saldo total em divida</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Saldo total em divida</p>
           <p className="text-xl font-mono font-bold text-red-500 mt-1">{formatKz(totalBalance)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Pagamento minimo mensal</p>
+        <div className="rounded-xl bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pagamento minimo mensal</p>
           <p className="text-xl font-mono font-bold mt-1">{formatKz(totalMinPayment)}</p>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function DebtsPage() {
           <p className="text-muted-foreground mt-3">Nenhuma divida registada</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card divide-y">
+        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
           {debts.map((debt) => {
             const pct = debt.original_amount > 0
               ? Math.round((1 - debt.remaining_balance / debt.original_amount) * 100)

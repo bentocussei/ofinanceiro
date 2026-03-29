@@ -14,9 +14,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "O Financeiro",
+  title: "O Financeiro — Gestão Financeira para Angola",
   description:
-    "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+    "Controle as suas finanças pessoais e familiares. Orçamentos, metas, contas, e muito mais.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {
-  Newspaper, ExternalLink, RefreshCw, ArrowUpDown,
+  Newspaper, ExternalLink, RefreshCw, TrendingUp, TrendingDown, Minus,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -53,89 +53,132 @@ export default function NewsPage() {
     return new Intl.NumberFormat("pt-AO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
   }
 
+  const placeholderRates: ExchangeRate[] = [
+    { currency: "USD", buy: 0, sell: 0, updated_at: "" },
+    { currency: "EUR", buy: 0, sell: 0, updated_at: "" },
+  ]
+
+  const displayRates = rates.length > 0 ? rates : placeholderRates
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">Noticias</h2>
+        <h2 className="text-[22px] font-bold tracking-tight">Noticias</h2>
         <Button variant="outline" onClick={fetchData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
           Actualizar
         </Button>
       </div>
 
-      {/* Exchange rates */}
-      <div className="grid gap-4 md:grid-cols-2 mb-8">
-        {rates.length > 0 ? rates.map((rate) => (
-          <div key={rate.currency} className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-semibold">Kz / {rate.currency}</p>
-            </div>
-            <div className="flex gap-6">
-              <div>
-                <p className="text-xs text-muted-foreground">Compra</p>
-                <p className="font-mono font-bold text-lg">{formatRate(rate.buy)} Kz</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Venda</p>
-                <p className="font-mono font-bold text-lg">{formatRate(rate.sell)} Kz</p>
-              </div>
-            </div>
-            {rate.updated_at && (
-              <p className="text-xs text-muted-foreground mt-2">Actualizado: {formatDate(rate.updated_at)}</p>
-            )}
-          </div>
-        )) : (
-          <>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-semibold">Kz / USD</p>
-              </div>
-              <p className="text-sm text-muted-foreground">A carregar...</p>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-semibold">Kz / EUR</p>
-              </div>
-              <p className="text-sm text-muted-foreground">A carregar...</p>
-            </div>
-          </>
-        )}
+      {/* Exchange Rates Terminal */}
+      <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] mb-8 overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Taxas de cambio
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/40">
+                <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Par</th>
+                <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Compra</th>
+                <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Venda</th>
+                <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Spread</th>
+                <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Actualizado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {displayRates.map((rate) => {
+                const spread = rate.sell > 0 && rate.buy > 0
+                  ? ((rate.sell - rate.buy) / rate.buy * 100).toFixed(2)
+                  : "—"
+                return (
+                  <tr key={rate.currency} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-semibold">AOA/{rate.currency}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      {rate.buy > 0 ? (
+                        <span className="font-mono font-semibold">{formatRate(rate.buy)} Kz</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      {rate.sell > 0 ? (
+                        <span className="font-mono font-semibold">{formatRate(rate.sell)} Kz</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <span className="font-mono text-xs text-muted-foreground">{spread !== "—" ? `${spread}%` : "—"}</span>
+                    </td>
+                    <td className="px-5 py-3 text-right text-xs text-muted-foreground">
+                      {rate.updated_at ? formatDate(rate.updated_at) : "A carregar..."}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* News feed */}
-      <h3 className="text-lg font-semibold mb-4">Feed de noticias financeiras</h3>
+      {/* News Feed */}
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Feed de noticias financeiras
+        </p>
+      </div>
 
       {news.length === 0 && !isLoading ? (
         <div className="text-center py-16">
-          <Newspaper className="h-12 w-12 mx-auto opacity-30" />
+          <Newspaper className="h-12 w-12 mx-auto text-muted-foreground/30" />
           <p className="text-muted-foreground mt-3">Nenhuma noticia disponivel</p>
+          <p className="text-sm text-muted-foreground mt-1">As noticias aparecerao aqui quando estiverem disponiveis</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {news.map((item) => (
-            <div key={item.id} className="rounded-lg border bg-card p-4 hover:border-foreground/20 transition-colors">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    {item.category && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">
-                        {item.category}
-                      </span>
-                    )}
-                    <span className="text-xs text-muted-foreground">{item.source}</span>
-                  </div>
-                  <h4 className="font-semibold leading-tight">{item.title}</h4>
-                  {item.summary && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.summary}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-2">{formatDate(item.published_at)}</p>
-                </div>
+            <div
+              key={item.id}
+              className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                {item.category && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wide">
+                    {item.category}
+                  </span>
+                )}
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                  {item.source}
+                </span>
+              </div>
+
+              <h4 className="font-semibold leading-snug text-[15px]">{item.title}</h4>
+
+              {item.summary && (
+                <p className="text-[13px] text-muted-foreground mt-2 line-clamp-3 leading-relaxed">
+                  {item.summary}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                <p className="text-[11px] text-muted-foreground">{formatDate(item.published_at)}</p>
                 {item.url && (
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground shrink-0">
-                    <ExternalLink className="h-4 w-4" />
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Ler mais
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
