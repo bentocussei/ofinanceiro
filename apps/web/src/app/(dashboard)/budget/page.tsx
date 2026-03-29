@@ -72,6 +72,8 @@ export default function BudgetPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [createName, setCreateName] = useState("")
   const [createLimit, setCreateLimit] = useState("")
+  const [createAlertThreshold, setCreateAlertThreshold] = useState("80")
+  const [createAlertEnabled, setCreateAlertEnabled] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchBudgets = () => {
@@ -102,11 +104,15 @@ export default function BudgetPage() {
           period_start: start.toISOString().split("T")[0],
           period_end: end.toISOString().split("T")[0],
           total_limit: createLimit ? Math.round(parseFloat(createLimit) * 100) : undefined,
+          alert_threshold: parseInt(createAlertThreshold) || 80,
+          alert_enabled: createAlertEnabled,
         }),
       })
       setCreateOpen(false)
       setCreateName("")
       setCreateLimit("")
+      setCreateAlertThreshold("80")
+      setCreateAlertEnabled(true)
       fetchBudgets()
     } catch {}
     setIsSubmitting(false)
@@ -148,6 +154,22 @@ export default function BudgetPage() {
               <div>
                 <Label>Limite total (Kz)</Label>
                 <Input type="number" placeholder="0" value={createLimit} onChange={(e) => setCreateLimit(e.target.value)} className="font-mono" />
+              </div>
+              <div>
+                <Label>Limite de alerta (%)</Label>
+                <Input type="number" min="1" max="100" placeholder="80" value={createAlertThreshold} onChange={(e) => setCreateAlertThreshold(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-3">
+                <Label className="flex-1">Alertas activados</Label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={createAlertEnabled}
+                  onClick={() => setCreateAlertEnabled(!createAlertEnabled)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${createAlertEnabled ? "bg-primary" : "bg-muted"}`}
+                >
+                  <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${createAlertEnabled ? "translate-x-4" : "translate-x-0"}`} />
+                </button>
               </div>
               <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
                 {isSubmitting ? "A criar..." : "Criar orçamento"}

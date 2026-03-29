@@ -13,8 +13,16 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
+
+interface AccountOption {
+  id: string
+  name: string
+}
 
 interface Debt {
   id: string
@@ -26,7 +34,29 @@ interface Debt {
   minimum_payment: number
   due_day: number
   status: string
+  nature?: string | null
+  creditor_type?: string | null
+  auto_pay?: boolean
+  linked_account_id?: string | null
 }
+
+const NATURE_OPTIONS = [
+  { value: "FORMAL", label: "Formal" },
+  { value: "INFORMAL", label: "Informal" },
+]
+
+const CREDITOR_TYPE_OPTIONS = [
+  { value: "BANK", label: "Banco" },
+  { value: "FINANCIAL", label: "Financeira" },
+  { value: "FAMILY", label: "Família" },
+  { value: "FRIENDS", label: "Amigos" },
+  { value: "SUPPLIER", label: "Fornecedor" },
+  { value: "EMPLOYER", label: "Empregador" },
+  { value: "OTHER", label: "Outro" },
+]
+
+const NATURE_LABELS: Record<string, string> = Object.fromEntries(NATURE_OPTIONS.map((n) => [n.value, n.label]))
+const CREDITOR_LABELS: Record<string, string> = Object.fromEntries(CREDITOR_TYPE_OPTIONS.map((c) => [c.value, c.label]))
 
 interface Props {
   item: Debt | null
@@ -55,6 +85,13 @@ export function DebtDetailDialog({
   const [isPaying, setIsPaying] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
+
+  useState(() => {
+    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => {})
+  })
 
   const handlePay = async () => {
     if (!item || !payAmount) return
@@ -155,6 +192,26 @@ export function DebtDetailDialog({
               <p className="font-mono font-bold text-sm">{formatKz(item.minimum_payment)}</p>
             </div>
           </div>
+
+          {/* Extra details */}
+          <div className="grid grid-cols-2 gap-3">
+            {item.nature && (
+              <div className="rounded-lg bg-muted p-3 text-center">
+                <p className="text-xs text-muted-foreground">Natureza</p>
+                <p className="font-semibold text-sm">{NATURE_LABELS[item.nature] || item.nature}</p>
+              </div>
+            )}
+            {item.creditor_type && (
+              <div className="rounded-lg bg-muted p-3 text-center">
+                <p className="text-xs text-muted-foreground">Tipo de credor</p>
+                <p className="font-semibold text-sm">{CREDITOR_LABELS[item.creditor_type] || item.creditor_type}</p>
+              </div>
+            )}
+          </div>
+
+          {item.auto_pay && (
+            <p className="text-sm text-muted-foreground text-center">Pagamento automático activado</p>
+          )}
 
           {item.due_day > 0 && (
             <p className="text-sm text-muted-foreground text-center">

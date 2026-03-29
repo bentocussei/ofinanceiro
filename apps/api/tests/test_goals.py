@@ -67,7 +67,7 @@ class TestGoalCRUD:
         token = await register_and_get_token(client, "+244923600004")
         create = await client.post(
             "/api/v1/goals/",
-            json={"name": "Telemóvel", "target_amount": 15000000, "monthly_contribution": 3000000},
+            json={"name": "Telemóvel", "target_amount": 15000000, "contribution_amount": 3000000},
             headers=auth_header(token),
         )
         goal_id = create.json()["id"]

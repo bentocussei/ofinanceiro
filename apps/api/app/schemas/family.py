@@ -5,15 +5,19 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import FamilyRole
+from app.models.enums import CurrencyCode, FamilyRole
 
 
 class FamilyCreate(BaseModel):
     name: str = Field("A Minha Família", max_length=100)
+    currency: CurrencyCode = CurrencyCode.AOA
+    month_start_day: int = Field(1, ge=1, le=28)
 
 
 class FamilyUpdate(BaseModel):
     name: str | None = Field(None, max_length=100)
+    currency: CurrencyCode | None = None
+    month_start_day: int | None = Field(None, ge=1, le=28)
     contribution_model: dict | None = None
 
 
@@ -35,6 +39,8 @@ class FamilyResponse(BaseModel):
     id: uuid.UUID
     name: str
     admin_user_id: uuid.UUID
+    currency: CurrencyCode
+    month_start_day: int
     contribution_model: dict
     invite_code: str | None
     members: list[FamilyMemberResponse]

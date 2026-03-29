@@ -40,6 +40,11 @@ class Account(BaseModel):
     usage_type: Mapped[AccountUsageType | None] = mapped_column(
         ENUM(AccountUsageType, name="account_usage_type", create_type=True), nullable=True
     )
+    # Dados bancários
+    iban: Mapped[str | None] = mapped_column(String(34), nullable=True)
+    nib: Mapped[str | None] = mapped_column(String(21), nullable=True)
+    swift_code: Mapped[str | None] = mapped_column(String(11), nullable=True)
+    account_holder: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)

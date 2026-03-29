@@ -28,7 +28,7 @@ GOALS_TOOLS = [
             "properties": {
                 "name": {"type": "string", "description": "Nome da meta"},
                 "target_amount": {"type": "number", "description": "Valor alvo em Kz"},
-                "monthly_contribution": {"type": "number", "description": "Contribuição mensal em Kz"},
+                "contribution_amount": {"type": "number", "description": "Contribuição em Kz"},
             },
             "required": ["name", "target_amount"],
         },
@@ -79,7 +79,7 @@ class GoalsAgent(BaseAgent):
         data = GoalCreate(
             name=args["name"],
             target_amount=int(args["target_amount"] * 100),
-            monthly_contribution=int(args["monthly_amount"] * 100) if args.get("monthly_amount") else None,
+            contribution_amount=int(args["monthly_amount"] * 100) if args.get("monthly_amount") else None,
         )
         goal = await create_goal(ctx.db, ctx.user_id, data)
         return {"success": True, "goal_id": str(goal.id), "name": goal.name}

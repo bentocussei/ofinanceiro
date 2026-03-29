@@ -38,6 +38,10 @@ async def create_account(db: AsyncSession, user_id: uuid.UUID, data: AccountCrea
         icon=data.icon,
         color=data.color,
         institution=data.institution,
+        iban=data.iban,
+        nib=data.nib,
+        swift_code=data.swift_code,
+        account_holder=data.account_holder,
         sort_order=data.sort_order,
     )
     db.add(account)

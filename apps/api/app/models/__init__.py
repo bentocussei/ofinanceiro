@@ -25,9 +25,11 @@ from app.models.enums import (
     NotificationType,
     RecurrenceFrequency,
     SnapshotPeriodType,
+    SplitType,
     SubscriptionPlan,
     TransactionType,
 )
+from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.finance_settings import FinanceSettings
 from app.models.finance_snapshot import FinanceSnapshot
@@ -37,6 +39,7 @@ from app.models.investment import Investment
 from app.models.notification import Notification
 from app.models.recurring_rule import RecurringRule
 from app.models.subscription import Subscription
+from app.models.tag import Tag
 from app.models.transaction import Transaction
 from app.models.user import User
 
@@ -63,6 +66,7 @@ __all__ = [
     "NotificationType",
     "RecurrenceFrequency",
     "SnapshotPeriodType",
+    "SplitType",
     "SubscriptionPlan",
     "TransactionType",
     "User",
@@ -73,6 +77,8 @@ __all__ = [
     "Category",
     "Debt",
     "DebtPayment",
+    "ExpenseSplit",
+    "ExpenseSplitPart",
     "Family",
     "FamilyInvite",
     "FamilyMember",
@@ -85,5 +91,6 @@ __all__ = [
     "Notification",
     "RecurringRule",
     "Subscription",
+    "Tag",
     "Transaction",
 ]

@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftRight,
+  Banknote,
   BarChart3,
   Bell,
   CreditCard,
@@ -14,6 +15,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PieChart,
+  Receipt,
+  Repeat,
   Settings,
   Sun,
   Target,
@@ -58,6 +61,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/goals", label: "Metas", icon: Target },
       { href: "/debts", label: "Dívidas", icon: CreditCard },
       { href: "/investments", label: "Investimentos", icon: TrendingUp },
+      { href: "/income-sources", label: "Rendimentos", icon: Banknote },
+      { href: "/bills", label: "Contas a Pagar", icon: Receipt },
+      { href: "/recurring-rules", label: "Recorrentes", icon: Repeat },
     ],
   },
   {

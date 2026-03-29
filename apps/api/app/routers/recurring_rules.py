@@ -1,6 +1,7 @@
 """Recurring Rules router: CRUD para regras de transacções recorrentes."""
 
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -35,6 +36,10 @@ async def create_recurring_rule(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
+    # Parse date fields from strings
+    for date_field in ("start_date", "end_date"):
+        if date_field in data and isinstance(data[date_field], str):
+            data[date_field] = date.fromisoformat(data[date_field])
     rule = RecurringRule(user_id=user.id, **data)
     db.add(rule)
     await db.flush()

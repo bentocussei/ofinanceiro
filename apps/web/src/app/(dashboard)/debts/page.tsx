@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -50,7 +53,20 @@ export default function DebtsPage() {
   const [interestRate, setInterestRate] = useState("")
   const [minimumPayment, setMinimumPayment] = useState("")
   const [dueDay, setDueDay] = useState("1")
+  const [nature, setNature] = useState("FORMAL")
+  const [creditorType, setCreditorType] = useState("BANK")
+  const [autoPay, setAutoPay] = useState(false)
+  const [linkedAccountId, setLinkedAccountId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  interface AccountOption { id: string; name: string }
+  const [debtAccounts, setDebtAccounts] = useState<AccountOption[]>([])
+
+  useEffect(() => {
+    apiFetch<{ accounts: AccountOption[] }>("/api/v1/accounts/summary")
+      .then((data) => setDebtAccounts(data.accounts || []))
+      .catch(() => {})
+  }, [])
 
   // Payment form
   const [payAmount, setPayAmount] = useState("")
@@ -83,6 +99,10 @@ export default function DebtsPage() {
           interest_rate: parseFloat(interestRate) || 0,
           minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
           due_day: parseInt(dueDay) || 1,
+          nature,
+          creditor_type: creditorType,
+          auto_pay: autoPay,
+          linked_account_id: linkedAccountId || undefined,
         }),
       })
       setCreateOpen(false)
@@ -172,6 +192,57 @@ export default function DebtsPage() {
                 <div><Label>Taxa de juros (%)</Label><Input type="number" step="0.1" placeholder="0" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} className="font-mono" /></div>
                 <div><Label>Pagamento mínimo (Kz)</Label><Input type="number" placeholder="0" value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} className="font-mono" /></div>
                 <div><Label>Dia de vencimento</Label><Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} className="font-mono" /></div>
+                <div>
+                  <Label>Natureza</Label>
+                  <Select value={nature} onValueChange={(v) => { if (v) setNature(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FORMAL">Formal</SelectItem>
+                      <SelectItem value="INFORMAL">Informal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tipo de credor</Label>
+                  <Select value={creditorType} onValueChange={(v) => { if (v) setCreditorType(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BANK">Banco</SelectItem>
+                      <SelectItem value="FINANCIAL">Financeira</SelectItem>
+                      <SelectItem value="FAMILY">Família</SelectItem>
+                      <SelectItem value="FRIENDS">Amigos</SelectItem>
+                      <SelectItem value="SUPPLIER">Fornecedor</SelectItem>
+                      <SelectItem value="EMPLOYER">Empregador</SelectItem>
+                      <SelectItem value="OTHER">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="flex-1">Pagamento automático</Label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={autoPay}
+                    onClick={() => setAutoPay(!autoPay)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${autoPay ? "bg-primary" : "bg-muted"}`}
+                  >
+                    <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${autoPay ? "translate-x-4" : "translate-x-0"}`} />
+                  </button>
+                </div>
+                {autoPay && (
+                  <div>
+                    <Label>Conta vinculada</Label>
+                    <Select value={linkedAccountId} onValueChange={(v) => setLinkedAccountId(v || "")}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Nenhuma</SelectItem>
+                        {debtAccounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>{isSubmitting ? "A criar..." : "Criar dívida"}</Button>
               </div>
             </DialogContent>

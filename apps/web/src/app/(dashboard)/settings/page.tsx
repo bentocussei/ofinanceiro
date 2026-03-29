@@ -1,6 +1,6 @@
 "use client"
 
-import { Lock, Mail, Phone, Trash2, User, Wallet } from "lucide-react"
+import { Lock, Mail, Phone, Plus, Tag, Trash2, User, Wallet, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiFetch } from "@/lib/api"
 import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
+
+interface UserTag {
+  id: string
+  name: string
+  color: string
+}
 
 export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -21,6 +27,47 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+
+  // Tags
+  const [tags, setTags] = useState<UserTag[]>([])
+  const [newTagName, setNewTagName] = useState("")
+  const [newTagColor, setNewTagColor] = useState("#3b82f6")
+
+  const TAG_COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"]
+
+  const fetchTags = () => {
+    apiFetch<UserTag[]>("/api/v1/tags/").then(setTags).catch(() => {})
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    try {
+      await apiFetch("/api/v1/tags/", {
+        method: "POST",
+        body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
+      })
+      setNewTagName("")
+      setNewTagColor("#3b82f6")
+      fetchTags()
+      toast.success("Etiqueta criada com sucesso")
+    } catch {
+      toast.error("Erro ao criar etiqueta")
+    }
+  }
+
+  const handleDeleteTag = (id: string) => {
+    toast("Eliminar esta etiqueta?", {
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          await apiFetch(`/api/v1/tags/${id}`, { method: "DELETE" }).catch(() => {})
+          fetchTags()
+          toast.success("Etiqueta eliminada")
+        },
+      },
+      cancel: { label: "Cancelar", onClick: () => {} },
+    })
+  }
 
   useEffect(() => {
     async function load() {
@@ -35,6 +82,7 @@ export default function SettingsPage() {
       setLoading(false)
     }
     load()
+    fetchTags()
   }, [])
 
   async function handleProfileSave() {
@@ -206,6 +254,68 @@ export default function SettingsPage() {
               </div>
 
               <Button size="sm" onClick={handlePasswordChange}>Alterar senha</Button>
+            </div>
+          </section>
+
+          {/* Tags */}
+          <section className="rounded-xl bg-card shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <Tag className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-semibold">Etiquetas</h2>
+                <p className="text-xs text-muted-foreground">Organize transacções com etiquetas personalizadas</p>
+              </div>
+            </div>
+
+            {/* Tag list */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {tags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                    {tag.name}
+                    <button onClick={() => handleDeleteTag(tag.id)} className="text-muted-foreground hover:text-red-500 ml-1">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {tags.length === 0 && (
+              <p className="text-sm text-muted-foreground mb-4">Nenhuma etiqueta criada</p>
+            )}
+
+            {/* Create tag */}
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs">Nome da etiqueta</Label>
+                <Input
+                  placeholder="Ex: Urgente"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Cor</Label>
+                <div className="flex gap-1">
+                  {TAG_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setNewTagColor(c)}
+                      className={`h-8 w-8 rounded-md border-2 transition-colors ${newTagColor === c ? "border-foreground" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <Button size="sm" onClick={handleCreateTag} className="shrink-0">
+                <Plus className="h-4 w-4 mr-1" /> Criar
+              </Button>
             </div>
           </section>
 
