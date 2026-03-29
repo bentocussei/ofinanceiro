@@ -24,7 +24,10 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | # | Item | Ficheiro | Razão | Quando Remover |
 |---|------|---------|-------|----------------|
 | 1 | **MockLLMProvider** | `apps/api/app/ai/llm/mock_provider.py` | Fallback quando não há API keys configuradas | Nunca remover — manter como fallback dev/test. Em produção, as API keys reais são usadas automaticamente via `factory.py` |
-| 2 | **OTP log em dev** | `apps/api/app/services/otp.py` linha 84 | Sem Twilio em dev, OTP é logado: `logger.info("DEV MODE — OTP para %s: %s")` | Mantém-se — behaviour controlado por `settings.environment` |
+| 2 | **OTP log em dev** | `apps/api/app/services/otp.py` | Sem Twilio em dev, OTP é logado no console | Mantém-se — controlado por `settings.environment` |
+| 3 | **OCR mock** | `apps/api/app/services/ocr.py` | Sem API key multimodal, OCR usa mock LLM | Produção: usa GPT-4o/Sonnet real com API key |
+| 4 | **Voice mock** | `apps/api/app/services/voice.py` | Sem API key OpenAI, retorna texto mock | Produção: usa Whisper real com API key |
+| 5 | **Embeddings skip** | `apps/api/app/ai/memory/semantic.py` | Sem API key OpenAI, embeddings não são gerados | Produção: usa text-embedding-3-small com API key |
 
 ---
 
