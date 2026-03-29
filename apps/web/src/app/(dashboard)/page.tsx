@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -62,7 +63,7 @@ export default function HomePage() {
             {summary.accounts.map((acc) => (
               <div key={acc.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{acc.icon || "💰"}</span>
+                  <IconDisplay name={acc.type} className="h-5 w-5" />
                   <span className="font-medium">{acc.name}</span>
                 </div>
                 <p className={`text-lg font-mono font-semibold ${acc.balance >= 0 ? "text-green-500" : "text-red-500"}`}>

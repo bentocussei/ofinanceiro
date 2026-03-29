@@ -16,6 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
 import { Budget, BudgetStatus, useBudgetsStore } from '../../stores/budgets'
@@ -116,7 +117,7 @@ export default function BudgetScreen() {
               <View key={cat.category_id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={[styles.itemName, isDark && styles.textLight]}>
-                    {cat.category_icon || '📦'} {cat.category_name}
+                    <IconDisplay name={cat.category_name} size={13} color={isDark ? '#fff' : '#000'} /> {cat.category_name}
                   </Text>
                   <Text style={[styles.itemValues, isDark && styles.textMuted]}>
                     {formatKz(cat.spent)} / {formatKz(cat.limit_amount)}

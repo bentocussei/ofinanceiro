@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 
 import AmountInput from '../common/AmountInput'
+import IconDisplay from '../common/IconDisplay'
 import { useAccountsStore } from '../../stores/accounts'
 import { useCategoriesStore } from '../../stores/categories'
 import { useTransactionsStore } from '../../stores/transactions'
@@ -143,7 +144,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
                   ]}
                   onPress={() => setSelectedAccount(acc.id)}
                 >
-                  <Text style={styles.accountChipIcon}>{acc.icon || '💰'}</Text>
+                  <IconDisplay name={acc.icon || 'default'} size={14} color={(selectedAccount || accounts[0]?.id) === acc.id ? '#3b82f6' : '#666'} />
                   <Text
                     style={[
                       styles.accountChipText,
@@ -174,7 +175,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
                 fetchCategories()
               }}
             >
-              <Text style={styles.categoryIcon}>{cat.icon || '📦'}</Text>
+              <IconDisplay name={cat.name} size={20} color={selectedCategory === cat.id ? '#3b82f6' : '#666'} />
               <Text
                 style={[
                   styles.categoryLabel,

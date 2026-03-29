@@ -11,6 +11,7 @@ import {
   useColorScheme,
 } from 'react-native'
 
+import IconDisplay from '../common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { Account, useAccountsStore } from '../../stores/accounts'
 
@@ -95,7 +96,7 @@ const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) =>
               ]}
               onPress={() => onSelect(acc.id)}
             >
-              <Text style={styles.accountIcon}>{acc.icon || '💰'}</Text>
+              <IconDisplay name={acc.icon || 'default'} size={16} color={selectedId === acc.id ? '#3b82f6' : '#666'} />
               <Text
                 style={[
                   styles.accountName,

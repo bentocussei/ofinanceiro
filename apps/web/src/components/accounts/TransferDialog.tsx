@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 
 interface Account {
@@ -118,7 +119,7 @@ export function TransferDialog({ onTransferred }: Props) {
                 <SelectContent>
                   {accounts.filter((a) => a.id !== toId).map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
-                      {acc.icon || "💰"} {acc.name}
+                      <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -136,7 +137,7 @@ export function TransferDialog({ onTransferred }: Props) {
                 <SelectContent>
                   {accounts.filter((a) => a.id !== fromId).map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
-                      {acc.icon || "💰"} {acc.name}
+                      <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>

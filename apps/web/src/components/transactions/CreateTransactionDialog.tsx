@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { apiFetch } from "@/lib/api"
 
 interface Account {
@@ -168,7 +169,7 @@ export function CreateTransactionDialog({ onCreated }: Props) {
               <SelectContent>
                 {accounts.map((acc) => (
                   <SelectItem key={acc.id} value={acc.id}>
-                    {acc.icon || "💰"} {acc.name}
+                    <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -187,7 +188,7 @@ export function CreateTransactionDialog({ onCreated }: Props) {
                   .filter((c) => !c.parent_id && (c.type === type || c.type === "both"))
                   .map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.icon || "📦"} {cat.name}
+                      <span className="flex items-center gap-1"><IconDisplay name={cat.name} className="h-4 w-4" /> {cat.name}</span>
                     </SelectItem>
                   ))}
               </SelectContent>

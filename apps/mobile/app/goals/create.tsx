@@ -7,16 +7,17 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import { useGoalsStore } from '../../stores/goals'
 
 const GOAL_TYPES = [
-  { value: 'savings', label: 'Poupança', icon: '💰' },
-  { value: 'emergency_fund', label: 'Fundo emergência', icon: '🛡️' },
-  { value: 'purchase', label: 'Compra', icon: '🛒' },
-  { value: 'travel', label: 'Viagem', icon: '✈️' },
-  { value: 'event', label: 'Evento', icon: '🎉' },
-  { value: 'education', label: 'Educação', icon: '📚' },
-  { value: 'custom', label: 'Outro', icon: '🎯' },
+  { value: 'savings', label: 'Poupança' },
+  { value: 'emergency_fund', label: 'Fundo emergência' },
+  { value: 'purchase', label: 'Compra' },
+  { value: 'travel', label: 'Viagem' },
+  { value: 'event', label: 'Evento' },
+  { value: 'education', label: 'Educação' },
+  { value: 'custom', label: 'Outro' },
 ]
 
 export default function CreateGoalScreen() {
@@ -80,7 +81,7 @@ export default function CreateGoalScreen() {
               style={[styles.typeChip, isDark && styles.typeChipDark, type === t.value && styles.typeSelected]}
               onPress={() => setType(t.value)}
             >
-              <Text style={styles.typeIcon}>{t.icon}</Text>
+              <IconDisplay name={t.value} size={20} color={type === t.value ? '#3b82f6' : '#666'} />
               <Text style={[styles.typeLabel, type === t.value && styles.typeLabelSelected]}>{t.label}</Text>
             </Pressable>
           ))}

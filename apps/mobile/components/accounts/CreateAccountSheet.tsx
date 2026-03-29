@@ -11,16 +11,17 @@ import {
   useColorScheme,
 } from 'react-native'
 
+import IconDisplay from '../common/IconDisplay'
 import { useAccountsStore } from '../../stores/accounts'
 
 const ACCOUNT_TYPES = [
-  { value: 'bank', label: 'Banco', icon: '🏦' },
-  { value: 'digital_wallet', label: 'Carteira digital', icon: '📱' },
-  { value: 'cash', label: 'Dinheiro', icon: '💵' },
-  { value: 'savings', label: 'Poupança', icon: '🏦' },
-  { value: 'investment', label: 'Investimento', icon: '📈' },
-  { value: 'credit_card', label: 'Cartão de crédito', icon: '💳' },
-  { value: 'loan', label: 'Empréstimo', icon: '📋' },
+  { value: 'bank', label: 'Banco' },
+  { value: 'digital_wallet', label: 'Carteira digital' },
+  { value: 'cash', label: 'Dinheiro' },
+  { value: 'savings', label: 'Poupança' },
+  { value: 'investment', label: 'Investimento' },
+  { value: 'credit_card', label: 'Cartão de crédito' },
+  { value: 'loan', label: 'Empréstimo' },
 ]
 
 interface Props {
@@ -59,7 +60,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         type,
         institution: institution.trim() || undefined,
         balance: balanceCentavos,
-        icon: ACCOUNT_TYPES.find((t) => t.value === type)?.icon,
+        icon: type,
       })
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       reset()
@@ -114,7 +115,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
               }}
             >
-              <Text style={styles.typeIcon}>{t.icon}</Text>
+              <IconDisplay name={t.value} size={16} color={type === t.value ? '#3b82f6' : '#666'} />
               <Text
                 style={[
                   styles.typeLabel,

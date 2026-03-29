@@ -15,14 +15,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
 import { Goal, useGoalsStore } from '../../stores/goals'
-
-const GOAL_ICONS: Record<string, string> = {
-  savings: '💰', emergency_fund: '🛡️', purchase: '🛒', travel: '✈️',
-  event: '🎉', education: '📚', retirement: '🏖️', custom: '🎯',
-}
 
 export default function GoalsScreen() {
   const isDark = useColorScheme() === 'dark'
@@ -64,7 +60,6 @@ export default function GoalsScreen() {
 
   const renderGoal = ({ item }: { item: Goal }) => {
     const pct = item.target_amount > 0 ? Math.round(item.current_amount / item.target_amount * 100) : 0
-    const icon = GOAL_ICONS[item.type] || '🎯'
     const isComplete = item.status === 'completed'
 
     return (
@@ -73,10 +68,15 @@ export default function GoalsScreen() {
         onLongPress={() => handleDelete(item)}
       >
         <View style={styles.goalHeader}>
-          <Text style={styles.goalIcon}>{icon}</Text>
+          <View style={styles.goalIcon}><IconDisplay name={item.type} size={24} color={isDark ? '#fff' : '#000'} /></View>
           <View style={styles.goalInfo}>
             <Text style={[styles.goalName, isDark && styles.textLight]}>{item.name}</Text>
-            {isComplete && <Text style={styles.completeBadge}>✅ Concluída</Text>}
+            {isComplete && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
+                <Text style={styles.completeBadge}>Concluída</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -157,7 +157,7 @@ export default function GoalsScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🎯</Text>
+            <IconDisplay name="custom" size={48} color={isDark ? '#666' : '#ccc'} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma meta criada</Text>
             <Text style={[styles.emptySubtext, isDark && styles.textMuted]}>
               Defina metas para poupar e alcançar os seus objectivos
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   goalCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16 },
   cardDark: { backgroundColor: '#1a1a1a' },
   goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  goalIcon: { fontSize: 24 },
+  goalIcon: { width: 24, height: 24 },
   goalInfo: { flex: 1 },
   goalName: { fontSize: 16, fontWeight: '600', color: '#000' },
   completeBadge: { fontSize: 12, color: '#22c55e', marginTop: 2 },

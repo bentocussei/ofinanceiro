@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { IconDisplay } from "@/components/common/IconDisplay"
 import { AccountDetailDialog } from "@/components/accounts/AccountDetailDialog"
 import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
 import { TransferDialog } from "@/components/accounts/TransferDialog"
@@ -82,7 +83,7 @@ export default function AccountsPage() {
             {summary.accounts.map((acc) => (
               <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{acc.icon || "💰"}</span>
+                  <IconDisplay name={acc.type} className="h-6 w-6" />
                   <div>
                     <p className="font-medium">{acc.name}</p>
                     <p className="text-xs text-muted-foreground">
