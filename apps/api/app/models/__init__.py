@@ -1,5 +1,6 @@
 from app.models.account import Account
 from app.models.base import Base, BaseModel
+from app.models.budget import Budget, BudgetItem
 from app.models.category import Category
 from app.models.enums import (
     AccountType,
@@ -17,6 +18,7 @@ from app.models.enums import (
     SubscriptionPlan,
     TransactionType,
 )
+from app.models.goal import Goal, GoalContribution
 from app.models.transaction import Transaction
 from app.models.user import User
 
@@ -39,6 +41,10 @@ __all__ = [
     "TransactionType",
     "User",
     "Account",
+    "Budget",
+    "BudgetItem",
     "Category",
+    "Goal",
+    "GoalContribution",
     "Transaction",
 ]

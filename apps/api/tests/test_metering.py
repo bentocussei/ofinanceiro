@@ -26,8 +26,9 @@ class TestPlanLimits:
 class TestMemoryExtractor:
     @pytest.mark.asyncio
     async def test_extract_salary_day(self) -> None:
-        from app.ai.memory.extractor import FACT_PATTERNS
         import re
+
+        from app.ai.memory.extractor import FACT_PATTERNS
 
         pattern, key = FACT_PATTERNS[0]
         match = re.search(pattern, "recebo dia 25", re.IGNORECASE)
@@ -37,8 +38,9 @@ class TestMemoryExtractor:
 
     @pytest.mark.asyncio
     async def test_extract_children(self) -> None:
-        from app.ai.memory.extractor import FACT_PATTERNS
         import re
+
+        from app.ai.memory.extractor import FACT_PATTERNS
 
         pattern, key = FACT_PATTERNS[1]
         match = re.search(pattern, "tenho 2 filhos", re.IGNORECASE)
@@ -48,8 +50,9 @@ class TestMemoryExtractor:
 
     @pytest.mark.asyncio
     async def test_extract_bank(self) -> None:
-        from app.ai.memory.extractor import FACT_PATTERNS
         import re
+
+        from app.ai.memory.extractor import FACT_PATTERNS
 
         pattern, key = FACT_PATTERNS[3]
         match = re.search(pattern, "a minha conta no BAI", re.IGNORECASE)

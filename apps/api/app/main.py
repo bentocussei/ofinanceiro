@@ -5,7 +5,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import accounts, auth, categories, chat, health, reports, transactions
+from app.routers import (
+    accounts,
+    auth,
+    budgets,
+    categories,
+    chat,
+    goals,
+    health,
+    reports,
+    transactions,
+)
 
 
 @asynccontextmanager
@@ -38,5 +48,7 @@ app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(transactions.router)
 app.include_router(categories.router)
+app.include_router(budgets.router)
+app.include_router(goals.router)
 app.include_router(reports.router)
 app.include_router(chat.router)

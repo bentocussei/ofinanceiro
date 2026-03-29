@@ -7,7 +7,9 @@ const NAV_ITEMS = [
   { href: "/", label: "Início", icon: "🏠" },
   { href: "/accounts", label: "Contas", icon: "💳" },
   { href: "/transactions", label: "Transacções", icon: "🔄" },
-  { href: "/reports", label: "Relatórios", icon: "📊" },
+  { href: "/budget", label: "Orçamentos", icon: "📊" },
+  { href: "/goals", label: "Metas", icon: "🎯" },
+  { href: "/reports", label: "Relatórios", icon: "📈" },
   { href: "/settings", label: "Configurações", icon: "⚙️" },
 ]
 
