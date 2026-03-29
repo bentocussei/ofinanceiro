@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.enums import AccountType, CurrencyCode
+from app.models.enums import AccountType, AccountUsageType, CurrencyCode
 
 
 class Account(BaseModel):
@@ -33,6 +33,13 @@ class Account(BaseModel):
     color: Mapped[str | None] = mapped_column(String(7))
     institution: Mapped[str | None] = mapped_column(String(100))
     account_number: Mapped[str | None] = mapped_column(Text)
+    # Limite de crédito em centavos (para cartões de crédito)
+    credit_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Alerta de saldo baixo em centavos
+    low_balance_alert: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    usage_type: Mapped[AccountUsageType | None] = mapped_column(
+        ENUM(AccountUsageType, name="account_usage_type", create_type=True), nullable=True
+    )
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)
@@ -40,5 +47,7 @@ class Account(BaseModel):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="accounts")  # noqa: F821
     transactions: Mapped[list["Transaction"]] = relationship(  # noqa: F821
-        back_populates="account", lazy="noload"
+        back_populates="account",
+        lazy="noload",
+        foreign_keys="[Transaction.account_id]",
     )

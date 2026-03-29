@@ -42,8 +42,12 @@ class Transaction(BaseModel):
     latitude: Mapped[float | None] = mapped_column(Double)
     longitude: Mapped[float | None] = mapped_column(Double)
 
-    # Attachments
-    receipt_url: Mapped[str | None] = mapped_column(Text)
+    # Anexos
+    attachments: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    # Conta destino (para transferências)
+    to_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=True
+    )
 
     # Metadata
     tags: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
@@ -71,7 +75,9 @@ class Transaction(BaseModel):
     user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="transactions", foreign_keys=[user_id]
     )
-    account: Mapped["Account"] = relationship(back_populates="transactions")  # noqa: F821
+    account: Mapped["Account"] = relationship(  # noqa: F821
+        back_populates="transactions", foreign_keys=[account_id]
+    )
     category: Mapped["Category | None"] = relationship(lazy="joined")  # noqa: F821
 
     __table_args__ = (

@@ -1,15 +1,25 @@
 """Debt and DebtPayment models."""
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, SmallInteger, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.enums import CurrencyCode, DebtType
+from app.models.enums import CreditorType, CurrencyCode, DebtNature, DebtType
 
 
 class Debt(BaseModel):
@@ -36,6 +46,19 @@ class Debt(BaseModel):
     expected_end_date: Mapped[date | None] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(Text)
+    nature: Mapped[DebtNature] = mapped_column(
+        ENUM(DebtNature, name="debt_nature", create_type=True),
+        default=DebtNature.FORMAL,
+    )
+    creditor_type: Mapped[CreditorType | None] = mapped_column(
+        ENUM(CreditorType, name="creditor_type", create_type=True), nullable=True
+    )
+    linked_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )  # para pagamento automático
+    auto_pay_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_paid_off: Mapped[bool] = mapped_column(Boolean, default=False)
+    paid_off_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     payments: Mapped[list["DebtPayment"]] = relationship(
         back_populates="debt", lazy="subquery", cascade="all, delete-orphan"

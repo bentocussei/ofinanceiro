@@ -3,7 +3,16 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,6 +46,8 @@ class Budget(BaseModel):
     total_limit: Mapped[int | None] = mapped_column(Integer)
     rollover: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    alert_threshold: Mapped[int] = mapped_column(SmallInteger, default=80)  # percentagem
+    alert_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relationships
     items: Mapped[list["BudgetItem"]] = relationship(

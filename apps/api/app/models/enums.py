@@ -113,3 +113,69 @@ class ChatRole(enum.StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
+
+
+class IncomeSourceType(enum.StrEnum):
+    SALARY = "salary"
+    RENTAL = "rental"
+    BUSINESS = "business"
+    FREELANCE = "freelance"
+    INVESTMENT = "investment"
+    PENSION = "pension"
+    OTHER = "other"
+
+
+class RecurrenceFrequency(enum.StrEnum):
+    WEEKLY = "weekly"
+    BIWEEKLY = "biweekly"
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    SEMIANNUAL = "semiannual"
+    YEARLY = "yearly"
+
+
+class BillStatus(enum.StrEnum):
+    PENDING = "pending"
+    PAID = "paid"
+    OVERDUE = "overdue"
+    CANCELLED = "cancelled"
+
+
+class SnapshotPeriodType(enum.StrEnum):
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+
+class AccountUsageType(enum.StrEnum):
+    PERSONAL = "personal"
+    SALARY = "salary"
+    SAVINGS = "savings"
+    BUSINESS = "business"
+    INVESTMENT = "investment"
+    JOINT = "joint"
+
+
+class DebtNature(enum.StrEnum):
+    FORMAL = "formal"
+    INFORMAL = "informal"
+
+
+class CreditorType(enum.StrEnum):
+    BANK = "bank"
+    FINANCIAL = "financial"
+    FAMILY = "family"
+    FRIENDS = "friends"
+    SUPPLIER = "supplier"
+    EMPLOYER = "employer"
+    OTHER = "other"
+
+
+class FamilyRelation(enum.StrEnum):
+    SPOUSE = "spouse"
+    FATHER = "father"
+    MOTHER = "mother"
+    SON = "son"
+    DAUGHTER = "daughter"
+    SIBLING = "sibling"
+    GRANDPARENT = "grandparent"
+    OTHER = "other"
