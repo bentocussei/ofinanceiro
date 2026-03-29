@@ -1,5 +1,6 @@
 """Chat orchestrator — routes messages through agents and manages conversation."""
 
+import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,11 @@ from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
 from app.ai.llm.base import LLMMessage
 from app.ai.llm.router import LLMRouter
+from app.ai.memory.extractor import extract_facts_from_message
+from app.ai.memory.facts import get_user_facts
+from app.ai.memory.session import add_message_to_session, get_session
+
+logger = logging.getLogger(__name__)
 
 
 class ChatOrchestrator:
@@ -43,13 +49,20 @@ class ChatOrchestrator:
     ) -> AgentResponse:
         """Process a user message through the multi-agent system."""
 
-        # 1. Route to the correct agent
+        # 1. Load user facts from memory
+        user_facts = await get_user_facts(db, user_id)
+
+        # 2. Load session history from Redis (if no history provided)
+        if not conversation_history:
+            session_data = await get_session(user_id, session_id)
+            conversation_history = session_data.get("messages", [])
+
+        # 3. Route to the correct agent
         agent_name = await self.router_agent.classify_intent(message)
 
-        # 2. Get the agent (fallback to TRACKER for unimplemented agents)
+        # 4. Get the agent (fallback for unimplemented agents)
         agent = self.agents.get(agent_name)
         if not agent:
-            # For unimplemented agents, use a generic response
             from app.ai.agents.base import BaseAgent
 
             agent = BaseAgent(self.llm_router)
@@ -60,20 +73,33 @@ class ChatOrchestrator:
                 "Factos do utilizador: {user_facts}\n{loaded_skills}"
             )
 
-        # 3. Build context
+        # 5. Build context with facts and history
         history = []
         if conversation_history:
-            for msg in conversation_history[-20:]:  # Last 20 messages
+            for msg in conversation_history[-20:]:
                 history.append(LLMMessage(role=msg["role"], content=msg["content"]))
 
         context = AgentContext(
             user_id=user_id,
             db=db,
             session_id=session_id,
+            user_facts=user_facts,
             conversation_history=history,
         )
 
-        # 4. Process through the specialist agent
+        # 6. Process through the specialist agent
         response = await agent.process(message, context)
+
+        # 7. Save messages to session memory (Redis)
+        await add_message_to_session(user_id, session_id, "user", message)
+        await add_message_to_session(
+            user_id, session_id, "assistant", response.content, response.agent_name
+        )
+
+        # 8. Extract facts from user message (non-blocking)
+        try:
+            await extract_facts_from_message(db, user_id, message)
+        except Exception:
+            logger.exception("Failed to extract facts from message")
 
         return response
