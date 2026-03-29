@@ -4,6 +4,7 @@ import { useMemo, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
+import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
 import { apiFetch } from "@/lib/api"
 import { formatKz, formatRelativeDate } from "@/lib/format"
 
@@ -28,6 +29,7 @@ export default function TransactionsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grouped")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("month")
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
@@ -167,7 +169,7 @@ export default function TransactionsPage() {
             </thead>
             <tbody className="divide-y">
               {filtered.map((txn) => (
-                <tr key={txn.id} className="hover:bg-accent/50 transition-colors">
+                <tr key={txn.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                     {formatRelativeDate(txn.transaction_date)}
                   </td>
@@ -222,7 +224,7 @@ export default function TransactionsPage() {
                 </div>
                 <div className="rounded-lg border bg-card divide-y">
                   {items.map((txn) => (
-                    <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer">
+                    <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
                       <span className="text-sm">{txn.description || "Sem descrição"}</span>
                       <span
                         className={`font-mono font-semibold text-sm ${
@@ -249,6 +251,14 @@ export default function TransactionsPage() {
           Carregar mais
         </button>
       )}
+
+      <TransactionDetailDialog
+        transaction={selectedTxn}
+        open={!!selectedTxn}
+        onOpenChange={(v) => { if (!v) setSelectedTxn(null) }}
+        onUpdated={() => { setSelectedTxn(null); fetchTransactions(true) }}
+        onDeleted={() => fetchTransactions(true)}
+      />
     </div>
   )
 }

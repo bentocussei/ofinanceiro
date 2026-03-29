@@ -1,7 +1,9 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
+import * as Haptics from 'expo-haptics'
 import { useCallback, useEffect, useRef } from 'react'
 import {
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -10,9 +12,12 @@ import {
   View,
   useColorScheme,
 } from 'react-native'
+
+import { apiFetch } from '../../lib/api'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import CreateAccountSheet from '../../components/accounts/CreateAccountSheet'
+import TransferSheet from '../../components/accounts/TransferSheet'
 import FAB from '../../components/common/FAB'
 import { formatKz } from '../../lib/format'
 import { Account, useAccountsStore } from '../../stores/accounts'
@@ -41,6 +46,7 @@ export default function AccountsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const createSheetRef = useRef<BottomSheet>(null)
+  const transferSheetRef = useRef<BottomSheet>(null)
   const { accounts, summary, fetchSummary, isLoading } = useAccountsStore()
 
   useEffect(() => {
@@ -49,8 +55,35 @@ export default function AccountsScreen() {
 
   const onRefresh = useCallback(() => fetchSummary(), [])
 
+  const handleAccountAction = (account: Account) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    Alert.alert(
+      account.name,
+      `Saldo: ${formatKz(account.balance)}`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiFetch(`/api/v1/accounts/${account.id}`, { method: 'DELETE' })
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+              fetchSummary()
+            } catch (error: any) {
+              Alert.alert('Erro', error.message || 'Não foi possível eliminar. A conta pode ter transacções.')
+            }
+          },
+        },
+      ]
+    )
+  }
+
   const renderAccount = ({ item }: { item: Account }) => (
-    <View style={[styles.accountRow, isDark && styles.rowDark]}>
+    <Pressable
+      style={[styles.accountRow, isDark && styles.rowDark]}
+      onLongPress={() => handleAccountAction(item)}
+    >
       <Text style={styles.accountIcon}>{item.icon || ACCOUNT_TYPE_ICONS[item.type] || '💰'}</Text>
       <View style={styles.accountInfo}>
         <Text style={[styles.accountName, isDark && styles.textLight]}>{item.name}</Text>
@@ -67,7 +100,7 @@ export default function AccountsScreen() {
       >
         {formatKz(item.balance)}
       </Text>
-    </View>
+    </Pressable>
   )
 
   return (
@@ -81,6 +114,15 @@ export default function AccountsScreen() {
           <View>
             <View style={styles.header}>
               <Text style={[styles.title, isDark && styles.textLight]}>Contas</Text>
+              {accounts.length >= 2 && (
+                <Pressable
+                  style={[styles.transferBtn, isDark && styles.transferBtnDark]}
+                  onPress={() => transferSheetRef.current?.expand()}
+                >
+                  <Ionicons name="swap-horizontal" size={16} color="#3b82f6" />
+                  <Text style={styles.transferBtnText}>Transferir</Text>
+                </Pressable>
+              )}
             </View>
             {summary && (
               <View style={[styles.summaryCard, isDark && styles.cardDark]}>
@@ -110,6 +152,7 @@ export default function AccountsScreen() {
 
       <FAB onPress={() => createSheetRef.current?.expand()} />
       <CreateAccountSheet ref={createSheetRef} onCreated={() => fetchSummary()} />
+      <TransferSheet ref={transferSheetRef} onTransferred={() => fetchSummary()} />
     </SafeAreaView>
   )
 }
@@ -117,8 +160,18 @@ export default function AccountsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   containerDark: { backgroundColor: '#000' },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8,
+  },
   title: { fontSize: 24, fontWeight: '700', color: '#000' },
+  transferBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+    backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+  },
+  transferBtnDark: { backgroundColor: '#1e3a5f', borderColor: '#2563eb' },
+  transferBtnText: { fontSize: 13, color: '#3b82f6', fontWeight: '600' },
   summaryCard: {
     marginHorizontal: 16, marginVertical: 12, padding: 16,
     backgroundColor: '#fff', borderRadius: 12,

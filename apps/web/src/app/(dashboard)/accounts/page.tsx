@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 
+import { AccountDetailDialog } from "@/components/accounts/AccountDetailDialog"
 import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
+import { TransferDialog } from "@/components/accounts/TransferDialog"
 import { apiFetch } from "@/lib/api"
 import { formatKz } from "@/lib/format"
 
@@ -35,6 +37,9 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function AccountsPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+
+  const refresh = () => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)
 
   useEffect(() => {
     apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary).catch(() => {})
@@ -44,7 +49,10 @@ export default function AccountsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Contas</h2>
-        <CreateAccountDialog onCreated={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
+        <div className="flex gap-2">
+          <TransferDialog onTransferred={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
+          <CreateAccountDialog onCreated={() => apiFetch<Summary>("/api/v1/accounts/summary").then(setSummary)} />
+        </div>
       </div>
 
       {summary && (
@@ -72,7 +80,7 @@ export default function AccountsPage() {
           {/* Accounts List */}
           <div className="rounded-lg border bg-card divide-y">
             {summary.accounts.map((acc) => (
-              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5">
+              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{acc.icon || "💰"}</span>
                   <div>
@@ -98,6 +106,14 @@ export default function AccountsPage() {
           </div>
         </>
       )}
+
+      <AccountDetailDialog
+        account={selectedAccount}
+        open={!!selectedAccount}
+        onOpenChange={(v) => { if (!v) setSelectedAccount(null) }}
+        onUpdated={() => { setSelectedAccount(null); refresh() }}
+        onDeleted={() => refresh()}
+      />
     </div>
   )
 }
