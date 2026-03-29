@@ -63,6 +63,32 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 
 ---
 
+## 4.1 Tarefas Agendadas (Cron Jobs)
+
+| # | Tarefa | Frequência | Endpoint / Comando | O que faz |
+|---|--------|-----------|-------------------|-----------|
+| 1 | **Notification Scheduler** | A cada hora | `POST /api/v1/notifications/check` | Verifica contas a pagar (7/3/1 dias), saldo baixo, orçamento em risco, metas atingidas. Cria notificações automáticas. |
+| 2 | **Finance Snapshot** | Diário (00:00) | `POST /api/v1/snapshots/generate` | Gera resumo financeiro mensal (receitas, despesas, net worth, score). |
+| 3 | **Bill Overdue Check** | Diário (08:00) | Incluído no Notification Scheduler | Marca facturas como OVERDUE quando passam a data de vencimento. |
+
+**Como configurar no Railway:**
+```bash
+# Opção 1: Railway Cron Service
+# Criar um serviço do tipo "Cron" no Railway que chama os endpoints via curl
+
+# Notificações — a cada hora
+curl -X POST https://api.ofinanceiro.ao/api/v1/notifications/check \
+  -H "Authorization: Bearer $SERVICE_TOKEN"
+
+# Snapshots — diariamente à meia-noite
+curl -X POST https://api.ofinanceiro.ao/api/v1/snapshots/generate \
+  -H "Authorization: Bearer $SERVICE_TOKEN"
+```
+
+**Nota:** Os endpoints acima requerem autenticação. Em produção, criar um `SERVICE_TOKEN` com permissões de admin para os cron jobs, ou usar um endpoint interno sem auth (protegido por rede privada do Railway).
+
+---
+
 ## 5. Regras
 
 1. **Só se adiciona mock/TODO quando há dependência externa não disponível** (API key, serviço terceiro, hardware)
