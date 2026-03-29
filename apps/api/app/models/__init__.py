@@ -1,5 +1,6 @@
 from app.models.account import Account
 from app.models.base import Base, BaseModel
+from app.models.budget import Budget, BudgetItem
 from app.models.category import Category
 from app.models.enums import (
     AccountType,
@@ -39,6 +40,8 @@ __all__ = [
     "TransactionType",
     "User",
     "Account",
+    "Budget",
+    "BudgetItem",
     "Category",
     "Transaction",
 ]
