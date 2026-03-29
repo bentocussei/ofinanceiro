@@ -1,10 +1,14 @@
 import Link from "next/link"
 import {
   ArrowRight,
+  Bell,
   Check,
   Eye,
   Banknote,
   PiggyBank,
+  Receipt,
+  Repeat,
+  Target,
   Users,
   BarChart3,
   ChevronRight,
@@ -19,21 +23,51 @@ const features = [
   },
   {
     icon: PiggyBank,
-    title: "Nunca mais perca o controlo do orçamento familiar",
+    title: "Orçamentos que protegem o seu dinheiro",
     description:
-      "Defina limites por categoria e receba alertas antes de ultrapassar. O dinheiro rende mais quando sabe para onde vai.",
+      "Defina limites por categoria com 5 métodos diferentes. Receba alertas antes de ultrapassar. Rollover para o mês seguinte.",
+  },
+  {
+    icon: Target,
+    title: "Metas de poupança que funcionam",
+    description:
+      "Defina objectivos com prazos reais. Contribua com qualquer frequência — semanal, mensal, trimestral. Acompanhe o progresso visual.",
   },
   {
     icon: Users,
     title: "Finanças da família, organizadas em conjunto",
     description:
-      "Partilhe o controlo com o seu cônjuge. Defina limites para dependentes. Alcance metas juntos, como família.",
+      "Partilhe contas com o seu cônjuge. Divida despesas entre membros. Controle gastos dos dependentes com permissões granulares.",
+  },
+  {
+    icon: Receipt,
+    title: "Contas a pagar nunca mais esquecidas",
+    description:
+      "Registe as suas facturas recorrentes — água, luz, internet. Receba lembretes antes do vencimento. Marque como pago com um toque.",
+  },
+  {
+    icon: Banknote,
+    title: "Controle todas as suas fontes de rendimento",
+    description:
+      "Registe salários, rendas, freelance e outros rendimentos. Saiba exactamente quando e quanto entra na sua conta.",
+  },
+  {
+    icon: Repeat,
+    title: "Transacções recorrentes automáticas",
+    description:
+      "Crie regras para gastos e receitas que se repetem. O sistema regista automaticamente com a frequência que definir.",
+  },
+  {
+    icon: Bell,
+    title: "Alertas que evitam surpresas",
+    description:
+      "Notificações de saldo baixo, orçamento em risco, facturas a vencer, e metas atingidas. Sempre informado, sempre no controlo.",
   },
   {
     icon: BarChart3,
     title: "Relatórios que mostram a verdade",
     description:
-      "Gráficos claros sobre receitas, despesas e tendências. Tome decisões financeiras com confiança, não com intuição.",
+      "Gráficos claros sobre receitas, despesas e tendências. Resumos mensais automáticos com score financeiro de 0 a 100.",
   },
 ]
 
@@ -242,7 +276,7 @@ export default function LandingPage() {
             Funcionalidades pensadas para a forma como realmente gere o seu dinheiro no dia-a-dia.
           </p>
 
-          <div className="mt-14 grid gap-8 sm:grid-cols-2">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => {
               const Icon = f.icon
               return (
