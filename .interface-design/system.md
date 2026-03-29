@@ -1,156 +1,114 @@
 # O Financeiro — Design System
 
 ## Direction
-**Personality:** Sophistication & Trust
-**Foundation:** Warm neutral (stone/amber base, NOT slate gray)
-**Depth:** Subtle shadows + border accent (layered, premium feel)
-**Feel:** Trustworthy, calming, professional — like a private banker, not a spreadsheet
+**Personality:** A caderneta digital — banco privado angolano meets personal finance notebook
+**Feel:** Calmo, confiável, organizado. Como ter um gestor financeiro privado.
+**Foundation:** Warm cream + deep green (Kwanza-inspired)
+**Depth:** Subtle shadows (premium lift, not borders)
+**Signature:** Cards that feel like pages of a personal finance notebook — clean, warm, organized
 
-## Brand Colors
-- **Primary:** Teal `#0D9488` (teal-600) — trustworthy, calming
-- **Primary Dark:** `#0F766E` (teal-700)
-- **Primary Light:** `#99F6E4` (teal-200)
-- **Accent:** Amber `#D97706` (amber-600) — warmth, attention
+## Who
+Angolano(a) urbano(a), 25-45 anos. Opens app after work or Saturday morning. Wants clarity: "quanto tenho?", "quanto gastei?". Deals with cash, Multicaixa, Kixikila.
 
-## Semantic Colors
-- **Income:** `#16A34A` (green-600) / dark: `#4ADE80` (green-400)
-- **Expense:** `#DC2626` (red-600) / dark: `#F87171` (red-400)
-- **Warning:** `#D97706` (amber-600) / dark: `#FBBF24` (amber-400)
-- **Goal/Savings:** `#2563EB` (blue-600) / dark: `#60A5FA` (blue-400)
-- **Family:** `#9333EA` (purple-600) / dark: `#C084FC` (purple-400)
+## Color Palette
 
-## Light Mode Palette
-- **Background:** `#FAFAF9` (stone-50) — warm, NOT cold gray
-- **Card/Surface:** `#FFFFFF` with shadow `0 1px 3px rgba(0,0,0,0.06)`
-- **Sidebar:** `#F5F5F4` (stone-100) with right border
-- **Foreground:** `#1C1917` (stone-900)
-- **Muted text:** `#78716C` (stone-500)
-- **Border:** `#E7E5E4` (stone-200)
-- **Hover:** `#F5F5F4` (stone-100)
+### Primary — Deep Green (Kwanza prosperity)
+- `--primary`: oklch(0.45 0.15 155) — #15803D range
+- `--primary-foreground`: white
 
-## Dark Mode Palette (blue-tinted, NEVER pure black)
-- **Background:** `#1C1917` (stone-900)
-- **Card/Surface:** `#292524` (stone-800) with shadow `0 1px 2px rgba(0,0,0,0.4)`
-- **Sidebar:** `#1C1917` (stone-900) with right border
-- **Foreground:** `#FAFAF9` (stone-50)
-- **Muted text:** `#A8A29E` (stone-400)
-- **Border:** `#44403C` (stone-700)
-- **Hover:** `#292524` (stone-800)
+### Light Mode — Warm Cream (caderneta paper)
+- `--background`: oklch(0.985 0.008 95) — warm cream, NOT cold white
+- `--card`: oklch(1 0 0) — white cards on cream
+- `--foreground`: oklch(0.18 0.02 60) — dark warm brown-black
+- `--muted`: oklch(0.96 0.01 90) — warm gray
+- `--muted-foreground`: oklch(0.50 0.02 60) — medium warm
+- `--border`: oklch(0.92 0.008 90) — subtle warm border
+- `--sidebar`: oklch(0.975 0.008 95) — slightly darker cream
+
+### Dark Mode — Deep Warm Dark (NOT pure black)
+- `--background`: oklch(0.14 0.01 70) — warm charcoal
+- `--card`: oklch(0.19 0.01 70) — elevated surface
+- `--foreground`: oklch(0.95 0.005 90) — warm white
+- `--muted`: oklch(0.24 0.01 70)
+- `--muted-foreground`: oklch(0.60 0.01 70)
+- `--border`: oklch(0.28 0.01 70)
+- `--sidebar`: oklch(0.16 0.01 70)
+
+### Semantic
+- Income: oklch(0.55 0.18 150) — green
+- Expense: oklch(0.55 0.20 25) — warm red
+- Warning: oklch(0.70 0.16 80) — amber
+- Goal: oklch(0.55 0.15 250) — blue
+
+### Charts
+1. Deep green (primary)
+2. Amber/gold
+3. Blue
+4. Purple
+5. Teal
 
 ## Tokens
 
-### Spacing
-Base: 4px
-Scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64
-- Micro: 4px (between icon and label)
-- Component: 8-12px (internal padding of chips, badges)
-- Card padding: 20-24px
-- Section gap: 24-32px
-- Page margin: 32-48px
+### Spacing (8px base)
+- 4: micro (icon gaps)
+- 8: component internal
+- 12: tight component
+- 16: standard component padding
+- 20: card padding
+- 24: section gap
+- 32: major separation
+- 48: page sections
 
-### Border Radius
-- Small (chips, badges): 6px
-- Medium (buttons, inputs): 8px
-- Large (cards): 12px
-- XL (modals, sheets): 16px
-- Full (avatars, FAB): 9999px
+### Radius
+- 6px: inputs, buttons, badges
+- 8px: small cards, dropdowns
+- 12px: main cards
+- 16px: modals, sheets
 
 ### Typography
-- **Display (net worth):** 36px, 700 weight, tabular-nums, tracking-tight
-- **Heading 1 (page title):** 24px, 700 weight, tracking-tight
-- **Heading 2 (card title):** 16px, 600 weight
-- **Heading 3 (section):** 14px, 600 weight, uppercase, letter-spacing 0.05em, muted
-- **Body:** 14px, 400 weight
-- **Body small:** 13px, 400 weight, muted
-- **Caption:** 12px, 400 weight, muted
-- **Money (all amounts):** font-variant-numeric: tabular-nums, font-family: 'JetBrains Mono'
-- **Money large:** 24-36px, 700 weight, mono
-- **Money inline:** 14px, 600 weight, mono
+- Display: 32px, 700, tabular-nums (net worth)
+- H1: 22px, 700, tracking-tight (page title)
+- H2: 15px, 600 (card title)
+- H3: 12px, 600, uppercase, tracking-wide, muted (section label)
+- Body: 14px, 400
+- Small: 13px, 400, muted
+- Caption: 11px, 400, muted
+- Money: JetBrains Mono, tabular-nums, 600 weight
+- Money large: 24-32px mono bold
 
 ### Shadows
-- **Card:** `0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)`
-- **Card hover:** `0 4px 12px rgba(0,0,0,0.08)`
-- **Elevated (modal):** `0 8px 24px rgba(0,0,0,0.12)`
-- **Dark card:** `0 1px 3px rgba(0,0,0,0.3)`
-
-## Patterns
-
-### Button Primary
-- Height: 40px
-- Padding: 10px 20px
-- Radius: 8px
-- Background: primary (teal-600)
-- Text: white, 14px, 500 weight
-- Hover: teal-700
-- Active: scale(0.98)
-
-### Card Default
-- Background: card surface
-- Border: none (shadow-based depth)
-- Padding: 20px
-- Radius: 12px
-- Shadow: card shadow
-- Hover: card hover shadow (for clickable cards)
-
-### Input
-- Height: 40px
-- Padding: 0 12px
-- Radius: 8px
-- Border: 1px solid border color
-- Focus: ring-2 primary with 20% opacity
-- Font: 14px
-
-### Sidebar Navigation Item
-- Height: 40px
-- Padding: 8px 12px
-- Radius: 8px
-- Gap: 12px (icon to label)
-- Active: primary/10% background + primary text + left 3px accent border
-- Hover: hover background
-- Icon: 18px, muted → active: primary
-
-### Transaction Row
-- Height: 60px
-- Layout: [icon 36px round] [merchant + category] [amount right-aligned]
-- Icon: category-colored circle with Lucide icon
-- Merchant: 14px, 500 weight
-- Category + Account: 12px, muted
-- Amount: 14px, 600 weight, mono, colored (green/red)
-- Hover: subtle background
-- Border-bottom: 1px border
-
-### Progress Bar (Budget)
-- Height: 8px
-- Radius: 4px
-- Background: muted/10%
-- Fill: green (<70%), amber (70-90%), red (>90%)
-- Animation: width transition 0.5s ease
-
-### Dashboard Net Worth Hero
-- Full-width card at top
-- Large number: 36px mono bold
-- Trend: up/down arrow + percentage + sparkline
-- Subtitle: "Saldo total" in muted 14px
-- Background: slight gradient or elevated card
-
-## Component Library (Shadcn)
-Required components:
-- Button, Input, Label, Textarea
-- Dialog, Sheet, Drawer
-- Select, Command (command palette)
-- Table (DataTable for transactions)
-- Tabs, Badge, Avatar
-- Sonner (toast notifications)
-- Tooltip, Popover, DropdownMenu
-- Skeleton (loading)
-- Separator
-- Switch, Checkbox
-- Calendar, DatePicker
-- Progress
-- Chart (recharts integration)
+- Card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06)
+- Hover: 0 2px 8px rgba(0,0,0,0.08)
+- Elevated: 0 4px 16px rgba(0,0,0,0.10)
+- Dark card: 0 1px 3px rgba(0,0,0,0.3)
 
 ## Layout
-- **Sidebar:** 256px, collapsible to 64px (icon-only)
-- **Main content:** flex-1, max-width 1200px centered, padding 32px
-- **Chat:** toggle button (bottom-right), opens Sheet/Drawer (NOT permanent panel)
-- **Mobile:** sidebar becomes hamburger drawer
+- Sidebar: 240px, collapsible to 60px
+- Main: full width with padding 24px (desktop), 16px (mobile). NO max-width.
+- Chat: side panel WITHOUT overlay. Opens from right, 380px. Semi-transparent backdrop optional but NO block.
+- Landing: / (root). Dashboard: route group (dashboard) with auth.
+
+## Component Patterns
+
+### Sidebar Nav Item
+- Height: 38px, padding: 0 12px, radius: 6px
+- Active: primary bg/10%, primary text, left 3px primary border
+- Icon: 18px, gap 10px to label
+
+### Card
+- Background: card surface, shadow (not border)
+- Padding: 20px, radius: 12px
+- Clickable cards: hover shadow transition
+
+### Transaction Row
+- Height: 56px
+- [Category dot 8px] [Description 14px/500] [Category 12px muted] → [Amount mono 14px/600 colored]
+
+### Progress Bar
+- Height: 6px, radius: 3px
+- Green <70%, Amber 70-90%, Red >90%
+
+### Dashboard Sections
+- NOT vertical list. Use named sections in 2-col grid:
+  - Left col: Net Worth hero (full), Cash Flow (full), Recent Transactions
+  - Right col: Accounts, Budget Progress, Goals Progress, Spending by Category

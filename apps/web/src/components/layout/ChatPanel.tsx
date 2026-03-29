@@ -4,14 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"
-import { Banknote, BarChart3, Bot, ClipboardList, MessageCircle } from "lucide-react"
+import { Banknote, BarChart3, Bot, ClipboardList, MessageCircle, X } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 
 interface ChatMessage {
@@ -117,109 +110,118 @@ export function ChatPanel() {
         </button>
       )}
 
-      {/* Chat sheet */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-[400px] flex flex-col p-0">
-          <SheetHeader className="px-4 py-3 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <SheetTitle className="text-sm font-semibold">Assistente</SheetTitle>
-                <SheetDescription className="text-xs">
-                  Pergunte-me qualquer coisa
-                </SheetDescription>
-              </div>
-              {messages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setMessages([])
-                    setSessionId(null)
-                  }}
-                >
-                  Limpar
-                </Button>
-              )}
-            </div>
-          </SheetHeader>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center pt-8 gap-3">
-                <Bot className="h-10 w-10 text-muted-foreground" />
-                <p className="text-sm text-center text-muted-foreground">
-                  Ola! Sou o teu assistente financeiro.
-                </p>
-                <div className="w-full space-y-2 mt-4">
-                  {QUICK_ACTIONS.map((action) => (
-                    <button
-                      key={action.label}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-lg border border-border hover:bg-accent transition-colors"
-                      onClick={() => sendMessage(action.label)}
-                    >
-                      <action.Icon className="h-4 w-4" />
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`max-w-[90%] ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}
-                >
-                  {msg.role === "assistant" && msg.agent && (
-                    <span className="text-[10px] font-semibold text-primary uppercase mb-0.5 block">
-                      {msg.agent}
-                    </span>
-                  )}
-                  <div
-                    className={`rounded-2xl px-3 py-2 text-sm ${
-                      msg.role === "user"
-                        ? "bg-foreground text-background rounded-br-sm"
-                        : "bg-muted rounded-bl-sm"
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div className="text-xs text-muted-foreground italic">A pensar...</div>
-            )}
-            <div ref={messagesEndRef} />
+      {/* Side panel — no overlay, no blocking */}
+      <aside
+        className={`fixed top-0 right-0 z-40 h-full w-[380px] bg-card border-l border-border shadow-[−4px_0_16px_rgba(0,0,0,0.08)] flex flex-col transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div>
+            <h2 className="text-sm font-semibold">Assistente</h2>
+            <p className="text-xs text-muted-foreground">
+              Pergunte-me qualquer coisa
+            </p>
           </div>
-
-          {/* Input */}
-          <div className="p-3 border-t border-border">
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault()
-                sendMessage(input)
-              }}
-            >
-              <Input
-                placeholder="Escreve uma mensagem..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading}
-                className="text-sm"
-              />
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && (
               <Button
-                type="submit"
+                variant="ghost"
                 size="sm"
-                disabled={!input.trim() || isLoading}
+                onClick={() => {
+                  setMessages([])
+                  setSessionId(null)
+                }}
               >
-                Enviar
+                Limpar
               </Button>
-            </form>
+            )}
+            <button
+              onClick={() => setOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center pt-8 gap-3">
+              <Bot className="h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-center text-muted-foreground">
+                Ola! Sou o teu assistente financeiro.
+              </p>
+              <div className="w-full space-y-2 mt-4">
+                {QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-lg border border-border hover:bg-accent transition-colors"
+                    onClick={() => sendMessage(action.label)}
+                  >
+                    <action.Icon className="h-4 w-4" />
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`max-w-[90%] ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}
+              >
+                {msg.role === "assistant" && msg.agent && (
+                  <span className="text-[10px] font-semibold text-primary uppercase mb-0.5 block">
+                    {msg.agent}
+                  </span>
+                )}
+                <div
+                  className={`rounded-2xl px-3 py-2 text-sm ${
+                    msg.role === "user"
+                      ? "bg-foreground text-background rounded-br-sm"
+                      : "bg-muted rounded-bl-sm"
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))
+          )}
+          {isLoading && (
+            <div className="text-xs text-muted-foreground italic">A pensar...</div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="p-3 border-t border-border">
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              sendMessage(input)
+            }}
+          >
+            <Input
+              placeholder="Escreve uma mensagem..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+              className="text-sm"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!input.trim() || isLoading}
+            >
+              Enviar
+            </Button>
+          </form>
+        </div>
+      </aside>
     </>
   )
 }

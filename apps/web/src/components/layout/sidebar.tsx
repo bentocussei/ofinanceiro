@@ -8,11 +8,14 @@ import {
   GraduationCap,
   Home,
   LogOut,
+  Monitor,
+  Moon,
   Newspaper,
   PanelLeftClose,
   PanelLeftOpen,
   PieChart,
   Settings,
+  Sun,
   Target,
   TrendingUp,
   Users,
@@ -22,6 +25,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState, type ElementType } from "react"
 import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface NavItem {
   href: string
@@ -38,7 +46,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Principal",
     items: [
-      { href: "/", label: "Dashboard", icon: Home },
+      { href: "/dashboard", label: "Dashboard", icon: Home },
       { href: "/transactions", label: "Transaccoes", icon: ArrowLeftRight },
       { href: "/accounts", label: "Contas", icon: Wallet },
     ],
@@ -64,25 +72,63 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ]
 
-const SETTINGS_ITEM: NavItem = {
-  href: "/settings",
-  label: "Configuracoes",
-  icon: Settings,
+type Theme = "light" | "dark" | "system"
+
+function useTheme() {
+  const [theme, setThemeState] = useState<Theme>("system")
+
+  useEffect(() => {
+    const stored = localStorage.getItem("theme") as Theme | null
+    if (stored) {
+      setThemeState(stored)
+      applyTheme(stored)
+    }
+  }, [])
+
+  const setTheme = (t: Theme) => {
+    setThemeState(t)
+    localStorage.setItem("theme", t)
+    applyTheme(t)
+  }
+
+  return { theme, setTheme }
+}
+
+function applyTheme(t: Theme) {
+  const root = document.documentElement
+  if (t === "dark") {
+    root.classList.add("dark")
+  } else if (t === "light") {
+    root.classList.remove("dark")
+  } else {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      root.classList.add("dark")
+    } else {
+      root.classList.remove("dark")
+    }
+  }
 }
 
 export function Sidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [collapsed, setCollapsed] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     getCurrentUser().then(setUser)
   }, [])
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/"
+    if (href === "/dashboard") return pathname === "/dashboard"
     return pathname.startsWith(href)
   }
+
+  const themeOptions: { value: Theme; label: string; icon: ElementType }[] = [
+    { value: "light", label: "Claro", icon: Sun },
+    { value: "dark", label: "Escuro", icon: Moon },
+    { value: "system", label: "Sistema", icon: Monitor },
+  ]
 
   return (
     <aside
@@ -128,7 +174,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
-                  className={`relative flex items-center gap-3 rounded-lg h-10 text-sm font-medium transition-colors mb-0.5 ${
+                  className={`relative flex items-center gap-3 rounded-md h-[38px] text-sm font-medium transition-colors mb-0.5 ${
                     collapsed ? "justify-center px-0" : "px-3"
                   } ${
                     active
@@ -148,60 +194,91 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Settings */}
-      <div className="px-2 pb-1">
-        {(() => {
-          const active = isActive(SETTINGS_ITEM.href)
-          const Icon = SETTINGS_ITEM.icon
-          return (
-            <Link
-              href={SETTINGS_ITEM.href}
-              title={collapsed ? SETTINGS_ITEM.label : undefined}
-              className={`relative flex items-center gap-3 rounded-lg h-10 text-sm font-medium transition-colors ${
-                collapsed ? "justify-center px-0" : "px-3"
-              } ${
-                active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-sm bg-primary" />
-              )}
-              <Icon className="h-[18px] w-[18px] shrink-0" />
-              {!collapsed && <span>{SETTINGS_ITEM.label}</span>}
-            </Link>
-          )
-        })()}
-      </div>
-
-      {/* User section */}
+      {/* User section with popover */}
       <div className="border-t border-sidebar-border px-2 py-3">
-        <div className={`flex items-center gap-3 rounded-lg px-2 py-1.5 ${collapsed ? "justify-center" : ""}`}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-            {user?.name?.charAt(0)?.toUpperCase() || "?"}
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-sidebar-foreground">
+        <Popover>
+          <PopoverTrigger
+            className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent cursor-pointer ${collapsed ? "justify-center" : ""}`}
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+              {user?.name?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                  {user?.name || "Utilizador"}
+                </p>
+                <p className="truncate text-[12px] text-muted-foreground">
+                  {user?.phone || ""}
+                </p>
+              </div>
+            )}
+          </PopoverTrigger>
+          <PopoverContent
+            side={collapsed ? "right" : "top"}
+            align="start"
+            className="w-56 p-0"
+          >
+            {/* User info */}
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-sm font-medium truncate">
                 {user?.name || "Utilizador"}
               </p>
-              <p className="truncate text-[12px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {user?.phone || ""}
               </p>
             </div>
-          )}
-        </div>
-        <button
-          onClick={logout}
-          title={collapsed ? "Terminar sessao" : undefined}
-          className={`mt-1 flex w-full items-center gap-3 rounded-lg h-10 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground ${
-            collapsed ? "justify-center px-0" : "px-3"
-          }`}
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && <span>Terminar sessao</span>}
-        </button>
+
+            {/* Settings link */}
+            <div className="p-1">
+              <Link
+                href="/settings"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                Configuracoes
+              </Link>
+            </div>
+
+            {/* Theme toggle */}
+            <div className="border-t border-border p-1">
+              <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Tema
+              </p>
+              <div className="flex gap-1 px-2 pb-1">
+                {themeOptions.map((opt) => {
+                  const Icon = opt.icon
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTheme(opt.value)}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                        theme === opt.value
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      }`}
+                      title={opt.label}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Logout */}
+            <div className="border-t border-border p-1">
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Terminar sessao
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </aside>
   )
