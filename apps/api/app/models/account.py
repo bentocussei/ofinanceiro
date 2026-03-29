@@ -1,0 +1,44 @@
+import uuid
+
+from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String, Text
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import BaseModel
+from app.models.enums import AccountType, CurrencyCode
+
+
+class Account(BaseModel):
+    __tablename__ = "accounts"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    # family_id FK will be added in Phase 4 when families table is created
+    family_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100))
+    type: Mapped[AccountType] = mapped_column(
+        ENUM(AccountType, name="account_type", create_type=False)
+    )
+    currency: Mapped[CurrencyCode] = mapped_column(
+        ENUM(CurrencyCode, name="currency_code", create_type=False),
+        default=CurrencyCode.AOA,
+    )
+    # Balance in centavos (integer) to avoid float precision issues
+    balance: Mapped[int] = mapped_column(Integer, default=0)
+    icon: Mapped[str | None] = mapped_column(String(10))
+    color: Mapped[str | None] = mapped_column(String(7))
+    institution: Mapped[str | None] = mapped_column(String(100))
+    account_number: Mapped[str | None] = mapped_column(Text)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="accounts")  # noqa: F821
+    transactions: Mapped[list["Transaction"]] = relationship(  # noqa: F821
+        back_populates="account", lazy="noload"
+    )
