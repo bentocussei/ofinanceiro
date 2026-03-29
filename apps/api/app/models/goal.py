@@ -50,6 +50,11 @@ class Goal(BaseModel):
         default=GoalStatus.ACTIVE,
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    savings_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
+    description: Mapped[str | None] = mapped_column(Text)
+    image_url: Mapped[str | None] = mapped_column(Text)
 
     contributions: Mapped[list["GoalContribution"]] = relationship(
         back_populates="goal", lazy="subquery", cascade="all, delete-orphan"

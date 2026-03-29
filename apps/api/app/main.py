@@ -9,23 +9,28 @@ from app.routers import (
     accounts,
     auth,
     billing,
+    bills,
     budgets,
     categories,
     chat,
     debts,
     education,
     families,
+    finance_settings,
     goals,
     health,
     imports,
+    income_sources,
     insights,
     investments,
     news,
     notifications,
     ocr,
     onboarding,
+    recurring_rules,
     reports,
     score,
+    snapshots,
     transactions,
     users,
     voice,
@@ -80,3 +85,8 @@ app.include_router(investments.router)
 app.include_router(news.router)
 app.include_router(education.router)
 app.include_router(users.router)
+app.include_router(income_sources.router)
+app.include_router(bills.router)
+app.include_router(recurring_rules.router)
+app.include_router(finance_settings.router)
+app.include_router(snapshots.router)
