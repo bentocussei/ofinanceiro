@@ -106,6 +106,26 @@ o-financeiro/
 - 5-second rule: any common action must be completable in under 5 seconds
 - Offline-capable: core features must work without internet, sync when back online
 
+### Mobile / Web Feature Parity
+
+Both platforms must be 100% implemented. Web is NOT a "lite" version.
+
+| Funcionalidade | Mobile | Web | Nota |
+|---------------|--------|-----|------|
+| Registo de transacções | Completo | Completo | Core em ambos |
+| Chat com assistente | Completo | Painel lateral permanente | Desktop: chat + dashboard em simultâneo |
+| Dashboard e relatórios | Completo | Completo (melhor) | Gráficos e tabelas brilham no desktop |
+| Orçamento | Completo | Completo | Core em ambos |
+| Família | Completo | Completo | Ecrã maior beneficia gestão familiar |
+| Import de extractos | Upload | Upload (melhor) | Desktop mais natural para ficheiros |
+| OCR de recibos | Completo (câmara) | Upload de foto apenas | Câmara é mobile |
+| Input por voz | Completo (Whisper) | Não prioritário | Ninguém fala para o PC no escritório |
+| Push notifications | Completo | Não aplicável | Push é mobile |
+| Modo offline | Completo | Não prioritário | Desktop tem internet estável |
+| Biometria | Completo | Não aplicável | Hardware mobile |
+| Quick-add (FAB) | FAB | Atalho de teclado | Adaptado ao contexto |
+| Estilo planilha | Disponível | Completo (melhor) | Planilha precisa de largura |
+
 ---
 
 ## AI Architecture

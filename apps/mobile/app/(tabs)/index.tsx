@@ -1,6 +1,7 @@
+import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   FlatList,
   Pressable,
@@ -12,6 +13,8 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import FAB from '../../components/common/FAB'
+import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
 import { formatKz, formatRelativeDate } from '../../lib/format'
 import { useAccountsStore } from '../../stores/accounts'
 import { Transaction, useTransactionsStore } from '../../stores/transactions'
@@ -20,6 +23,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const router = useRouter()
+  const txnSheetRef = useRef<BottomSheet>(null)
 
   const { summary, fetchSummary } = useAccountsStore()
   const { transactions, fetchTransactions, isLoading } = useTransactionsStore()
@@ -128,6 +132,9 @@ export default function HomeScreen() {
           </View>
         }
       />
+
+      <FAB onPress={() => txnSheetRef.current?.expand()} />
+      <CreateTransactionSheet ref={txnSheetRef} onCreated={onRefresh} />
     </SafeAreaView>
   )
 }
