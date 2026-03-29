@@ -87,10 +87,17 @@ async def create_transaction(
             detail={"code": "ACCOUNT_NOT_FOUND", "message": "Conta não encontrada"},
         )
 
+    # Auto-categorize if no category provided
+    category_id = data.category_id
+    if not category_id and data.description:
+        from app.services.categorize import suggest_category
+
+        category_id = await suggest_category(db, data.description, data.merchant)
+
     txn = Transaction(
         user_id=user_id,
         account_id=data.account_id,
-        category_id=data.category_id,
+        category_id=category_id,
         amount=data.amount,
         type=data.type,
         description=data.description,
