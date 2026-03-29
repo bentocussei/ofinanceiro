@@ -1,17 +1,19 @@
+import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useColorScheme,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import CreateAccountSheet from '../../components/accounts/CreateAccountSheet'
+import FAB from '../../components/common/FAB'
 import { formatKz } from '../../lib/format'
 import { Account, useAccountsStore } from '../../stores/accounts'
 
@@ -38,6 +40,7 @@ const ACCOUNT_TYPE_ICONS: Record<string, string> = {
 export default function AccountsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const createSheetRef = useRef<BottomSheet>(null)
   const { accounts, summary, fetchSummary, isLoading } = useAccountsStore()
 
   useEffect(() => {
@@ -104,6 +107,9 @@ export default function AccountsScreen() {
           </View>
         }
       />
+
+      <FAB onPress={() => createSheetRef.current?.expand()} />
+      <CreateAccountSheet ref={createSheetRef} onCreated={() => fetchSummary()} />
     </SafeAreaView>
   )
 }
