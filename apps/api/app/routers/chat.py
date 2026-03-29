@@ -2,10 +2,12 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.cache import get_cached_response, set_cached_response
 from app.ai.llm.factory import create_llm_router
+from app.ai.metering import check_quota, record_token_usage
 from app.ai.orchestrator import ChatOrchestrator
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -14,7 +16,6 @@ from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
-# Create orchestrator (singleton for the router module)
 _orchestrator: ChatOrchestrator | None = None
 
 
@@ -33,7 +34,28 @@ async def send_message(
     user: User = Depends(get_current_user),
 ) -> ChatMessageResponse:
     """Send a message to the AI assistant."""
+    # Check quota
+    can_continue = await check_quota(user.id, user.plan)
+    if not can_continue:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "QUOTA_EXCEEDED",
+                "message": "Atingiste o limite diário de perguntas. Actualiza o teu plano para mais.",
+            },
+        )
+
     session_id = data.session_id or str(uuid.uuid4())
+
+    # Check L1 cache for exact match
+    cached = await get_cached_response(str(user.id), data.message)
+    if cached:
+        return ChatMessageResponse(
+            content=cached,
+            agent="cache",
+            session_id=session_id,
+        )
+
     orchestrator = get_orchestrator()
 
     response = await orchestrator.process_message(
@@ -43,6 +65,13 @@ async def send_message(
         db=db,
         conversation_history=data.conversation_history,
     )
+
+    # Record token usage
+    await record_token_usage(user.id, response.tokens_input, response.tokens_output)
+
+    # Cache the response (L1)
+    if response.content and not response.needs_confirmation:
+        await set_cached_response(str(user.id), data.message, response.content)
 
     return ChatMessageResponse(
         content=response.content,
