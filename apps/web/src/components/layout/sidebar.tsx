@@ -7,6 +7,7 @@ import {
   PieChart,
   Settings,
   Target,
+  Users,
   Wallet,
 } from "lucide-react"
 import Link from "next/link"
@@ -19,6 +20,7 @@ const NAV_ITEMS: { href: string; label: string; icon: ElementType }[] = [
   { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
   { href: "/budget", label: "Orçamentos", icon: PieChart },
   { href: "/goals", label: "Metas", icon: Target },
+  { href: "/family", label: "Família", icon: Users },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
   { href: "/settings", label: "Configurações", icon: Settings },
 ]

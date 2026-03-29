@@ -21,7 +21,7 @@ export default function MoreScreen() {
         <MenuItem icon="bar-chart-outline" label="Relatórios" isDark={isDark} onPress={() => router.push('/(tabs)/reports')} />
         <MenuItem icon="flag-outline" label="Metas" isDark={isDark} onPress={() => router.push('/goals')} />
         <MenuItem icon="card-outline" label="Dívidas" isDark={isDark} />
-        <MenuItem icon="people-outline" label="Família" isDark={isDark} />
+        <MenuItem icon="people-outline" label="Família" isDark={isDark} onPress={() => router.push('/family')} />
         <MenuItem icon="settings-outline" label="Configurações" isDark={isDark} />
 
         <Pressable style={styles.logoutRow} onPress={logout}>
