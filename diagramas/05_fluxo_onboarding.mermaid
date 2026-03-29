@@ -1,0 +1,44 @@
+%% O Financeiro — Fluxo de Primeiro Uso (Onboarding)
+
+flowchart TD
+    START["📱 Abrir App pela Primeira Vez"] --> WELCOME["Ecrã de Boas-Vindas<br/>'Olá! Sou O Financeiro.'"]
+    WELCOME --> AUTH{"Registar ou Login?"}
+    
+    AUTH -->|"Registar"| REG_PHONE["Inserir Telefone"]
+    REG_PHONE --> OTP["Receber OTP por SMS"]
+    OTP --> VERIFY["Verificar Código"]
+    AUTH -->|"Login"| LOGIN["Login com telefone/email"]
+    
+    VERIFY --> PROFILE["Setup Perfil<br/>Nome, Avatar"]
+    LOGIN --> HOME_EXISTING["Home (utilizador existente)"]
+    
+    PROFILE --> CURRENCY["Escolher Moeda<br/>🇦🇴 Kwanza (default)<br/>🇺🇸 USD<br/>🇪🇺 EUR"]
+    
+    CURRENCY --> SALARY["'Quando recebes salário?'<br/>Escolher dia do mês<br/>(assistente pergunta via chat)"]
+    
+    SALARY --> FIRST_ACCOUNT["Criar Primeira Conta<br/>'Qual é a tua conta principal?'<br/>Ex: BAI - Conta Corrente"]
+    
+    FIRST_ACCOUNT --> FIRST_BALANCE["'Quanto tens nesta conta agora?'<br/>Inserir saldo actual"]
+    
+    FIRST_BALANCE --> MORE_ACCOUNTS{"Tens mais contas?"}
+    MORE_ACCOUNTS -->|"Sim"| ADD_ACCOUNT["Adicionar Conta<br/>(BFA, Multicaixa Express, Cash...)"]
+    ADD_ACCOUNT --> MORE_ACCOUNTS
+    MORE_ACCOUNTS -->|"Não, por agora"| TUTORIAL
+    
+    TUTORIAL["Mini-Tutorial<br/>'Vou mostrar-te como funciono'"]
+    TUTORIAL --> DEMO_EXPENSE["Demo: Registar Gasto<br/>'Diz-me: gastei 2000 com café'<br/>(utilizador testa o chat)"]
+    
+    DEMO_EXPENSE --> DEMO_QUERY["Demo: Consultar<br/>'Agora pergunta: quanto tenho na conta?'"]
+    
+    DEMO_QUERY --> PLAN{"Escolher Plano"}
+    PLAN -->|"Gratuito"| HOME["🏠 Home"]
+    PLAN -->|"Pessoal $2.99"| PAYMENT["Pagamento"]
+    PLAN -->|"Família $5.99"| PAYMENT
+    PAYMENT --> HOME
+    
+    HOME --> DAILY["Uso Diário<br/>• Registar gastos por chat/voz<br/>• Ver dashboard<br/>• Receber insights<br/>• Criar orçamento<br/>• Definir metas"]
+
+    style START fill:#E3F2FD
+    style HOME fill:#E8F5E9
+    style DEMO_EXPENSE fill:#FFF3E0
+    style DEMO_QUERY fill:#FFF3E0

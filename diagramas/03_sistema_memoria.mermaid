@@ -1,0 +1,51 @@
+%% O Financeiro — Sistema de Memória
+%% Três camadas de memória do assistente
+
+graph TB
+    subgraph INPUT["💬 Input do Utilizador"]
+        MSG["Mensagem / Conversa"]
+    end
+
+    subgraph PROCESSING["🔄 Processamento"]
+        AGENT["Agente Especializado"]
+        EXTRACTOR["Memory Extractor<br/>(Assíncrono)"]
+    end
+
+    subgraph MEMORY["🧠 3 Camadas de Memória"]
+        subgraph L1["Camada 1: Sessão"]
+            SESSION["Redis<br/>TTL: 24h<br/>• Últimas 20 mensagens<br/>• Agente activo<br/>• Estado de workflow"]
+        end
+
+        subgraph L2["Camada 2: Factos"]
+            FACTS["PostgreSQL<br/>Permanente<br/>• Salário: 450.000 Kz<br/>• Dia salário: 25<br/>• 2 filhos<br/>• Renda: 150.000 Kz<br/>• Banco: BAI"]
+        end
+
+        subgraph L3["Camada 3: Semântica"]
+            SEMANTIC["pgvector<br/>Embeddings<br/>• Padrões de gasto<br/>• Preferências inferidas<br/>• Conversas passadas<br/>• Objectivos mencionados"]
+        end
+    end
+
+    subgraph SOURCES["📥 Fontes de Memória"]
+        EXPLICIT["Explícita<br/>'Recebo salário dia 25'"]
+        IMPLICIT["Implícita<br/>3 meses de dados → padrão"]
+        INFERRED["Inferida<br/>IA detecta comportamento"]
+    end
+
+    MSG --> AGENT
+    AGENT --> SESSION
+    AGENT --> EXTRACTOR
+
+    EXTRACTOR --> FACTS
+    EXTRACTOR --> SEMANTIC
+
+    EXPLICIT --> FACTS
+    IMPLICIT --> FACTS
+    INFERRED --> SEMANTIC
+
+    SESSION -.->|"Contexto imediato"| AGENT
+    FACTS -.->|"Factos conhecidos"| AGENT
+    SEMANTIC -.->|"Busca semântica"| AGENT
+
+    style L1 fill:#E3F2FD,stroke:#1565C0
+    style L2 fill:#E8F5E9,stroke:#2E7D32
+    style L3 fill:#FFF3E0,stroke:#E65100

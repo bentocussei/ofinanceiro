@@ -1,0 +1,97 @@
+%% O Financeiro — Arquitectura do Sistema
+%% Visão geral de alto nível
+
+graph TB
+    subgraph CLIENTS["📱 Clientes"]
+        MOBILE["React Native + Expo<br/>(iOS & Android)"]
+        WEB["Next.js 15<br/>(Web App)"]
+    end
+
+    subgraph API_GATEWAY["🔐 API Gateway"]
+        AUTH["Auth Middleware<br/>(JWT + Rate Limit)"]
+    end
+
+    subgraph BACKEND["⚙️ Backend (FastAPI)"]
+        direction TB
+        subgraph CORE_API["Core API"]
+            ACC_SVC["Accounts Service"]
+            TXN_SVC["Transactions Service"]
+            BUD_SVC["Budget Service"]
+            FAM_SVC["Family Service"]
+            GOL_SVC["Goals Service"]
+            DEB_SVC["Debts Service"]
+            RPT_SVC["Reports Service"]
+            NTF_SVC["Notifications Service"]
+            USR_SVC["Users Service"]
+        end
+
+        subgraph AI_ENGINE["🧠 AI Engine"]
+            ROUTER["Router Agent"]
+            TRACKER["Tracker Agent"]
+            ADVISOR["Advisor Agent"]
+            BUDGET_A["Budget Agent"]
+            FAMILY_A["Family Agent"]
+            GOALS_A["Goals Agent"]
+            REPORT_A["Report Agent"]
+            DEBT_A["Debt Agent"]
+            NEWS_A["News Agent"]
+            TOOL_DISP["Tool Dispatcher"]
+            MEMORY["Memory Manager"]
+            SKILLS["Skills Loader"]
+            INSIGHT["Smart Insights<br/>Engine"]
+        end
+    end
+
+    subgraph DATA["💾 Data Layer"]
+        PG["PostgreSQL 16<br/>(+ pgvector)"]
+        REDIS["Redis<br/>(Cache + Sessions)"]
+        S3["Object Storage<br/>(Recibos, Extractos)"]
+    end
+
+    subgraph EXTERNAL["🌐 Serviços Externos"]
+        LLM_PROVIDERS["LLM Providers<br/>(Claude, GPT-4o, Gemini)"]
+        WHISPER["Whisper API<br/>(Speech-to-Text)"]
+        NEWS_FEED["News APIs<br/>(RSS, Scraping)"]
+        BNA["BNA Câmbio<br/>(Taxa oficial)"]
+        PUSH["FCM / APNS<br/>(Push Notifications)"]
+    end
+
+    MOBILE --> AUTH
+    WEB --> AUTH
+    AUTH --> CORE_API
+    AUTH --> AI_ENGINE
+
+    ROUTER --> TRACKER
+    ROUTER --> ADVISOR
+    ROUTER --> BUDGET_A
+    ROUTER --> FAMILY_A
+    ROUTER --> GOALS_A
+    ROUTER --> REPORT_A
+    ROUTER --> DEBT_A
+    ROUTER --> NEWS_A
+
+    TRACKER --> TOOL_DISP
+    ADVISOR --> TOOL_DISP
+    BUDGET_A --> TOOL_DISP
+    FAMILY_A --> TOOL_DISP
+    GOALS_A --> TOOL_DISP
+    REPORT_A --> TOOL_DISP
+    DEBT_A --> TOOL_DISP
+
+    TOOL_DISP --> CORE_API
+
+    AI_ENGINE --> LLM_PROVIDERS
+    AI_ENGINE --> WHISPER
+    NEWS_A --> NEWS_FEED
+    RPT_SVC --> BNA
+    NTF_SVC --> PUSH
+
+    MEMORY --> PG
+    MEMORY --> REDIS
+    SKILLS --> S3
+
+    CORE_API --> PG
+    CORE_API --> REDIS
+    INSIGHT --> PG
+    INSIGHT --> LLM_PROVIDERS
+    INSIGHT --> PUSH

@@ -1,0 +1,40 @@
+%% O Financeiro — Fluxo Multi-Agente
+%% Como uma mensagem é processada
+
+sequenceDiagram
+    actor U as Utilizador
+    participant APP as Mobile/Web App
+    participant API as FastAPI
+    participant R as Router Agent
+    participant A as Agente Especializado
+    participant TD as Tool Dispatcher
+    participant DB as PostgreSQL
+    participant MEM as Memory Manager
+    participant LLM as LLM Provider
+
+    U->>APP: "Gastei 5000 com almoço"
+    APP->>API: POST /api/v1/chat {message, session_id}
+    API->>MEM: Carregar contexto sessão + factos utilizador
+    MEM-->>API: {session_context, user_facts}
+
+    API->>R: Classificar intent
+    R->>LLM: [Router Prompt + mensagem]
+    LLM-->>R: "TRACKER"
+
+    R->>A: Encaminhar para Tracker Agent
+    Note over A: Carrega Skills:<br/>categorization.md<br/>voice_parsing.md
+    A->>LLM: [Tracker Prompt + Skills + Facts + mensagem]
+    LLM-->>A: Tool Call: add_transaction(amount=5000, type=expense, category=Alimentação, subcategory=Restaurante)
+
+    A->>TD: Executar add_transaction
+    TD->>DB: INSERT INTO transactions (...)
+    DB-->>TD: {id: "txn_123", success: true}
+    TD-->>A: {result: "Transacção criada"}
+
+    A->>LLM: [Resultado da tool + contexto]
+    LLM-->>A: "Registei: 5.000 Kz em Alimentação (Restaurante). Correcto? ✅"
+
+    A-->>API: Resposta final
+    API->>MEM: Actualizar sessão + extrair factos (async)
+    API-->>APP: {message: "Registei: 5.000 Kz...", type: "confirm"}
+    APP-->>U: Mostra resposta + botão confirmar/editar

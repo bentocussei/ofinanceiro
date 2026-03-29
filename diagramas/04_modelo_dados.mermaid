@@ -1,0 +1,209 @@
+%% O Financeiro — Modelo de Dados
+%% Diagrama ER principal
+
+erDiagram
+    USERS {
+        uuid id PK
+        string email
+        string phone
+        string name
+        string avatar_url
+        string currency_default
+        string country
+        string language
+        string plan
+        int salary_day
+        jsonb preferences
+        timestamp created_at
+    }
+
+    ACCOUNTS {
+        uuid id PK
+        uuid user_id FK
+        uuid family_id FK
+        string name
+        string type
+        string currency
+        decimal balance
+        string icon
+        string color
+        boolean is_archived
+        int sort_order
+        timestamp created_at
+    }
+
+    TRANSACTIONS {
+        uuid id PK
+        uuid account_id FK
+        uuid user_id FK
+        uuid category_id FK
+        uuid family_member_id FK
+        decimal amount
+        string type
+        string description
+        string merchant
+        point location
+        string receipt_url
+        string[] tags
+        boolean is_recurring
+        jsonb recurrence_rule
+        boolean needs_review
+        boolean is_private
+        text notes
+        date transaction_date
+        timestamp created_at
+    }
+
+    CATEGORIES {
+        uuid id PK
+        uuid parent_id FK
+        string name
+        string icon
+        string color
+        string type
+        boolean is_system
+        boolean is_active
+        int sort_order
+    }
+
+    BUDGETS {
+        uuid id PK
+        uuid user_id FK
+        uuid family_id FK
+        string method
+        string period_type
+        date period_start
+        date period_end
+        decimal total_limit
+        boolean rollover
+        timestamp created_at
+    }
+
+    BUDGET_ITEMS {
+        uuid id PK
+        uuid budget_id FK
+        uuid category_id FK
+        decimal limit_amount
+        decimal spent_amount
+    }
+
+    GOALS {
+        uuid id PK
+        uuid user_id FK
+        uuid family_id FK
+        string name
+        string type
+        string icon
+        decimal target_amount
+        decimal current_amount
+        date target_date
+        decimal monthly_contribution
+        boolean auto_contribute
+        string status
+        timestamp created_at
+    }
+
+    DEBTS {
+        uuid id PK
+        uuid user_id FK
+        string name
+        string type
+        string creditor
+        decimal original_amount
+        decimal current_balance
+        decimal interest_rate
+        decimal monthly_payment
+        date start_date
+        date end_date
+        int payment_day
+        timestamp created_at
+    }
+
+    FAMILIES {
+        uuid id PK
+        string name
+        uuid admin_user_id FK
+        jsonb contribution_model
+        timestamp created_at
+    }
+
+    FAMILY_MEMBERS {
+        uuid id PK
+        uuid family_id FK
+        uuid user_id FK
+        string role
+        string display_name
+        boolean is_active
+        timestamp joined_at
+    }
+
+    CHAT_MESSAGES {
+        uuid id PK
+        uuid user_id FK
+        string session_id
+        string role
+        text content
+        string agent
+        jsonb tool_calls
+        jsonb tool_results
+        timestamp created_at
+    }
+
+    USER_FACTS {
+        uuid id PK
+        uuid user_id FK
+        string fact_type
+        string fact_value
+        float confidence
+        string source
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        string type
+        string title
+        text body
+        jsonb data
+        boolean is_read
+        timestamp sent_at
+    }
+
+    RECURRING_PATTERNS {
+        uuid id PK
+        uuid user_id FK
+        uuid category_id FK
+        string merchant
+        decimal avg_amount
+        string frequency
+        int day_of_month
+        boolean confirmed
+        timestamp detected_at
+    }
+
+    USERS ||--o{ ACCOUNTS : "has"
+    USERS ||--o{ TRANSACTIONS : "creates"
+    USERS ||--o{ BUDGETS : "creates"
+    USERS ||--o{ GOALS : "creates"
+    USERS ||--o{ DEBTS : "has"
+    USERS ||--o{ CHAT_MESSAGES : "sends"
+    USERS ||--o{ USER_FACTS : "has"
+    USERS ||--o{ NOTIFICATIONS : "receives"
+
+    ACCOUNTS ||--o{ TRANSACTIONS : "contains"
+    CATEGORIES ||--o{ TRANSACTIONS : "categorises"
+    CATEGORIES ||--o{ BUDGET_ITEMS : "limits"
+    CATEGORIES ||--o{ CATEGORIES : "parent"
+
+    BUDGETS ||--o{ BUDGET_ITEMS : "contains"
+    FAMILIES ||--o{ FAMILY_MEMBERS : "has"
+    FAMILIES ||--o{ ACCOUNTS : "owns"
+    FAMILIES ||--o{ BUDGETS : "has"
+    FAMILIES ||--o{ GOALS : "has"
+
+    FAMILY_MEMBERS }o--|| USERS : "is"
+    FAMILY_MEMBERS ||--o{ TRANSACTIONS : "responsible"
+
+    USERS ||--o{ RECURRING_PATTERNS : "has"
