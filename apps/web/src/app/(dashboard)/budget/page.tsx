@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { PieChart } from "lucide-react"
 
 import { BudgetDetailDialog } from "@/components/budgets/BudgetDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -158,10 +159,10 @@ export default function BudgetPage() {
 
       {budgets.length === 0 ? (
         <div className="text-center py-16">
-          <IconDisplay name="financeiro" className="h-12 w-12 opacity-30" />
-          <p className="text-muted-foreground mt-3">Nenhum orçamento criado</p>
+          <PieChart className="h-10 w-10 mx-auto text-muted-foreground/30" />
+          <p className="text-muted-foreground mt-3">Nenhum orcamento criado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie um orçamento para controlar os seus gastos
+            Crie um orcamento para controlar os seus gastos
           </p>
         </div>
       ) : (
@@ -171,7 +172,7 @@ export default function BudgetPage() {
             return (
               <div
                 key={budget.id}
-                className="rounded-lg border bg-card p-4 cursor-pointer hover:border-foreground/20 transition-colors"
+                className="rounded-xl bg-card p-5 shadow-sm cursor-pointer transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
                 onClick={() => setSelectedBudget(selectedBudget === budget.id ? null : budget.id)}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -192,8 +193,8 @@ export default function BudgetPage() {
                       <span className="font-mono font-bold text-lg">{formatKz(status.total_spent)}</span>
                       <span className="text-sm text-muted-foreground font-mono">/ {formatKz(status.total_limit || 0)}</span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full mb-1">
-                      <div className={`h-2 rounded-full ${getProgressColor(status.percentage)}`} style={{ width: `${Math.min(status.percentage, 100)}%` }} />
+                    <div className="h-1.5 bg-muted rounded-full mb-1">
+                      <div className={`h-1.5 rounded-full transition-all ${getProgressColor(status.percentage)}`} style={{ width: `${Math.min(status.percentage, 100)}%` }} />
                     </div>
                     <p className={`text-xs font-semibold ${getTextColor(status.percentage)}`}>{status.percentage}% utilizado</p>
 

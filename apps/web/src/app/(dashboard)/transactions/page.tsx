@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect, useState } from "react"
 
+import { Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
@@ -98,7 +99,7 @@ export default function TransactionsPage() {
         <h2 className="text-2xl font-bold tracking-tight">Transacções</h2>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex border rounded-lg overflow-hidden">
+          <div className="flex rounded-lg shadow-sm overflow-hidden">
             <button
               className={`px-3 py-1.5 text-xs ${viewMode === "grouped" ? "bg-foreground text-background" : "hover:bg-accent"}`}
               onClick={() => setViewMode("grouped")}
@@ -150,14 +151,17 @@ export default function TransactionsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-center text-muted-foreground py-16">
-          {typeFilter !== "all" || periodFilter !== "all"
-            ? "Nenhuma transacção encontrada com estes filtros"
-            : "Nenhuma transacção registada"}
-        </p>
+        <div className="text-center py-16">
+          <Receipt className="h-10 w-10 mx-auto text-muted-foreground/30" />
+          <p className="text-muted-foreground mt-3">
+            {typeFilter !== "all" || periodFilter !== "all"
+              ? "Nenhuma transaccao encontrada com estes filtros"
+              : "Nenhuma transaccao registada"}
+          </p>
+        </div>
       ) : viewMode === "table" ? (
         /* Table/Spreadsheet View */
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        <div className="rounded-xl bg-card shadow-sm overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
@@ -222,7 +226,7 @@ export default function TransactionsPage() {
                     {formatKz(Math.abs(dayTotal))}
                   </span>
                 </div>
-                <div className="rounded-lg border bg-card divide-y">
+                <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
                   {items.map((txn) => (
                     <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
                       <span className="text-sm">{txn.description || "Sem descrição"}</span>

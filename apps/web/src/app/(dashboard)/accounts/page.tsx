@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { Wallet } from "lucide-react"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { AccountDetailDialog } from "@/components/accounts/AccountDetailDialog"
 import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
@@ -60,26 +61,26 @@ export default function AccountsPage() {
         <>
           {/* Summary */}
           <div className="grid gap-4 md:grid-cols-3 mb-8">
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Activos</p>
+            <div className="rounded-xl bg-card p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Activos</p>
               <p className="text-xl font-mono font-bold text-green-500 mt-1">
                 {formatKz(summary.total_assets)}
               </p>
             </div>
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Passivos</p>
+            <div className="rounded-xl bg-card p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Passivos</p>
               <p className="text-xl font-mono font-bold text-red-500 mt-1">
                 {formatKz(summary.total_liabilities)}
               </p>
             </div>
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Patrimônio líquido</p>
+            <div className="rounded-xl bg-card p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Patrimonio liquido</p>
               <p className="text-xl font-mono font-bold mt-1">{formatKz(summary.net_worth)}</p>
             </div>
           </div>
 
           {/* Accounts List */}
-          <div className="rounded-lg border bg-card divide-y">
+          <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
             {summary.accounts.map((acc) => (
               <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
                 <div className="flex items-center gap-3">
@@ -102,7 +103,10 @@ export default function AccountsPage() {
               </div>
             ))}
             {summary.accounts.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">Nenhuma conta criada</p>
+              <div className="text-center py-12">
+                <Wallet className="h-10 w-10 mx-auto text-muted-foreground/30" />
+                <p className="text-muted-foreground mt-3">Nenhuma conta criada</p>
+              </div>
             )}
           </div>
         </>

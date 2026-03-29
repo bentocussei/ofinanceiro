@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { Target } from "lucide-react"
 
 import { GoalDetailDialog } from "@/components/goals/GoalDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -135,8 +136,9 @@ export default function GoalsPage() {
 
       {goals.length === 0 ? (
         <div className="text-center py-16">
-          <IconDisplay name="custom" className="h-12 w-12 opacity-30" />
+          <Target className="h-10 w-10 mx-auto text-muted-foreground/30" />
           <p className="text-muted-foreground mt-3">Nenhuma meta criada</p>
+          <p className="text-sm text-muted-foreground mt-1">Defina metas para acompanhar as suas poupancas</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -148,7 +150,7 @@ export default function GoalsPage() {
             return (
               <div
                 key={goal.id}
-                className="rounded-lg border bg-card p-4 cursor-pointer hover:border-foreground/20 transition-colors"
+                className="rounded-xl bg-card p-5 shadow-sm cursor-pointer transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
                 onClick={() => setSelectedGoal(isSelected ? null : goal.id)}
               >
                 <div className="flex items-center gap-2 mb-3">
