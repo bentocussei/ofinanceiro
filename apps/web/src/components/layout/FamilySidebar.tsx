@@ -2,7 +2,10 @@
 
 import {
   ArrowLeftRight,
+  Banknote,
   BarChart3,
+  Bell,
+  CreditCard,
   Home,
   LogOut,
   Monitor,
@@ -11,9 +14,12 @@ import {
   PanelLeftOpen,
   Percent,
   PieChart,
+  Receipt,
+  Repeat,
   Settings,
   Sun,
   Target,
+  TrendingUp,
   Users,
   Wallet,
 } from "lucide-react"
@@ -49,19 +55,24 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Gestão Familiar",
+    label: "Gestão",
     items: [
       { href: "/family/budget", label: "Orçamento doméstico", icon: PieChart },
       { href: "/family/goals", label: "Metas familiares", icon: Target },
-      { href: "/family/members", label: "Membros", icon: Users },
-      { href: "/family/expense-splits", label: "Divisão de despesas", icon: Percent },
+      { href: "/family/debts", label: "Dívidas", icon: CreditCard },
+      { href: "/family/investments", label: "Investimentos", icon: TrendingUp },
+      { href: "/family/income-sources", label: "Rendimentos", icon: Banknote },
+      { href: "/family/bills", label: "Contas a pagar", icon: Receipt },
+      { href: "/family/recurring-rules", label: "Recorrentes", icon: Repeat },
     ],
   },
   {
     label: "Mais",
     items: [
+      { href: "/family/members", label: "Membros", icon: Users },
+      { href: "/family/expense-splits", label: "Divisão de despesas", icon: Percent },
       { href: "/family/reports", label: "Relatórios", icon: BarChart3 },
-      { href: "/family/settings", label: "Configurações", icon: Settings },
+      { href: "/family/notifications", label: "Notificações", icon: Bell },
     ],
   },
 ]
