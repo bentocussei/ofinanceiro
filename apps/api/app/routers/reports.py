@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.account import Account
+from app.models.asset import Asset
 from app.models.category import Category
 from app.models.debt import Debt
 from app.models.enums import AccountType, GoalStatus, TransactionType
@@ -148,6 +149,14 @@ async def get_patrimony(
     goals_list = list((await db.execute(goals_stmt)).scalars().all())
     savings_total = sum(g.current_amount for g in goals_list)
 
+    # --- Physical assets ---
+    physical_assets_stmt = select(Asset).where(
+        Asset.user_id == user.id,
+        Asset.is_active.is_(True),
+    )
+    physical_assets = list((await db.execute(physical_assets_stmt)).scalars().all())
+    physical_assets_total = sum(a.current_value for a in physical_assets)
+
     # --- Active debts ---
     debts_stmt = select(Debt).where(
         Debt.user_id == user.id,
@@ -165,7 +174,7 @@ async def get_patrimony(
     credit_accounts = list((await db.execute(credit_accounts_stmt)).scalars().all())
     credit_total = sum(abs(a.balance) for a in credit_accounts)
 
-    total_assets = accounts_total + investments_total + savings_total
+    total_assets = accounts_total + investments_total + savings_total + physical_assets_total
     total_liabilities = debts_total + credit_total
     net_worth = total_assets - total_liabilities
 
@@ -196,6 +205,17 @@ async def get_patrimony(
                 "items": [
                     {"name": g.name, "current_amount": g.current_amount}
                     for g in goals_list
+                ],
+            },
+            "physical_assets": {
+                "total": physical_assets_total,
+                "items": [
+                    {
+                        "name": a.name,
+                        "current_value": a.current_value,
+                        "type": a.type,
+                    }
+                    for a in physical_assets
                 ],
             },
         },

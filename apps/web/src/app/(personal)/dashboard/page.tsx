@@ -13,6 +13,7 @@ import { formatKz } from "@/lib/format"
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Building2,
   CreditCard,
   PieChart,
   Plus,
@@ -132,7 +133,7 @@ export default function DashboardPage() {
         </p>
 
         {/* Sub-cards */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
           <div className="rounded-lg bg-muted/50 p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Wallet className="h-3.5 w-3.5 text-income" />
@@ -149,6 +150,15 @@ export default function DashboardPage() {
             </div>
             <p className="text-sm font-bold font-mono text-income">
               {formatKz(patrimony?.assets.investments.total ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Building2 className="h-3.5 w-3.5 text-income" />
+              <span className="text-xs text-muted-foreground">Bens</span>
+            </div>
+            <p className="text-sm font-bold font-mono text-income">
+              {formatKz(patrimony?.assets.physical_assets.total ?? 0)}
             </p>
           </div>
           <div className="rounded-lg bg-muted/50 p-3">

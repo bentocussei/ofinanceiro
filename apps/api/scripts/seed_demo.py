@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session
 from app.models import (
     Account,
+    Asset,
     Bill,
     Budget,
     BudgetItem,
@@ -38,6 +39,7 @@ from app.models import (
 )
 from app.models.enums import (
     AccountType,
+    AssetType,
     BillStatus,
     BudgetMethod,
     BudgetPeriod,
@@ -500,6 +502,56 @@ async def main() -> None:
         db.add_all(investments)
 
         # ==========================================
+        # PHYSICAL ASSETS
+        # ==========================================
+        assets = [
+            Asset(
+                user_id=cussei_id, name="Apartamento T3 Talatona",
+                type=AssetType.REAL_ESTATE,
+                purchase_price=kz(25_000_000), current_value=kz(28_000_000),
+                purchase_date=TODAY - timedelta(days=730),
+                last_valuation_date=TODAY - timedelta(days=60),
+                annual_change_rate=600,  # 6% appreciation
+                details={"address": "Talatona, Luanda", "area_sqm": 120, "bedrooms": 3, "parking": 1},
+                linked_debt_id=debt_car_id,  # linked to mortgage (reusing car loan for demo)
+                is_insured=True, insurance_value=kz(25_000_000),
+                insurance_expiry=TODAY + timedelta(days=180),
+                description="Apartamento na urbanização Nova Vida",
+            ),
+            Asset(
+                user_id=cussei_id, name="Toyota Hilux 2024",
+                type=AssetType.VEHICLE,
+                purchase_price=kz(12_000_000), current_value=kz(10_200_000),
+                purchase_date=TODAY - timedelta(days=365),
+                last_valuation_date=TODAY - timedelta(days=30),
+                annual_change_rate=-1500,  # -15% depreciation
+                details={"brand": "Toyota", "model": "Hilux SR5", "year": 2024, "plate": "LD-45-67-AB", "km": 25000},
+                is_insured=True, insurance_value=kz(12_000_000),
+                insurance_expiry=TODAY + timedelta(days=90),
+            ),
+            Asset(
+                user_id=cussei_id, name="Terreno Benfica",
+                type=AssetType.LAND,
+                purchase_price=kz(5_000_000), current_value=kz(6_500_000),
+                purchase_date=TODAY - timedelta(days=1095),
+                annual_change_rate=800,  # 8% appreciation
+                details={"address": "Benfica, Luanda"},
+                description="Terreno 500m² para construção futura",
+            ),
+            # Family asset
+            Asset(
+                user_id=cussei_id, family_id=family_id,
+                name="Mobiliário casa",
+                type=AssetType.FURNITURE,
+                purchase_price=kz(3_500_000), current_value=kz(2_800_000),
+                purchase_date=TODAY - timedelta(days=365),
+                annual_change_rate=-2000,  # -20% depreciation
+                description="Sala, quartos e cozinha completos",
+            ),
+        ]
+        db.add_all(assets)
+
+        # ==========================================
         # NOTIFICATIONS
         # ==========================================
         notifications = [
@@ -546,6 +598,7 @@ async def main() -> None:
         print(f"Bills: 4 personal + 1 family")
         print(f"Income sources: 3")
         print(f"Investments: 2")
+        print(f"Assets: 3 personal + 1 family")
         print(f"Notifications: 4")
         print("=" * 50)
 

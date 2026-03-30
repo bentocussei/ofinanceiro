@@ -178,6 +178,19 @@ class SplitType(enum.StrEnum):
     FIXED = "fixed"
 
 
+class AssetType(enum.StrEnum):
+    REAL_ESTATE = "real_estate"
+    VEHICLE = "vehicle"
+    LAND = "land"
+    JEWELRY = "jewelry"
+    ART = "art"
+    ELECTRONICS = "electronics"
+    FURNITURE = "furniture"
+    LIVESTOCK = "livestock"
+    BUSINESS_EQUITY = "business_equity"
+    OTHER = "other"
+
+
 class FamilyRelation(enum.StrEnum):
     SPOUSE = "spouse"
     FATHER = "father"

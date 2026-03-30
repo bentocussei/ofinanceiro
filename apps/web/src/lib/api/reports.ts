@@ -46,6 +46,7 @@ export interface PatrimonyData {
     accounts: PatrimonyGroup
     investments: PatrimonyGroup
     savings_goals: PatrimonyGroup
+    physical_assets: PatrimonyGroup
   }
   liabilities: {
     total: number

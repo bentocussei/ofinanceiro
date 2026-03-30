@@ -10,6 +10,7 @@
 export { apiFetch, setTokens, clearTokens } from "./client"
 
 export { accountsApi } from "./accounts"
+export { assetsApi } from "./assets"
 export { billsApi } from "./bills"
 export { budgetsApi } from "./budgets"
 export { categoriesApi } from "./categories"

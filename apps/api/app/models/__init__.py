@@ -1,4 +1,5 @@
 from app.models.account import Account
+from app.models.asset import Asset
 from app.models.base import Base, BaseModel
 from app.models.bill import Bill
 from app.models.budget import Budget, BudgetItem
@@ -7,6 +8,7 @@ from app.models.debt import Debt, DebtPayment
 from app.models.enums import (
     AccountType,
     AccountUsageType,
+    AssetType,
     BillStatus,
     BudgetMethod,
     BudgetPeriod,
@@ -48,6 +50,8 @@ __all__ = [
     "BaseModel",
     "AccountType",
     "AccountUsageType",
+    "Asset",
+    "AssetType",
     "BillStatus",
     "BudgetMethod",
     "BudgetPeriod",
