@@ -24,11 +24,16 @@ async def list_budgets(
     active_only: bool = True,
     cursor: str | None = None,
     limit: int = 50,
+    family_id: uuid.UUID | None = None,
 ) -> tuple[list[Budget], str | None]:
     """List budgets with cursor-based pagination.
     Returns (budgets, next_cursor).
     """
-    stmt = select(Budget).where(Budget.user_id == user_id)
+    stmt = select(Budget)
+    if family_id is not None:
+        stmt = stmt.where(Budget.family_id == family_id)
+    else:
+        stmt = stmt.where(Budget.user_id == user_id, Budget.family_id.is_(None))
     if active_only:
         stmt = stmt.where(Budget.is_active.is_(True))
     if cursor:
@@ -47,16 +52,30 @@ async def list_budgets(
     return budgets, next_cursor
 
 
-async def get_budget(db: AsyncSession, budget_id: uuid.UUID, user_id: uuid.UUID) -> Budget | None:
-    result = await db.execute(
-        select(Budget).where(Budget.id == budget_id, Budget.user_id == user_id)
-    )
+async def get_budget(
+    db: AsyncSession,
+    budget_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> Budget | None:
+    stmt = select(Budget).where(Budget.id == budget_id)
+    if family_id is not None:
+        stmt = stmt.where(Budget.family_id == family_id)
+    else:
+        stmt = stmt.where(Budget.user_id == user_id, Budget.family_id.is_(None))
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def create_budget(db: AsyncSession, user_id: uuid.UUID, data: BudgetCreate) -> Budget:
+async def create_budget(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    data: BudgetCreate,
+    family_id: uuid.UUID | None = None,
+) -> Budget:
     budget = Budget(
         user_id=user_id,
+        family_id=family_id,
         name=data.name,
         method=data.method,
         period_type=data.period_type,

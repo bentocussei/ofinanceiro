@@ -22,8 +22,13 @@ async def list_income_sources(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(IncomeSource).where(IncomeSource.user_id == user.id)
+    stmt = select(IncomeSource)
+    if ctx.is_family:
+        stmt = stmt.where(IncomeSource.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(IncomeSource.user_id == user.id, IncomeSource.family_id.is_(None))
     if is_active is not None:
         stmt = stmt.where(IncomeSource.is_active == is_active)
     if cursor:
@@ -54,7 +59,7 @@ async def create_income_source(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    source = IncomeSource(user_id=user.id, **data)
+    source = IncomeSource(user_id=user.id, family_id=ctx.family_id, **data)
     db.add(source)
     await db.flush()
     await db.refresh(source)
@@ -70,7 +75,7 @@ async def update_income_source(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    source = await _get_or_404(db, source_id, user.id)
+    source = await _get_or_404(db, source_id, user.id, family_id=ctx.family_id)
     for key, value in data.items():
         if hasattr(source, key):
             setattr(source, key, value)
@@ -87,12 +92,21 @@ async def delete_income_source(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    source = await _get_or_404(db, source_id, user.id)
+    source = await _get_or_404(db, source_id, user.id, family_id=ctx.family_id)
     await db.delete(source)
 
 
-async def _get_or_404(db: AsyncSession, source_id: uuid.UUID, user_id: uuid.UUID) -> IncomeSource:
-    stmt = select(IncomeSource).where(IncomeSource.id == source_id, IncomeSource.user_id == user_id)
+async def _get_or_404(
+    db: AsyncSession,
+    source_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> IncomeSource:
+    stmt = select(IncomeSource).where(IncomeSource.id == source_id)
+    if family_id is not None:
+        stmt = stmt.where(IncomeSource.family_id == family_id)
+    else:
+        stmt = stmt.where(IncomeSource.user_id == user_id, IncomeSource.family_id.is_(None))
     result = await db.execute(stmt)
     source = result.scalar_one_or_none()
     if not source:

@@ -16,11 +16,20 @@ async def list_transactions(
     filters: TransactionFilter | None = None,
     cursor: str | None = None,
     limit: int = 50,
+    family_id: uuid.UUID | None = None,
 ) -> tuple[list[Transaction], str | None]:
     """List transactions with filters and cursor-based pagination.
     Returns (transactions, next_cursor).
+
+    Context filtering:
+    - family_id=None (personal): transactions on accounts where family_id IS NULL
+    - family_id=<uuid> (family): transactions on accounts with matching family_id
     """
-    stmt = select(Transaction).where(Transaction.user_id == user_id)
+    stmt = select(Transaction).join(Account, Transaction.account_id == Account.id)
+    if family_id is not None:
+        stmt = stmt.where(Account.family_id == family_id)
+    else:
+        stmt = stmt.where(Transaction.user_id == user_id, Account.family_id.is_(None))
 
     if filters:
         if filters.account_id:
@@ -64,21 +73,37 @@ async def list_transactions(
 
 
 async def get_transaction(
-    db: AsyncSession, txn_id: uuid.UUID, user_id: uuid.UUID
+    db: AsyncSession,
+    txn_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
 ) -> Transaction | None:
-    result = await db.execute(
-        select(Transaction).where(Transaction.id == txn_id, Transaction.user_id == user_id)
+    stmt = (
+        select(Transaction)
+        .join(Account, Transaction.account_id == Account.id)
+        .where(Transaction.id == txn_id)
     )
+    if family_id is not None:
+        stmt = stmt.where(Account.family_id == family_id)
+    else:
+        stmt = stmt.where(Transaction.user_id == user_id, Account.family_id.is_(None))
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
 async def create_transaction(
-    db: AsyncSession, user_id: uuid.UUID, data: TransactionCreate
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    data: TransactionCreate,
+    family_id: uuid.UUID | None = None,
 ) -> Transaction:
-    # Verify account belongs to user
-    account = await db.execute(
-        select(Account).where(Account.id == data.account_id, Account.user_id == user_id)
-    )
+    # Verify account belongs to user/family context
+    acct_stmt = select(Account).where(Account.id == data.account_id)
+    if family_id is not None:
+        acct_stmt = acct_stmt.where(Account.family_id == family_id)
+    else:
+        acct_stmt = acct_stmt.where(Account.user_id == user_id, Account.family_id.is_(None))
+    account = await db.execute(acct_stmt)
     if not account.scalar_one_or_none():
         from fastapi import HTTPException, status
 

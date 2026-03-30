@@ -16,11 +16,20 @@ async def list_accounts(
     include_archived: bool = False,
     cursor: str | None = None,
     limit: int = 50,
+    family_id: uuid.UUID | None = None,
 ) -> tuple[list[Account], str | None]:
     """List accounts with cursor-based pagination.
     Returns (accounts, next_cursor).
+
+    Context filtering:
+    - family_id=None (personal): user_id match AND family_id IS NULL
+    - family_id=<uuid> (family): family_id match (shared accounts)
     """
-    stmt = select(Account).where(Account.user_id == user_id)
+    stmt = select(Account)
+    if family_id is not None:
+        stmt = stmt.where(Account.family_id == family_id)
+    else:
+        stmt = stmt.where(Account.user_id == user_id, Account.family_id.is_(None))
     if not include_archived:
         stmt = stmt.where(Account.is_archived.is_(False))
     if cursor:
@@ -39,16 +48,35 @@ async def list_accounts(
     return accounts, next_cursor
 
 
-async def get_account(db: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID) -> Account | None:
-    result = await db.execute(
-        select(Account).where(Account.id == account_id, Account.user_id == user_id)
-    )
+async def get_account(
+    db: AsyncSession,
+    account_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> Account | None:
+    """Get a single account respecting context.
+
+    - family_id=None: personal account (user_id match, family_id IS NULL)
+    - family_id=<uuid>: family account (family_id match)
+    """
+    stmt = select(Account).where(Account.id == account_id)
+    if family_id is not None:
+        stmt = stmt.where(Account.family_id == family_id)
+    else:
+        stmt = stmt.where(Account.user_id == user_id, Account.family_id.is_(None))
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def create_account(db: AsyncSession, user_id: uuid.UUID, data: AccountCreate) -> Account:
+async def create_account(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    data: AccountCreate,
+    family_id: uuid.UUID | None = None,
+) -> Account:
     account = Account(
         user_id=user_id,
+        family_id=family_id,
         name=data.name,
         type=data.type,
         currency=data.currency,
@@ -82,8 +110,12 @@ async def delete_account(db: AsyncSession, account: Account) -> None:
     await db.flush()
 
 
-async def get_account_summary(db: AsyncSession, user_id: uuid.UUID) -> AccountSummary:
-    accounts = await list_accounts(db, user_id)
+async def get_account_summary(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> AccountSummary:
+    accounts, _ = await list_accounts(db, user_id, family_id=family_id)
 
     from app.schemas.account import AccountResponse
 

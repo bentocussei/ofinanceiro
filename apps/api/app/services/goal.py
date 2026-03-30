@@ -18,11 +18,16 @@ async def list_goals(
     status: str | None = None,
     cursor: str | None = None,
     limit: int = 50,
+    family_id: uuid.UUID | None = None,
 ) -> tuple[list[Goal], str | None]:
     """List goals with cursor-based pagination.
     Returns (goals, next_cursor).
     """
-    stmt = select(Goal).where(Goal.user_id == user_id)
+    stmt = select(Goal)
+    if family_id is not None:
+        stmt = stmt.where(Goal.family_id == family_id)
+    else:
+        stmt = stmt.where(Goal.user_id == user_id, Goal.family_id.is_(None))
     if status:
         stmt = stmt.where(Goal.status == status)
     if cursor:
@@ -41,16 +46,30 @@ async def list_goals(
     return goals, next_cursor
 
 
-async def get_goal(db: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID) -> Goal | None:
-    result = await db.execute(
-        select(Goal).where(Goal.id == goal_id, Goal.user_id == user_id)
-    )
+async def get_goal(
+    db: AsyncSession,
+    goal_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> Goal | None:
+    stmt = select(Goal).where(Goal.id == goal_id)
+    if family_id is not None:
+        stmt = stmt.where(Goal.family_id == family_id)
+    else:
+        stmt = stmt.where(Goal.user_id == user_id, Goal.family_id.is_(None))
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def create_goal(db: AsyncSession, user_id: uuid.UUID, data: GoalCreate) -> Goal:
+async def create_goal(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    data: GoalCreate,
+    family_id: uuid.UUID | None = None,
+) -> Goal:
     goal = Goal(
         user_id=user_id,
+        family_id=family_id,
         name=data.name,
         type=data.type,
         icon=data.icon,
@@ -137,14 +156,23 @@ async def get_progress(db: AsyncSession, goal: Goal) -> GoalProgressResponse:
     )
 
 
-async def calculate_emergency_fund(db: AsyncSession, user_id: uuid.UUID) -> int:
+async def calculate_emergency_fund(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> int:
     """Calculate recommended emergency fund: 3 months of average expenses."""
-    result = await db.execute(
+    from app.models.account import Account
+
+    stmt = (
         select(func.coalesce(func.avg(Transaction.amount), 0))
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.type == TransactionType.EXPENSE,
-        )
+        .join(Account, Transaction.account_id == Account.id)
+        .where(Transaction.type == TransactionType.EXPENSE)
     )
+    if family_id is not None:
+        stmt = stmt.where(Account.family_id == family_id)
+    else:
+        stmt = stmt.where(Transaction.user_id == user_id, Account.family_id.is_(None))
+    result = await db.execute(stmt)
     avg_monthly = (result.scalar() or 0) * 30
     return int(avg_monthly * 3)

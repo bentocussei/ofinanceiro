@@ -116,6 +116,24 @@ def _serialize_asset(a: Asset) -> dict:
     }
 
 
+async def _get_asset_or_404(
+    db: AsyncSession,
+    asset_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> Asset:
+    stmt = select(Asset).where(Asset.id == asset_id)
+    if family_id is not None:
+        stmt = stmt.where(Asset.family_id == family_id)
+    else:
+        stmt = stmt.where(Asset.user_id == user_id, Asset.family_id.is_(None))
+    result = await db.execute(stmt)
+    asset = result.scalar_one_or_none()
+    if not asset:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Bem não encontrado")
+    return asset
+
+
 @router.get("/")
 async def list_assets(
     limit: int = Query(50, ge=1, le=100),
@@ -124,8 +142,13 @@ async def list_assets(
     active_only: bool = True,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(Asset).where(Asset.user_id == user.id)
+    stmt = select(Asset)
+    if ctx.is_family:
+        stmt = stmt.where(Asset.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(Asset.user_id == user.id, Asset.family_id.is_(None))
     if active_only:
         stmt = stmt.where(Asset.is_active.is_(True))
     if type:
@@ -155,11 +178,13 @@ async def list_assets(
 async def get_summary(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(Asset).where(
-        Asset.user_id == user.id,
-        Asset.is_active.is_(True),
-    )
+    stmt = select(Asset).where(Asset.is_active.is_(True))
+    if ctx.is_family:
+        stmt = stmt.where(Asset.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(Asset.user_id == user.id, Asset.family_id.is_(None))
     result = await db.execute(stmt)
     assets = list(result.scalars().all())
 
@@ -201,7 +226,7 @@ async def create_asset(
     require_permission(ctx, "can_add_transactions")
     asset = Asset(
         user_id=user.id,
-        family_id=data.family_id,
+        family_id=ctx.family_id,
         name=data.name,
         type=data.type,
         description=data.description,
@@ -221,6 +246,7 @@ async def create_asset(
     )
     db.add(asset)
     await db.flush()
+    await db.refresh(asset)
     return _serialize_asset(asset)
 
 
@@ -233,17 +259,13 @@ async def update_asset(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(
-        select(Asset).where(Asset.id == asset_id, Asset.user_id == user.id)
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Bem não encontrado")
+    asset = await _get_asset_or_404(db, asset_id, user.id, ctx.family_id)
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(asset, field, value)
     await db.flush()
+    await db.refresh(asset)
     return _serialize_asset(asset)
 
 
@@ -255,12 +277,7 @@ async def delete_asset(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(
-        select(Asset).where(Asset.id == asset_id, Asset.user_id == user.id)
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Bem não encontrado")
+    asset = await _get_asset_or_404(db, asset_id, user.id, ctx.family_id)
     await db.delete(asset)
     await db.flush()
 
@@ -275,14 +292,10 @@ async def revalue_asset(
 ) -> dict:
     """Actualizar o valor corrente de um bem com nova data de avaliação."""
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(
-        select(Asset).where(Asset.id == asset_id, Asset.user_id == user.id)
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Bem não encontrado")
+    asset = await _get_asset_or_404(db, asset_id, user.id, ctx.family_id)
 
     asset.current_value = data.current_value
     asset.last_valuation_date = data.valuation_date or date.today()
     await db.flush()
+    await db.refresh(asset)
     return _serialize_asset(asset)

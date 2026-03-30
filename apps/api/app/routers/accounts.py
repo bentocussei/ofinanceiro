@@ -25,9 +25,10 @@ async def list_accounts(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     accounts, next_cursor = await account_service.list_accounts(
-        db, user.id, include_archived, cursor, limit
+        db, user.id, include_archived, cursor, limit, family_id=ctx.family_id
     )
     return {
         "items": [AccountResponse.model_validate(a) for a in accounts],
@@ -40,8 +41,9 @@ async def list_accounts(
 async def get_summary(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> AccountSummary:
-    return await account_service.get_account_summary(db, user.id)
+    return await account_service.get_account_summary(db, user.id, family_id=ctx.family_id)
 
 
 @router.get("/{account_id}", response_model=AccountResponse)
@@ -49,8 +51,9 @@ async def get_account(
     account_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> AccountResponse:
-    account = await account_service.get_account(db, account_id, user.id)
+    account = await account_service.get_account(db, account_id, user.id, family_id=ctx.family_id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})
     return AccountResponse.model_validate(account)
@@ -64,7 +67,7 @@ async def create_account(
     ctx: FinanceContext = Depends(get_context),
 ) -> AccountResponse:
     require_permission(ctx, "can_add_transactions")
-    account = await account_service.create_account(db, user.id, data)
+    account = await account_service.create_account(db, user.id, data, family_id=ctx.family_id)
     return AccountResponse.model_validate(account)
 
 
@@ -77,7 +80,7 @@ async def update_account(
     ctx: FinanceContext = Depends(get_context),
 ) -> AccountResponse:
     require_permission(ctx, "can_add_transactions")
-    account = await account_service.get_account(db, account_id, user.id)
+    account = await account_service.get_account(db, account_id, user.id, family_id=ctx.family_id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})
     updated = await account_service.update_account(db, account, data)
@@ -96,8 +99,8 @@ async def transfer(
     if data.from_account_id == data.to_account_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": "SAME_ACCOUNT", "message": "Não pode transferir para a mesma conta"})
 
-    from_account = await account_service.get_account(db, data.from_account_id, user.id)
-    to_account = await account_service.get_account(db, data.to_account_id, user.id)
+    from_account = await account_service.get_account(db, data.from_account_id, user.id, family_id=ctx.family_id)
+    to_account = await account_service.get_account(db, data.to_account_id, user.id, family_id=ctx.family_id)
 
     if not from_account or not to_account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "ACCOUNT_NOT_FOUND", "message": "Conta não encontrada"})
@@ -143,7 +146,7 @@ async def delete_account(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    account = await account_service.get_account(db, account_id, user.id)
+    account = await account_service.get_account(db, account_id, user.id, family_id=ctx.family_id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})
     await account_service.delete_account(db, account)

@@ -29,9 +29,10 @@ async def list_goals(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     goals, next_cursor = await goal_service.list_goals(
-        db, user.id, goal_status, cursor, limit
+        db, user.id, goal_status, cursor, limit, family_id=ctx.family_id
     )
     return {
         "items": [GoalResponse.model_validate(g) for g in goals],
@@ -44,8 +45,9 @@ async def list_goals(
 async def emergency_fund_recommendation(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    amount = await goal_service.calculate_emergency_fund(db, user.id)
+    amount = await goal_service.calculate_emergency_fund(db, user.id, family_id=ctx.family_id)
     return {"recommended_amount": amount, "months": 3}
 
 
@@ -54,8 +56,9 @@ async def get_goal(
     goal_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> GoalResponse:
-    goal = await goal_service.get_goal(db, goal_id, user.id)
+    goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
     return GoalResponse.model_validate(goal)
@@ -66,8 +69,9 @@ async def get_goal_progress(
     goal_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> GoalProgressResponse:
-    goal = await goal_service.get_goal(db, goal_id, user.id)
+    goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
     return await goal_service.get_progress(db, goal)
@@ -81,7 +85,7 @@ async def create_goal(
     ctx: FinanceContext = Depends(get_context),
 ) -> GoalResponse:
     require_permission(ctx, "can_edit_budgets")
-    goal = await goal_service.create_goal(db, user.id, data)
+    goal = await goal_service.create_goal(db, user.id, data, family_id=ctx.family_id)
     return GoalResponse.model_validate(goal)
 
 
@@ -94,7 +98,7 @@ async def contribute_to_goal(
     ctx: FinanceContext = Depends(get_context),
 ) -> GoalContributionResponse:
     require_permission(ctx, "can_edit_budgets")
-    goal = await goal_service.get_goal(db, goal_id, user.id)
+    goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
     contribution = await goal_service.contribute(db, goal, user.id, data.amount, data.note)
@@ -110,7 +114,7 @@ async def update_goal(
     ctx: FinanceContext = Depends(get_context),
 ) -> GoalResponse:
     require_permission(ctx, "can_edit_budgets")
-    goal = await goal_service.get_goal(db, goal_id, user.id)
+    goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
     updated = await goal_service.update_goal(db, goal, data)
@@ -125,7 +129,7 @@ async def delete_goal(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    goal = await goal_service.get_goal(db, goal_id, user.id)
+    goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
     await goal_service.delete_goal(db, goal)

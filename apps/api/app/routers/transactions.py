@@ -39,6 +39,7 @@ async def list_transactions(
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     filters = TransactionFilter(
         account_id=account_id,
@@ -52,7 +53,7 @@ async def list_transactions(
     )
 
     transactions, next_cursor = await txn_service.list_transactions(
-        db, user.id, filters, cursor, limit
+        db, user.id, filters, cursor, limit, family_id=ctx.family_id
     )
 
     return {
@@ -66,8 +67,11 @@ async def list_transactions(
 async def monthly_summary(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Resumo do mês corrente: receitas, despesas e gastos por categoria."""
+    from app.models.account import Account
+
     first_day = date.today().replace(day=1)
     today = date.today()
 
@@ -77,13 +81,18 @@ async def monthly_summary(
             Transaction.type,
             func.sum(Transaction.amount).label("total"),
         )
+        .join(Account, Transaction.account_id == Account.id)
         .where(
-            Transaction.user_id == user.id,
             Transaction.transaction_date >= first_day,
             Transaction.transaction_date <= today,
         )
-        .group_by(Transaction.type)
     )
+    if ctx.is_family:
+        type_stmt = type_stmt.where(Account.family_id == ctx.family_id)
+    else:
+        type_stmt = type_stmt.where(Transaction.user_id == user.id, Account.family_id.is_(None))
+    type_stmt = type_stmt.group_by(Transaction.type)
+
     type_result = await db.execute(type_stmt)
     totals = {"income": 0, "expense": 0}
     for row in type_result.all():
@@ -98,12 +107,19 @@ async def monthly_summary(
             func.count(Transaction.id).label("count"),
         )
         .join(Category, Transaction.category_id == Category.id)
+        .join(Account, Transaction.account_id == Account.id)
         .where(
-            Transaction.user_id == user.id,
             Transaction.type == TransactionType.EXPENSE,
             Transaction.transaction_date >= first_day,
             Transaction.transaction_date <= today,
         )
+    )
+    if ctx.is_family:
+        cat_stmt = cat_stmt.where(Account.family_id == ctx.family_id)
+    else:
+        cat_stmt = cat_stmt.where(Transaction.user_id == user.id, Account.family_id.is_(None))
+    cat_stmt = (
+        cat_stmt
         .group_by(Category.name)
         .order_by(func.sum(Transaction.amount).desc())
         .limit(10)
@@ -135,8 +151,9 @@ async def get_transaction(
     txn_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> TransactionResponse:
-    txn = await txn_service.get_transaction(db, txn_id, user.id)
+    txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
     return TransactionResponse.model_validate(txn)
@@ -150,7 +167,7 @@ async def create_transaction(
     ctx: FinanceContext = Depends(get_context),
 ) -> TransactionResponse:
     require_permission(ctx, "can_add_transactions")
-    txn = await txn_service.create_transaction(db, user.id, data)
+    txn = await txn_service.create_transaction(db, user.id, data, family_id=ctx.family_id)
     return TransactionResponse.model_validate(txn)
 
 
@@ -163,7 +180,7 @@ async def update_transaction(
     ctx: FinanceContext = Depends(get_context),
 ) -> TransactionResponse:
     require_permission(ctx, "can_add_transactions")
-    txn = await txn_service.get_transaction(db, txn_id, user.id)
+    txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
     updated = await txn_service.update_transaction(db, txn, data)
@@ -178,7 +195,7 @@ async def delete_transaction(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    txn = await txn_service.get_transaction(db, txn_id, user.id)
+    txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
     await txn_service.delete_transaction(db, txn)

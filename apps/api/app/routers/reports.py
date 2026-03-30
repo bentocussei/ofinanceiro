@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.account import Account
@@ -28,6 +29,7 @@ async def spending_by_category(
     date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> list[dict]:
     """Get expense totals grouped by category for a date range."""
     if not date_from:
@@ -44,12 +46,19 @@ async def spending_by_category(
             func.count(Transaction.id).label("count"),
         )
         .join(Category, Transaction.category_id == Category.id)
+        .join(Account, Transaction.account_id == Account.id)
         .where(
-            Transaction.user_id == user.id,
             Transaction.type == TransactionType.EXPENSE,
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date <= date_to,
         )
+    )
+    if ctx.is_family:
+        stmt = stmt.where(Account.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(Transaction.user_id == user.id, Account.family_id.is_(None))
+    stmt = (
+        stmt
         .group_by(Category.id, Category.name, Category.icon)
         .order_by(func.sum(Transaction.amount).desc())
     )
@@ -75,6 +84,7 @@ async def income_expense_summary(
     date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Get income vs expense totals for a date range."""
     if not date_from:
@@ -88,13 +98,17 @@ async def income_expense_summary(
             func.sum(Transaction.amount).label("total"),
             func.count(Transaction.id).label("count"),
         )
+        .join(Account, Transaction.account_id == Account.id)
         .where(
-            Transaction.user_id == user.id,
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date <= date_to,
         )
-        .group_by(Transaction.type)
     )
+    if ctx.is_family:
+        stmt = stmt.where(Account.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(Transaction.user_id == user.id, Account.family_id.is_(None))
+    stmt = stmt.group_by(Transaction.type)
 
     result = await db.execute(stmt)
     rows = result.all()
@@ -113,6 +127,7 @@ async def income_expense_summary(
 async def get_patrimony(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Calcula o património líquido agregando contas, investimentos, metas e dívidas."""
 
@@ -126,14 +141,17 @@ async def get_patrimony(
 
     # --- Asset accounts ---
     asset_accounts_stmt = select(Account).where(
-        Account.user_id == user.id,
         Account.is_archived.is_(False),
         Account.type.in_(asset_account_types),
     )
+    if ctx.is_family:
+        asset_accounts_stmt = asset_accounts_stmt.where(Account.family_id == ctx.family_id)
+    else:
+        asset_accounts_stmt = asset_accounts_stmt.where(Account.user_id == user.id, Account.family_id.is_(None))
     asset_accounts = list((await db.execute(asset_accounts_stmt)).scalars().all())
     accounts_total = sum(a.balance for a in asset_accounts)
 
-    # --- Active investments ---
+    # --- Active investments (always personal — no family_id) ---
     investments_stmt = select(Investment).where(
         Investment.user_id == user.id,
         Investment.is_active.is_(True),
@@ -142,22 +160,24 @@ async def get_patrimony(
     investments_total = sum(inv.current_value for inv in investments)
 
     # --- Savings goals (active only) ---
-    goals_stmt = select(Goal).where(
-        Goal.user_id == user.id,
-        Goal.status == GoalStatus.ACTIVE,
-    )
+    goals_stmt = select(Goal).where(Goal.status == GoalStatus.ACTIVE)
+    if ctx.is_family:
+        goals_stmt = goals_stmt.where(Goal.family_id == ctx.family_id)
+    else:
+        goals_stmt = goals_stmt.where(Goal.user_id == user.id, Goal.family_id.is_(None))
     goals_list = list((await db.execute(goals_stmt)).scalars().all())
     savings_total = sum(g.current_amount for g in goals_list)
 
     # --- Physical assets ---
-    physical_assets_stmt = select(Asset).where(
-        Asset.user_id == user.id,
-        Asset.is_active.is_(True),
-    )
+    physical_assets_stmt = select(Asset).where(Asset.is_active.is_(True))
+    if ctx.is_family:
+        physical_assets_stmt = physical_assets_stmt.where(Asset.family_id == ctx.family_id)
+    else:
+        physical_assets_stmt = physical_assets_stmt.where(Asset.user_id == user.id, Asset.family_id.is_(None))
     physical_assets = list((await db.execute(physical_assets_stmt)).scalars().all())
     physical_assets_total = sum(a.current_value for a in physical_assets)
 
-    # --- Active debts ---
+    # --- Active debts (always personal — no family_id) ---
     debts_stmt = select(Debt).where(
         Debt.user_id == user.id,
         Debt.is_active.is_(True),
@@ -167,10 +187,13 @@ async def get_patrimony(
 
     # --- Credit / loan accounts (liabilities) ---
     credit_accounts_stmt = select(Account).where(
-        Account.user_id == user.id,
         Account.is_archived.is_(False),
         Account.type.in_(liability_account_types),
     )
+    if ctx.is_family:
+        credit_accounts_stmt = credit_accounts_stmt.where(Account.family_id == ctx.family_id)
+    else:
+        credit_accounts_stmt = credit_accounts_stmt.where(Account.user_id == user.id, Account.family_id.is_(None))
     credit_accounts = list((await db.execute(credit_accounts_stmt)).scalars().all())
     credit_total = sum(abs(a.balance) for a in credit_accounts)
 

@@ -25,8 +25,13 @@ async def list_bills(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(Bill).where(Bill.user_id == user.id)
+    stmt = select(Bill)
+    if ctx.is_family:
+        stmt = stmt.where(Bill.family_id == ctx.family_id)
+    else:
+        stmt = stmt.where(Bill.user_id == user.id, Bill.family_id.is_(None))
     if is_active is not None:
         stmt = stmt.where(Bill.is_active == is_active)
     if bill_status is not None:
@@ -59,7 +64,7 @@ async def create_bill(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    bill = Bill(user_id=user.id, **data)
+    bill = Bill(user_id=user.id, family_id=ctx.family_id, **data)
     db.add(bill)
     await db.flush()
     await db.refresh(bill)
@@ -75,7 +80,7 @@ async def update_bill(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    bill = await _get_or_404(db, bill_id, user.id)
+    bill = await _get_or_404(db, bill_id, user.id, family_id=ctx.family_id)
     for key, value in data.items():
         if hasattr(bill, key):
             setattr(bill, key, value)
@@ -92,7 +97,7 @@ async def delete_bill(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    bill = await _get_or_404(db, bill_id, user.id)
+    bill = await _get_or_404(db, bill_id, user.id, family_id=ctx.family_id)
     await db.delete(bill)
 
 
@@ -105,7 +110,7 @@ async def pay_bill(
 ) -> dict:
     """Marcar conta como paga."""
     require_permission(ctx, "can_edit_budgets")
-    bill = await _get_or_404(db, bill_id, user.id)
+    bill = await _get_or_404(db, bill_id, user.id, family_id=ctx.family_id)
     bill.status = BillStatus.PAID
     bill.last_paid_at = datetime.now(UTC)
     await db.flush()
@@ -113,8 +118,17 @@ async def pay_bill(
     return _to_dict(bill)
 
 
-async def _get_or_404(db: AsyncSession, bill_id: uuid.UUID, user_id: uuid.UUID) -> Bill:
-    stmt = select(Bill).where(Bill.id == bill_id, Bill.user_id == user_id)
+async def _get_or_404(
+    db: AsyncSession,
+    bill_id: uuid.UUID,
+    user_id: uuid.UUID,
+    family_id: uuid.UUID | None = None,
+) -> Bill:
+    stmt = select(Bill).where(Bill.id == bill_id)
+    if family_id is not None:
+        stmt = stmt.where(Bill.family_id == family_id)
+    else:
+        stmt = stmt.where(Bill.user_id == user_id, Bill.family_id.is_(None))
     result = await db.execute(stmt)
     bill = result.scalar_one_or_none()
     if not bill:

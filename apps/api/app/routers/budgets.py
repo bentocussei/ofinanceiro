@@ -32,9 +32,10 @@ async def list_budgets(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     budgets, next_cursor = await budget_service.list_budgets(
-        db, user.id, active_only, cursor, limit
+        db, user.id, active_only, cursor, limit, family_id=ctx.family_id
     )
     return {
         "items": [BudgetResponse.model_validate(b) for b in budgets],
@@ -48,8 +49,9 @@ async def get_budget(
     budget_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetResponse:
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
     return BudgetResponse.model_validate(budget)
@@ -60,8 +62,9 @@ async def get_budget_status(
     budget_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetStatusResponse:
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
     return await budget_service.get_budget_status(db, budget)
@@ -75,7 +78,7 @@ async def create_budget(
     ctx: FinanceContext = Depends(get_context),
 ) -> BudgetResponse:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.create_budget(db, user.id, data)
+    budget = await budget_service.create_budget(db, user.id, data, family_id=ctx.family_id)
     return BudgetResponse.model_validate(budget)
 
 
@@ -88,7 +91,7 @@ async def update_budget(
     ctx: FinanceContext = Depends(get_context),
 ) -> BudgetResponse:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
     updated = await budget_service.update_budget(db, budget, data)
@@ -103,7 +106,7 @@ async def delete_budget(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
     await budget_service.delete_budget(db, budget)
@@ -118,7 +121,7 @@ async def create_budget_item(
     ctx: FinanceContext = Depends(get_context),
 ) -> BudgetItemResponse:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
 
@@ -155,7 +158,7 @@ async def update_budget_item(
     ctx: FinanceContext = Depends(get_context),
 ) -> BudgetItemResponse:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
 
@@ -180,7 +183,7 @@ async def delete_budget_item(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    budget = await budget_service.get_budget(db, budget_id, user.id)
+    budget = await budget_service.get_budget(db, budget_id, user.id, family_id=ctx.family_id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
 
