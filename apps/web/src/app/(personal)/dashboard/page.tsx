@@ -50,7 +50,7 @@ interface GoalItem {
 }
 
 interface SpendingCategory {
-  category: string
+  category_name: string
   amount: number
   percentage: number
 }
@@ -461,10 +461,10 @@ export default function DashboardPage() {
             {spending.length > 0 ? (
               <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-3">
                 {spending.map((cat) => (
-                  <div key={cat.category} className="flex items-center justify-between">
+                  <div key={cat.category_name} className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="h-2 w-2 rounded-full bg-expense shrink-0" />
-                      <span className="text-sm capitalize truncate">{cat.category}</span>
+                      <span className="text-sm capitalize truncate">{cat.category_name}</span>
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                       <span className="text-xs text-muted-foreground font-mono">

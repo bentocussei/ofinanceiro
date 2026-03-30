@@ -82,9 +82,16 @@ async def list_debts(
     items = [
         {
             "id": str(d.id), "name": d.name, "type": d.type, "creditor": d.creditor,
-            "original_amount": d.original_amount, "current_balance": d.current_balance,
-            "interest_rate": d.interest_rate, "monthly_payment": d.monthly_payment,
-            "payment_day": d.payment_day, "is_active": d.is_active,
+            "original_amount": d.original_amount,
+            "current_balance": d.current_balance,
+            "remaining_balance": d.current_balance,  # alias for frontend compat
+            "interest_rate": d.interest_rate,
+            "monthly_payment": d.monthly_payment,
+            "minimum_payment": d.monthly_payment or 0,  # alias for frontend compat
+            "payment_day": d.payment_day,
+            "due_day": d.payment_day,  # alias for frontend compat
+            "status": "paid_off" if getattr(d, 'is_paid_off', False) else "active",
+            "is_active": d.is_active,
             "start_date": str(d.start_date) if d.start_date else None,
             "expected_end_date": str(d.expected_end_date) if d.expected_end_date else None,
             "notes": d.notes,

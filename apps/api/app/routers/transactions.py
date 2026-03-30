@@ -130,7 +130,7 @@ async def monthly_summary(
     total_expense = totals["expense"] or 1  # avoid division by zero
     by_category = [
         {
-            "category": row.name,
+            "category_name": row.name,
             "amount": row.total,
             "count": row.count,
             "percentage": round((row.total / total_expense) * 100, 1),
@@ -138,11 +138,48 @@ async def monthly_summary(
         for row in categories
     ]
 
+    # Spending by member (for family context)
+    by_member: list[dict] = []
+    if ctx.is_family:
+        from app.models.user import User as UserModel
+
+        member_stmt = (
+            select(
+                UserModel.name.label("member_name"),
+                func.sum(
+                    func.case(
+                        (Transaction.type == TransactionType.INCOME, Transaction.amount),
+                        else_=0,
+                    )
+                ).label("income"),
+                func.sum(
+                    func.case(
+                        (Transaction.type == TransactionType.EXPENSE, Transaction.amount),
+                        else_=0,
+                    )
+                ).label("expense"),
+            )
+            .join(Account, Transaction.account_id == Account.id)
+            .join(UserModel, Transaction.user_id == UserModel.id)
+            .where(
+                Account.family_id == ctx.family_id,
+                Transaction.transaction_date >= first_day,
+                Transaction.transaction_date <= today,
+            )
+            .group_by(UserModel.name)
+        )
+        member_result = await db.execute(member_stmt)
+        by_member = [
+            {"member_name": row.member_name, "income": row.income, "expense": row.expense}
+            for row in member_result.all()
+        ]
+
     return {
         "income": totals["income"],
         "expense": totals["expense"],
         "balance": totals["income"] - totals["expense"],
         "by_category": by_category,
+        "by_member": by_member,
     }
 
 

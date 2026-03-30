@@ -1,5 +1,6 @@
 /** Format centavos to "150.000 Kz" */
-export function formatKz(centavos: number): string {
+export function formatKz(centavos: number | null | undefined): string {
+  if (centavos == null || isNaN(centavos)) return "0 Kz"
   const amount = Math.abs(centavos) / 100
   const formatted = new Intl.NumberFormat('pt-AO', {
     minimumFractionDigits: 0,

@@ -80,12 +80,14 @@ export default function FamilyReportsPage() {
               </h3>
               <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-3">
                 {summary.by_category.map((cat) => {
-                  const pct = summary.expense > 0 ? (cat.total / summary.expense) * 100 : 0
+                  const amount = (cat as unknown as { amount?: number; total?: number }).amount ?? cat.total ?? 0
+                  const name = cat.category_name ?? ""
+                  const pct = summary.expense > 0 ? (amount / summary.expense) * 100 : 0
                   return (
-                    <div key={cat.category_name}>
+                    <div key={name}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm capitalize">{cat.category_name}</span>
-                        <span className="text-sm font-mono font-semibold text-expense">{formatKz(cat.total)}</span>
+                        <span className="text-sm capitalize">{name}</span>
+                        <span className="text-sm font-mono font-semibold text-expense">{formatKz(amount)}</span>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-muted">
                         <div
