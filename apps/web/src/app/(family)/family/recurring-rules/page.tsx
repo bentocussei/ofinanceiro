@@ -43,6 +43,8 @@ export default function FamilyRecurringRulesPage() {
   const [editItem, setEditItem] = useState<RecurringRule | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Form
   const [accountId, setAccountId] = useState("")
@@ -54,9 +56,20 @@ export default function FamilyRecurringRulesPage() {
   const [dayOfMonth, setDayOfMonth] = useState("")
   const [startDate, setStartDate] = useState("")
 
-  const fetchItems = () => {
+  const fetchItems = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    recurringRulesApi.list(ctx).then(setItems).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    recurringRulesApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setItems(prev => [...prev, ...res.items])
+        } else {
+          setItems(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => {
@@ -98,6 +111,8 @@ export default function FamilyRecurringRulesPage() {
       }, ctx)
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Regra recorrente familiar criada com sucesso")
     } catch {
@@ -137,6 +152,8 @@ export default function FamilyRecurringRulesPage() {
       setEditOpen(false)
       resetForm()
       setEditItem(null)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Regra recorrente actualizada com sucesso")
     } catch {
@@ -153,6 +170,8 @@ export default function FamilyRecurringRulesPage() {
         onClick: async () => {
           const ctx = { headers: getContextHeader() }
           await recurringRulesApi.remove(id, ctx).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchItems()
           toast.success("Regra recorrente eliminada com sucesso")
         },
@@ -282,6 +301,14 @@ export default function FamilyRecurringRulesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchItems(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
 

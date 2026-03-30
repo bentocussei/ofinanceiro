@@ -9,10 +9,23 @@ import { getContextHeader } from "@/lib/context"
 
 export default function FamilyNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
-  const fetchNotifications = () => {
+  const fetchNotifications = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    notificationsApi.list(ctx).then(setNotifications).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    notificationsApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setNotifications(prev => [...prev, ...res.items])
+        } else {
+          setNotifications(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchNotifications() }, [])
@@ -20,12 +33,16 @@ export default function FamilyNotificationsPage() {
   const markRead = async (id: string) => {
     const ctx = { headers: getContextHeader() }
     await notificationsApi.markRead(id, ctx).catch(() => {})
+    setCursor(null)
+    setHasMore(false)
     fetchNotifications()
   }
 
   const markAllRead = async () => {
     const ctx = { headers: getContextHeader() }
     await notificationsApi.markAllRead(ctx).catch(() => {})
+    setCursor(null)
+    setHasMore(false)
     fetchNotifications()
   }
 
@@ -70,6 +87,14 @@ export default function FamilyNotificationsPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchNotifications(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
     </div>

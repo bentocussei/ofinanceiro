@@ -1,13 +1,4 @@
-"""Budgets router: CRUD + status.
-
-# TODO: Add get_context dependency for family permission checks
-# When migrated to get_context:
-#   - POST (create): require_permission(ctx, "can_edit_budgets")
-#   - PUT (update): require_permission(ctx, "can_edit_budgets")
-#   - DELETE: require_permission(ctx, "can_edit_budgets")
-#   - POST/PUT/DELETE items: require_permission(ctx, "can_edit_budgets")
-#   - GET (list/get/status): always allowed (read access)
-"""
+"""Budgets router: CRUD + status."""
 
 import uuid
 
@@ -15,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.budget import BudgetItem
@@ -80,7 +72,9 @@ async def create_budget(
     data: BudgetCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetResponse:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.create_budget(db, user.id, data)
     return BudgetResponse.model_validate(budget)
 
@@ -91,7 +85,9 @@ async def update_budget(
     data: BudgetUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetResponse:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.get_budget(db, budget_id, user.id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
@@ -104,7 +100,9 @@ async def delete_budget(
     budget_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.get_budget(db, budget_id, user.id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
@@ -117,7 +115,9 @@ async def create_budget_item(
     data: BudgetItemCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetItemResponse:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.get_budget(db, budget_id, user.id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
@@ -152,7 +152,9 @@ async def update_budget_item(
     data: BudgetItemUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> BudgetItemResponse:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.get_budget(db, budget_id, user.id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
@@ -175,7 +177,9 @@ async def delete_budget_item(
     item_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     budget = await budget_service.get_budget(db, budget_id, user.id)
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})

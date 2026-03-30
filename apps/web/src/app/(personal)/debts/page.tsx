@@ -51,6 +51,8 @@ export default function DebtsPage() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [payOpen, setPayOpen] = useState<string | null>(null)
   const [simOpen, setSimOpen] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Create form
   const [name, setName] = useState("")
@@ -87,8 +89,19 @@ export default function DebtsPage() {
   const [simPayment, setSimPayment] = useState("")
   const [simulation, setSimulation] = useState<DebtSimulation | null>(null)
 
-  const fetchDebts = () => {
-    debtsApi.list().then(setDebts).catch(() => {})
+  const fetchDebts = (loadMore = false) => {
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    debtsApi.listPage(params)
+      .then((res) => {
+        if (loadMore) {
+          setDebts(prev => [...prev, ...res.items])
+        } else {
+          setDebts(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchDebts() }, [])
@@ -135,6 +148,8 @@ export default function DebtsPage() {
       })
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchDebts()
       toast.success("Dívida criada com sucesso")
     } catch { /* handled by apiFetch */ }
@@ -147,6 +162,8 @@ export default function DebtsPage() {
       await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100))
       setPayOpen(null)
       setPayAmount("")
+      setCursor(null)
+      setHasMore(false)
       fetchDebts()
       toast.success("Pagamento registado com sucesso")
     } catch { /* handled by apiFetch */ }
@@ -159,6 +176,8 @@ export default function DebtsPage() {
         label: "Eliminar",
         onClick: async () => {
           await debtsApi.remove(id).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchDebts()
           toast.success("Dívida eliminada com sucesso")
         },
@@ -354,6 +373,14 @@ export default function DebtsPage() {
         </div>
       )}
 
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchDebts(true)}>
+            Carregar mais
+          </Button>
+        </div>
+      )}
+
       {/* Payment dialog */}
       <Dialog open={!!payOpen} onOpenChange={(v) => { if (!v) setPayOpen(null) }}>
         <DialogContent className="sm:max-w-md">
@@ -369,8 +396,8 @@ export default function DebtsPage() {
         item={detailDebt}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onUpdated={fetchDebts}
-        onDeleted={fetchDebts}
+        onUpdated={() => { setCursor(null); setHasMore(false); fetchDebts() }}
+        onDeleted={() => { setCursor(null); setHasMore(false); fetchDebts() }}
       />
 
       {/* Simulation dialog */}

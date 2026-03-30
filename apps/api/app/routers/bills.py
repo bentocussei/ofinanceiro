@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.bill import Bill
@@ -55,7 +56,9 @@ async def create_bill(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     bill = Bill(user_id=user.id, **data)
     db.add(bill)
     await db.flush()
@@ -69,7 +72,9 @@ async def update_bill(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     bill = await _get_or_404(db, bill_id, user.id)
     for key, value in data.items():
         if hasattr(bill, key):
@@ -84,7 +89,9 @@ async def delete_bill(
     bill_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     bill = await _get_or_404(db, bill_id, user.id)
     await db.delete(bill)
 
@@ -94,8 +101,10 @@ async def pay_bill(
     bill_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Marcar conta como paga."""
+    require_permission(ctx, "can_edit_budgets")
     bill = await _get_or_404(db, bill_id, user.id)
     bill.status = BillStatus.PAID
     bill.last_paid_at = datetime.now(UTC)

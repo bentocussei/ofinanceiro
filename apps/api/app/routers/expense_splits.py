@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
@@ -50,7 +51,9 @@ async def create_expense_split(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_add_transactions")
     family_id = await _get_user_family_id(db, user.id)
     if not family_id:
         raise HTTPException(
@@ -84,8 +87,10 @@ async def settle_expense_split(
     split_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Marcar divisão como liquidada."""
+    require_permission(ctx, "can_add_transactions")
     family_id = await _get_user_family_id(db, user.id)
     split = await _get_or_404(db, split_id, family_id)
     split.is_settled = True
@@ -108,8 +113,10 @@ async def settle_expense_split_part(
     part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Marcar parcela individual como paga."""
+    require_permission(ctx, "can_add_transactions")
     family_id = await _get_user_family_id(db, user.id)
     split = await _get_or_404(db, split_id, family_id)
 
@@ -157,7 +164,9 @@ async def delete_expense_split(
     split_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_add_transactions")
     family_id = await _get_user_family_id(db, user.id)
     split = await _get_or_404(db, split_id, family_id)
     await db.delete(split)

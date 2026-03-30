@@ -28,6 +28,11 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | 3 | **OCR mock** | `apps/api/app/services/ocr.py` | Sem API key multimodal, OCR usa mock LLM | Produção: usa GPT-4o/Sonnet real com API key |
 | 4 | **Voice mock** | `apps/api/app/services/voice.py` | Sem API key OpenAI, retorna texto mock | Produção: usa Whisper real com API key |
 | 5 | **Embeddings skip** | `apps/api/app/ai/memory/semantic.py` | Sem API key OpenAI, embeddings não são gerados | Produção: usa text-embedding-3-small com API key |
+| 6 | **News articles hardcoded** | `apps/api/app/routers/news.py` | Sem fontes RSS/API reais para Angola | Produção: integrar RSS (BNA, Jornal de Angola, Expansão, etc.) ou news aggregator API |
+| 7 | **Exchange rates hardcoded** | `apps/api/app/routers/news.py` | Sem API do BNA para taxas em tempo real | Produção: integrar API/scraping do BNA para taxas oficiais diárias |
+| 8 | **Market summary hardcoded** | `apps/api/app/routers/news.py` → `/market-summary` | Sem LLM para análise de mercado | Produção: NewsAgent gera resumo diário via LLM com dados reais |
+| 9 | **Impact analysis hardcoded** | `apps/api/app/routers/news.py` → `/impact-analysis` | Sem LLM + perfil financeiro do user | Produção: NewsAgent cruza notícias com dados financeiros do utilizador |
+| 10 | **News ask mock** | `apps/api/app/routers/news.py` → `/ask` | Sem LLM para RAG sobre notícias | Produção: NewsAgent usa RAG com embeddings de artigos recentes |
 
 ---
 

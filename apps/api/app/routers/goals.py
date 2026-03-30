@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -77,7 +78,9 @@ async def create_goal(
     data: GoalCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> GoalResponse:
+    require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.create_goal(db, user.id, data)
     return GoalResponse.model_validate(goal)
 
@@ -88,7 +91,9 @@ async def contribute_to_goal(
     data: GoalContributionCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> GoalContributionResponse:
+    require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.get_goal(db, goal_id, user.id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
@@ -102,7 +107,9 @@ async def update_goal(
     data: GoalUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> GoalResponse:
+    require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.get_goal(db, goal_id, user.id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
@@ -115,7 +122,9 @@ async def delete_goal(
     goal_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.get_goal(db, goal_id, user.id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})

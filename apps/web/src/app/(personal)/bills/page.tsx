@@ -46,6 +46,8 @@ export default function BillsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editItem, setEditItem] = useState<Bill | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Form
   const [name, setName] = useState("")
@@ -59,8 +61,19 @@ export default function BillsPage() {
   const [reminderDays, setReminderDays] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const fetchItems = () => {
-    billsApi.list().then(setItems).catch(() => {})
+  const fetchItems = (loadMore = false) => {
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    billsApi.listPage(params)
+      .then((res) => {
+        if (loadMore) {
+          setItems(prev => [...prev, ...res.items])
+        } else {
+          setItems(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => {
@@ -102,6 +115,8 @@ export default function BillsPage() {
       })
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Conta a pagar criada com sucesso")
     } catch {
@@ -143,6 +158,8 @@ export default function BillsPage() {
       setEditOpen(false)
       resetForm()
       setEditItem(null)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Conta a pagar actualizada com sucesso")
     } catch {
@@ -154,6 +171,8 @@ export default function BillsPage() {
   const handleMarkPaid = async (id: string) => {
     try {
       await billsApi.pay(id)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Marcado como pago")
     } catch {
@@ -168,6 +187,8 @@ export default function BillsPage() {
         label: "Eliminar",
         onClick: async () => {
           await billsApi.remove(id).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchItems()
           toast.success("Conta a pagar eliminada com sucesso")
         },
@@ -318,6 +339,14 @@ export default function BillsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchItems(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
 

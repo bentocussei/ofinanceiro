@@ -1,12 +1,4 @@
-"""Transactions router: CRUD with filters and pagination.
-
-# TODO: Add get_context dependency for family permission checks
-# When migrated to get_context:
-#   - POST (create): require_permission(ctx, "can_add_transactions")
-#   - PUT (update): require_permission(ctx, "can_add_transactions")
-#   - DELETE: require_permission(ctx, "can_add_transactions")
-#   - GET (list/get): always allowed (read access)
-"""
+"""Transactions router: CRUD with filters and pagination."""
 
 import uuid
 from datetime import date
@@ -15,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.category import Category
@@ -154,7 +147,9 @@ async def create_transaction(
     data: TransactionCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> TransactionResponse:
+    require_permission(ctx, "can_add_transactions")
     txn = await txn_service.create_transaction(db, user.id, data)
     return TransactionResponse.model_validate(txn)
 
@@ -165,7 +160,9 @@ async def update_transaction(
     data: TransactionUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> TransactionResponse:
+    require_permission(ctx, "can_add_transactions")
     txn = await txn_service.get_transaction(db, txn_id, user.id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
@@ -178,7 +175,9 @@ async def delete_transaction(
     txn_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_add_transactions")
     txn = await txn_service.get_transaction(db, txn_id, user.id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})

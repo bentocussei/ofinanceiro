@@ -33,6 +33,8 @@ export default function FamilyInvestmentsPage() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [simOpen, setSimOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Create form
   const [name, setName] = useState("")
@@ -52,9 +54,20 @@ export default function FamilyInvestmentsPage() {
   const [simMonthly, setSimMonthly] = useState("")
   const [simResult, setSimResult] = useState<{ final_value: number; total_invested: number; total_interest: number } | null>(null)
 
-  const fetchInvestments = () => {
+  const fetchInvestments = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    investmentsApi.list(ctx).then(setInvestments).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    investmentsApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setInvestments(prev => [...prev, ...res.items])
+        } else {
+          setInvestments(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchInvestments() }, [])
@@ -100,6 +113,8 @@ export default function FamilyInvestmentsPage() {
       }, ctx)
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchInvestments()
       toast.success("Investimento familiar criado com sucesso")
     } catch {
@@ -116,6 +131,8 @@ export default function FamilyInvestmentsPage() {
         onClick: async () => {
           const ctx = { headers: getContextHeader() }
           await investmentsApi.remove(id, ctx).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchInvestments()
           toast.success("Investimento eliminado com sucesso")
         },
@@ -252,12 +269,20 @@ export default function FamilyInvestmentsPage() {
         </div>
       )}
 
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchInvestments(true)}>
+            Carregar mais
+          </Button>
+        </div>
+      )}
+
       <InvestmentDetailDialog
         item={detailInvestment}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onUpdated={fetchInvestments}
-        onDeleted={fetchInvestments}
+        onUpdated={() => { setCursor(null); setHasMore(false); fetchInvestments() }}
+        onDeleted={() => { setCursor(null); setHasMore(false); fetchInvestments() }}
         contextHeaders={getContextHeader()}
       />
 

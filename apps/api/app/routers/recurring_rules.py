@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.recurring_rule import RecurringRule
@@ -51,7 +52,9 @@ async def create_recurring_rule(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     # Parse date fields from strings
     for date_field in ("start_date", "end_date"):
         if date_field in data and isinstance(data[date_field], str):
@@ -69,7 +72,9 @@ async def update_recurring_rule(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     rule = await _get_or_404(db, rule_id, user.id)
     for key, value in data.items():
         if hasattr(rule, key):
@@ -84,7 +89,9 @@ async def delete_recurring_rule(
     rule_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     rule = await _get_or_404(db, rule_id, user.id)
     await db.delete(rule)
 

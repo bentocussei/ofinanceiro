@@ -49,6 +49,8 @@ export default function IncomeSourcesPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editItem, setEditItem] = useState<IncomeSource | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Form state
   const [name, setName] = useState("")
@@ -60,8 +62,19 @@ export default function IncomeSourcesPage() {
   const [description, setDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const fetchItems = () => {
-    incomeSourcesApi.list().then(setItems).catch(() => {})
+  const fetchItems = (loadMore = false) => {
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    incomeSourcesApi.listPage(params)
+      .then((res) => {
+        if (loadMore) {
+          setItems(prev => [...prev, ...res.items])
+        } else {
+          setItems(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   const fetchAccounts = () => {
@@ -100,6 +113,8 @@ export default function IncomeSourcesPage() {
       })
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Rendimento criado com sucesso")
     } catch {
@@ -136,6 +151,8 @@ export default function IncomeSourcesPage() {
       setEditOpen(false)
       resetForm()
       setEditItem(null)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Rendimento actualizado com sucesso")
     } catch {
@@ -151,6 +168,8 @@ export default function IncomeSourcesPage() {
         label: "Eliminar",
         onClick: async () => {
           await incomeSourcesApi.remove(id).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchItems()
           toast.success("Rendimento eliminado com sucesso")
         },
@@ -275,6 +294,14 @@ export default function IncomeSourcesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchItems(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
 

@@ -47,6 +47,8 @@ export default function FamilyBillsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editItem, setEditItem] = useState<Bill | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Form
   const [name, setName] = useState("")
@@ -60,9 +62,20 @@ export default function FamilyBillsPage() {
   const [reminderDays, setReminderDays] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const fetchItems = () => {
+  const fetchItems = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    billsApi.list(ctx).then(setItems).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    billsApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setItems(prev => [...prev, ...res.items])
+        } else {
+          setItems(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => {
@@ -106,6 +119,8 @@ export default function FamilyBillsPage() {
       }, ctx)
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Conta a pagar criada com sucesso")
     } catch {
@@ -148,6 +163,8 @@ export default function FamilyBillsPage() {
       setEditOpen(false)
       resetForm()
       setEditItem(null)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Conta a pagar actualizada com sucesso")
     } catch {
@@ -160,6 +177,8 @@ export default function FamilyBillsPage() {
     try {
       const ctx = { headers: getContextHeader() }
       await billsApi.pay(id, ctx)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Marcado como paga")
     } catch {
@@ -175,6 +194,8 @@ export default function FamilyBillsPage() {
         onClick: async () => {
           const ctx = { headers: getContextHeader() }
           await billsApi.remove(id, ctx).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchItems()
           toast.success("Conta a pagar eliminada com sucesso")
         },
@@ -325,6 +346,14 @@ export default function FamilyBillsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchItems(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
 

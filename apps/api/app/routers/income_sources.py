@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.income_source import IncomeSource
@@ -50,7 +51,9 @@ async def create_income_source(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     source = IncomeSource(user_id=user.id, **data)
     db.add(source)
     await db.flush()
@@ -64,7 +67,9 @@ async def update_income_source(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_edit_budgets")
     source = await _get_or_404(db, source_id, user.id)
     for key, value in data.items():
         if hasattr(source, key):
@@ -79,7 +84,9 @@ async def delete_income_source(
     source_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_edit_budgets")
     source = await _get_or_404(db, source_id, user.id)
     await db.delete(source)
 

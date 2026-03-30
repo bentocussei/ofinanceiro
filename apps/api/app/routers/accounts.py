@@ -1,18 +1,11 @@
-"""Accounts router: CRUD + summary.
-
-# TODO: Add get_context dependency for family permission checks
-# When migrated to get_context:
-#   - GET (list/summary): require_permission(ctx, "can_view_all_accounts") in family context
-#     (or allow if viewing own accounts only)
-#   - POST (create), PUT (update), DELETE: standard write access
-#   - POST /transfer: require_permission(ctx, "can_add_transactions")
-"""
+"""Accounts router: CRUD + summary."""
 
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.enums import TransactionType
@@ -68,7 +61,9 @@ async def create_account(
     data: AccountCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> AccountResponse:
+    require_permission(ctx, "can_add_transactions")
     account = await account_service.create_account(db, user.id, data)
     return AccountResponse.model_validate(account)
 
@@ -79,7 +74,9 @@ async def update_account(
     data: AccountUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> AccountResponse:
+    require_permission(ctx, "can_add_transactions")
     account = await account_service.get_account(db, account_id, user.id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})
@@ -92,8 +89,10 @@ async def transfer(
     data: TransferRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> TransferResponse:
     """Transfer between own accounts. Creates expense on source, income on destination."""
+    require_permission(ctx, "can_add_transactions")
     if data.from_account_id == data.to_account_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": "SAME_ACCOUNT", "message": "Não pode transferir para a mesma conta"})
 
@@ -141,7 +140,9 @@ async def delete_account(
     account_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_add_transactions")
     account = await account_service.get_account(db, account_id, user.id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})

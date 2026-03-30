@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.debt import Debt, DebtPayment
@@ -107,7 +108,9 @@ async def create_debt(
     data: DebtCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_add_transactions")
     current_balance = data.current_balance if data.current_balance is not None else data.original_amount
     kwargs = {
         "user_id": user.id, "name": data.name, "type": data.type,
@@ -143,7 +146,9 @@ async def update_debt(
     data: DebtUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_add_transactions")
     result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
     debt = result.scalar_one_or_none()
     if not debt:
@@ -173,7 +178,9 @@ async def register_payment(
     data: PaymentCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
+    require_permission(ctx, "can_add_transactions")
     result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
     debt = result.scalar_one_or_none()
     if not debt:
@@ -244,7 +251,9 @@ async def delete_debt(
     debt_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> None:
+    require_permission(ctx, "can_add_transactions")
     result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
     debt = result.scalar_one_or_none()
     if not debt:

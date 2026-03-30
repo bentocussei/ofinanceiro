@@ -8,20 +8,37 @@ import { notificationsApi, type Notification } from "@/lib/api/notifications"
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
-  const fetchNotifications = () => {
-    notificationsApi.list().then(setNotifications).catch(() => {})
+  const fetchNotifications = (loadMore = false) => {
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    notificationsApi.listPage(params)
+      .then((res) => {
+        if (loadMore) {
+          setNotifications(prev => [...prev, ...res.items])
+        } else {
+          setNotifications(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchNotifications() }, [])
 
   const markRead = async (id: string) => {
     await notificationsApi.markRead(id).catch(() => {})
+    setCursor(null)
+    setHasMore(false)
     fetchNotifications()
   }
 
   const markAllRead = async () => {
     await notificationsApi.markAllRead().catch(() => {})
+    setCursor(null)
+    setHasMore(false)
     fetchNotifications()
   }
 
@@ -65,6 +82,14 @@ export default function NotificationsPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchNotifications(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
     </div>

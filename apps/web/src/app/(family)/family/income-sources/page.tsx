@@ -51,6 +51,8 @@ export default function FamilyIncomeSourcesPage() {
   const [editItem, setEditItem] = useState<IncomeSource | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Form state
   const [name, setName] = useState("")
@@ -61,9 +63,20 @@ export default function FamilyIncomeSourcesPage() {
   const [accountId, setAccountId] = useState("")
   const [description, setDescription] = useState("")
 
-  const fetchItems = () => {
+  const fetchItems = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    incomeSourcesApi.list(ctx).then(setItems).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    incomeSourcesApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setItems(prev => [...prev, ...res.items])
+        } else {
+          setItems(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   const fetchAccounts = () => {
@@ -104,6 +117,8 @@ export default function FamilyIncomeSourcesPage() {
       }, ctx)
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Rendimento familiar criado com sucesso")
     } catch {
@@ -141,6 +156,8 @@ export default function FamilyIncomeSourcesPage() {
       setEditOpen(false)
       resetForm()
       setEditItem(null)
+      setCursor(null)
+      setHasMore(false)
       fetchItems()
       toast.success("Rendimento actualizado com sucesso")
     } catch {
@@ -157,6 +174,8 @@ export default function FamilyIncomeSourcesPage() {
         onClick: async () => {
           const ctx = { headers: getContextHeader() }
           await incomeSourcesApi.remove(id, ctx).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchItems()
           toast.success("Rendimento eliminado com sucesso")
         },
@@ -281,6 +300,14 @@ export default function FamilyIncomeSourcesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchItems(true)}>
+            Carregar mais
+          </Button>
         </div>
       )}
 

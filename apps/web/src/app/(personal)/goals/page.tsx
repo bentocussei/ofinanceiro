@@ -28,6 +28,8 @@ export default function GoalsPage() {
   const [contributeAmount, setContributeAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isContributing, setIsContributing] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Create form
   const [createName, setCreateName] = useState("")
@@ -49,8 +51,19 @@ export default function GoalsPage() {
       .catch(() => {})
   }, [])
 
-  const fetchGoals = () => {
-    goalsApi.list().then((items) => setGoals(items ?? [])).catch(() => {})
+  const fetchGoals = (loadMore = false) => {
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    goalsApi.listPage(params)
+      .then((res) => {
+        if (loadMore) {
+          setGoals(prev => [...prev, ...res.items])
+        } else {
+          setGoals(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchGoals() }, [])
@@ -84,6 +97,8 @@ export default function GoalsPage() {
       })
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchGoals()
       toast.success("Meta criada com sucesso")
     } catch {
@@ -99,6 +114,8 @@ export default function GoalsPage() {
       await goalsApi.contribute(contributeGoalId, Math.round(parseFloat(contributeAmount) * 100))
       setContributeGoalId(null)
       setContributeAmount("")
+      setCursor(null)
+      setHasMore(false)
       fetchGoals()
       toast.success("Contribuição registada com sucesso")
     } catch {
@@ -275,6 +292,14 @@ export default function GoalsPage() {
         </div>
       )}
 
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchGoals(true)}>
+            Carregar mais
+          </Button>
+        </div>
+      )}
+
       {/* Contribute dialog */}
       <Dialog open={!!contributeGoalId} onOpenChange={(v) => { if (!v) { setContributeGoalId(null); setContributeAmount("") } }}>
         <DialogContent className="sm:max-w-md">
@@ -295,8 +320,8 @@ export default function GoalsPage() {
         item={detailGoal}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onUpdated={fetchGoals}
-        onDeleted={fetchGoals}
+        onUpdated={() => { setCursor(null); setHasMore(false); fetchGoals() }}
+        onDeleted={() => { setCursor(null); setHasMore(false); fetchGoals() }}
       />
     </div>
   )

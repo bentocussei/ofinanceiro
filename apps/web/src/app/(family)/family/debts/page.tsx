@@ -53,6 +53,8 @@ export default function FamilyDebtsPage() {
   const [payOpen, setPayOpen] = useState<string | null>(null)
   const [simOpen, setSimOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
 
   // Create form
   const [name, setName] = useState("")
@@ -89,9 +91,20 @@ export default function FamilyDebtsPage() {
       .catch(() => {})
   }, [])
 
-  const fetchDebts = () => {
+  const fetchDebts = (loadMore = false) => {
     const ctx = { headers: getContextHeader() }
-    debtsApi.list(ctx).then(setDebts).catch(() => {})
+    const params = loadMore && cursor ? `cursor=${cursor}` : ""
+    debtsApi.listPage(params, ctx)
+      .then((res) => {
+        if (loadMore) {
+          setDebts(prev => [...prev, ...res.items])
+        } else {
+          setDebts(res.items)
+        }
+        setCursor(res.cursor)
+        setHasMore(res.has_more)
+      })
+      .catch(() => {})
   }
 
   useEffect(() => { fetchDebts() }, [])
@@ -139,6 +152,8 @@ export default function FamilyDebtsPage() {
       }, ctx)
       setCreateOpen(false)
       resetForm()
+      setCursor(null)
+      setHasMore(false)
       fetchDebts()
       toast.success("Dívida familiar criada com sucesso")
     } catch {
@@ -154,6 +169,8 @@ export default function FamilyDebtsPage() {
       await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100), ctx)
       setPayOpen(null)
       setPayAmount("")
+      setCursor(null)
+      setHasMore(false)
       fetchDebts()
       toast.success("Pagamento registado com sucesso")
     } catch {
@@ -169,6 +186,8 @@ export default function FamilyDebtsPage() {
         onClick: async () => {
           const ctx = { headers: getContextHeader() }
           await debtsApi.remove(id, ctx).catch(() => {})
+          setCursor(null)
+          setHasMore(false)
           fetchDebts()
           toast.success("Dívida eliminada com sucesso")
         },
@@ -358,6 +377,14 @@ export default function FamilyDebtsPage() {
         </div>
       )}
 
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="sm" onClick={() => fetchDebts(true)}>
+            Carregar mais
+          </Button>
+        </div>
+      )}
+
       {/* Payment dialog */}
       <Dialog open={!!payOpen} onOpenChange={(v) => { if (!v) setPayOpen(null) }}>
         <DialogContent className="sm:max-w-md">
@@ -373,8 +400,8 @@ export default function FamilyDebtsPage() {
         item={detailDebt}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onUpdated={fetchDebts}
-        onDeleted={fetchDebts}
+        onUpdated={() => { setCursor(null); setHasMore(false); fetchDebts() }}
+        onDeleted={() => { setCursor(null); setHasMore(false); fetchDebts() }}
         contextHeaders={getContextHeader()}
       />
 
