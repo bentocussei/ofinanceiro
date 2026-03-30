@@ -101,8 +101,12 @@ async def list_investments(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(Investment).where(Investment.user_id == user.id)
+    if ctx.is_family:
+        stmt = select(Investment).where(Investment.family_id == ctx.family_id)
+    else:
+        stmt = select(Investment).where(Investment.user_id == user.id, Investment.family_id.is_(None))
     if cursor:
         cursor_uuid = uuid.UUID(cursor)
         stmt = stmt.where(Investment.id < cursor_uuid)
@@ -129,13 +133,17 @@ async def list_investments(
 async def get_performance(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    result = await db.execute(
-        select(
-            func.sum(Investment.invested_amount).label("total_invested"),
-            func.sum(Investment.current_value).label("total_value"),
-        ).where(Investment.user_id == user.id, Investment.is_active.is_(True))
-    )
+    base_stmt = select(
+        func.sum(Investment.invested_amount).label("total_invested"),
+        func.sum(Investment.current_value).label("total_value"),
+    ).where(Investment.is_active.is_(True))
+    if ctx.is_family:
+        base_stmt = base_stmt.where(Investment.family_id == ctx.family_id)
+    else:
+        base_stmt = base_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
+    result = await db.execute(base_stmt)
     row = result.one()
     invested = row.total_invested or 0
     value = row.total_value or 0
@@ -156,7 +164,8 @@ async def create_investment(
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
     inv = Investment(
-        user_id=user.id, name=data.name, type=data.type, institution=data.institution,
+        user_id=user.id, family_id=ctx.family_id,
+        name=data.name, type=data.type, institution=data.institution,
         invested_amount=data.invested_amount, current_value=data.current_value,
         interest_rate=data.get_interest_rate_bp(), start_date=data.start_date,
         maturity_date=data.maturity_date, notes=data.notes,
@@ -175,12 +184,7 @@ async def update_investment(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(
-        select(Investment).where(Investment.id == investment_id, Investment.user_id == user.id)
-    )
-    inv = result.scalar_one_or_none()
-    if not inv:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Investimento não encontrado")
+    inv = await _get_investment_or_404(db, investment_id, user.id, ctx)
 
     update_data = data.model_dump(exclude_unset=True)
     # Convert annual_return_rate to basis points if provided
@@ -226,13 +230,15 @@ async def simulate_compound_interest(
 async def get_allocation(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Portfolio allocation breakdown by investment type."""
-    result = await db.execute(
-        select(Investment).where(
-            Investment.user_id == user.id, Investment.is_active.is_(True)
-        )
-    )
+    alloc_stmt = select(Investment).where(Investment.is_active.is_(True))
+    if ctx.is_family:
+        alloc_stmt = alloc_stmt.where(Investment.family_id == ctx.family_id)
+    else:
+        alloc_stmt = alloc_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
+    result = await db.execute(alloc_stmt)
     investments = list(result.scalars().all())
 
     total_invested = sum(i.invested_amount for i in investments)
@@ -277,13 +283,15 @@ async def get_performance_history(
     months: int = Query(12, ge=1, le=60),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Monthly performance snapshots (linear interpolation from start_date to now)."""
-    result = await db.execute(
-        select(Investment).where(
-            Investment.user_id == user.id, Investment.is_active.is_(True)
-        )
-    )
+    hist_stmt = select(Investment).where(Investment.is_active.is_(True))
+    if ctx.is_family:
+        hist_stmt = hist_stmt.where(Investment.family_id == ctx.family_id)
+    else:
+        hist_stmt = hist_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
+    result = await db.execute(hist_stmt)
     investments = list(result.scalars().all())
     today = date.today()
 
@@ -350,13 +358,15 @@ async def get_performance_history(
 async def get_insights(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """AI-ready investment insights. Currently rule-based, later enhanced by AI agent."""
-    result = await db.execute(
-        select(Investment).where(
-            Investment.user_id == user.id, Investment.is_active.is_(True)
-        )
-    )
+    ins_stmt = select(Investment).where(Investment.is_active.is_(True))
+    if ctx.is_family:
+        ins_stmt = ins_stmt.where(Investment.family_id == ctx.family_id)
+    else:
+        ins_stmt = ins_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
+    result = await db.execute(ins_stmt)
     investments = list(result.scalars().all())
     today = date.today()
 
@@ -488,11 +498,21 @@ async def delete_investment(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(
-        select(Investment).where(Investment.id == investment_id, Investment.user_id == user.id)
-    )
-    inv = result.scalar_one_or_none()
-    if not inv:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    inv = await _get_investment_or_404(db, investment_id, user.id, ctx)
     await db.delete(inv)
     await db.flush()
+
+
+async def _get_investment_or_404(
+    db: AsyncSession, investment_id: uuid.UUID, user_id: uuid.UUID, ctx: FinanceContext,
+) -> Investment:
+    """Fetch an investment by ID with context-aware filtering."""
+    if ctx.is_family:
+        stmt = select(Investment).where(Investment.id == investment_id, Investment.family_id == ctx.family_id)
+    else:
+        stmt = select(Investment).where(Investment.id == investment_id, Investment.user_id == user_id, Investment.family_id.is_(None))
+    result = await db.execute(stmt)
+    inv = result.scalar_one_or_none()
+    if not inv:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Investimento não encontrado")
+    return inv

@@ -23,8 +23,12 @@ async def list_recurring_rules(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(RecurringRule).where(RecurringRule.user_id == user.id)
+    if ctx.is_family:
+        stmt = select(RecurringRule).where(RecurringRule.family_id == ctx.family_id)
+    else:
+        stmt = select(RecurringRule).where(RecurringRule.user_id == user.id, RecurringRule.family_id.is_(None))
     if is_active is not None:
         stmt = stmt.where(RecurringRule.is_active == is_active)
     if cursor:
@@ -59,7 +63,7 @@ async def create_recurring_rule(
     for date_field in ("start_date", "end_date"):
         if date_field in data and isinstance(data[date_field], str):
             data[date_field] = date.fromisoformat(data[date_field])
-    rule = RecurringRule(user_id=user.id, **data)
+    rule = RecurringRule(user_id=user.id, family_id=ctx.family_id, **data)
     db.add(rule)
     await db.flush()
     await db.refresh(rule)
@@ -75,7 +79,7 @@ async def update_recurring_rule(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    rule = await _get_or_404(db, rule_id, user.id)
+    rule = await _get_or_404(db, rule_id, user.id, ctx)
     for key, value in data.items():
         if hasattr(rule, key):
             setattr(rule, key, value)
@@ -92,12 +96,17 @@ async def delete_recurring_rule(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_edit_budgets")
-    rule = await _get_or_404(db, rule_id, user.id)
+    rule = await _get_or_404(db, rule_id, user.id, ctx)
     await db.delete(rule)
 
 
-async def _get_or_404(db: AsyncSession, rule_id: uuid.UUID, user_id: uuid.UUID) -> RecurringRule:
-    stmt = select(RecurringRule).where(RecurringRule.id == rule_id, RecurringRule.user_id == user_id)
+async def _get_or_404(
+    db: AsyncSession, rule_id: uuid.UUID, user_id: uuid.UUID, ctx: FinanceContext,
+) -> RecurringRule:
+    if ctx.is_family:
+        stmt = select(RecurringRule).where(RecurringRule.id == rule_id, RecurringRule.family_id == ctx.family_id)
+    else:
+        stmt = select(RecurringRule).where(RecurringRule.id == rule_id, RecurringRule.user_id == user_id, RecurringRule.family_id.is_(None))
     result = await db.execute(stmt)
     rule = result.scalar_one_or_none()
     if not rule:

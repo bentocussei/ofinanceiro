@@ -391,6 +391,8 @@ async def main() -> None:
         debt_car_id = uuid.uuid4()
         debt_friend_id = uuid.uuid4()
 
+        debt_family_id = uuid.uuid4()
+
         debts = [
             Debt(
                 id=debt_car_id, user_id=cussei_id, name="Empréstimo automóvel",
@@ -404,6 +406,14 @@ async def main() -> None:
                 type=DebtType.INFORMAL, creditor="João Silva", nature=DebtNature.INFORMAL,
                 original_amount=kz(200_000), current_balance=kz(80_000),
                 monthly_payment=kz(40_000), payment_day=15,
+            ),
+            # Family debt
+            Debt(
+                id=debt_family_id, user_id=cussei_id, family_id=family_id,
+                name="Electrodomésticos casa", type=DebtType.INFORMAL,
+                creditor="Loja Mega", nature=DebtNature.FORMAL,
+                original_amount=kz(800_000), current_balance=kz(400_000),
+                monthly_payment=kz(100_000), payment_day=10,
             ),
         ]
         db.add_all(debts)
@@ -497,6 +507,14 @@ async def main() -> None:
                 type="bond", institution="BNA", invested_amount=kz(1_000_000),
                 current_value=kz(1_080_000), interest_rate=1200,
                 start_date=TODAY - timedelta(days=365),
+            ),
+            # Family investment
+            Investment(
+                user_id=cussei_id, family_id=family_id,
+                name="Poupança familiar BAI",
+                type="savings", institution="BAI", invested_amount=kz(300_000),
+                current_value=kz(315_000), interest_rate=500,
+                start_date=TODAY - timedelta(days=120),
             ),
         ]
         db.add_all(investments)
@@ -594,10 +612,10 @@ async def main() -> None:
         print(f"Transactions: {len(personal_txns)} personal + {len(family_txns)} family")
         print(f"Budget: 1 with 5 items")
         print(f"Goals: 2 personal + 1 family")
-        print(f"Debts: 2 with payments")
+        print(f"Debts: 2 personal + 1 family with payments")
         print(f"Bills: 4 personal + 1 family")
         print(f"Income sources: 3")
-        print(f"Investments: 2")
+        print(f"Investments: 2 personal + 1 family")
         print(f"Assets: 3 personal + 1 family")
         print(f"Notifications: 4")
         print("=" * 50)

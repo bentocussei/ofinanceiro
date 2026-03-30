@@ -64,8 +64,12 @@ async def list_debts(
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    stmt = select(Debt).where(Debt.user_id == user.id)
+    if ctx.is_family:
+        stmt = select(Debt).where(Debt.family_id == ctx.family_id)
+    else:
+        stmt = select(Debt).where(Debt.user_id == user.id, Debt.family_id.is_(None))
     if cursor:
         cursor_uuid = uuid.UUID(cursor)
         stmt = stmt.where(Debt.id < cursor_uuid)
@@ -120,7 +124,8 @@ async def create_debt(
     require_permission(ctx, "can_add_transactions")
     current_balance = data.current_balance if data.current_balance is not None else data.original_amount
     kwargs = {
-        "user_id": user.id, "name": data.name, "type": data.type,
+        "user_id": user.id, "family_id": ctx.family_id,
+        "name": data.name, "type": data.type,
         "creditor": data.creditor or data.creditor_name,
         "original_amount": data.original_amount, "current_balance": current_balance,
         "interest_rate": data.interest_rate, "monthly_payment": data.monthly_payment,
@@ -156,10 +161,7 @@ async def update_debt(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
-    debt = result.scalar_one_or_none()
-    if not debt:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
+    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -188,10 +190,7 @@ async def register_payment(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
-    debt = result.scalar_one_or_none()
-    if not debt:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
 
     payment = DebtPayment(debt_id=debt.id, amount=data.amount, payment_date=data.payment_date)
     db.add(payment)
@@ -261,9 +260,21 @@ async def delete_debt(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
-    debt = result.scalar_one_or_none()
-    if not debt:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
     await db.delete(debt)
     await db.flush()
+
+
+async def _get_debt_or_404(
+    db: AsyncSession, debt_id: uuid.UUID, user_id: uuid.UUID, ctx: FinanceContext,
+) -> Debt:
+    """Fetch a debt by ID with context-aware filtering."""
+    if ctx.is_family:
+        stmt = select(Debt).where(Debt.id == debt_id, Debt.family_id == ctx.family_id)
+    else:
+        stmt = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id, Debt.family_id.is_(None))
+    result = await db.execute(stmt)
+    debt = result.scalar_one_or_none()
+    if not debt:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
+    return debt

@@ -28,6 +28,9 @@ class Debt(BaseModel):
     user_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
+    family_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[DebtType] = mapped_column(
         ENUM(DebtType, name="debt_type", create_type=True)

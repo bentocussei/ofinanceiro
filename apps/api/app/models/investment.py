@@ -18,6 +18,9 @@ class Investment(BaseModel):
     user_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
+    family_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[str] = mapped_column(String(50))  # deposit, bond, stock, crypto, real_estate
     institution: Mapped[str | None] = mapped_column(String(100))
