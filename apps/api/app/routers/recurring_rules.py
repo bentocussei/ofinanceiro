@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,16 +18,32 @@ router = APIRouter(prefix="/api/v1/recurring-rules", tags=["recurring-rules"])
 @router.get("/")
 async def list_recurring_rules(
     is_active: bool | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[dict]:
+) -> dict:
     stmt = select(RecurringRule).where(RecurringRule.user_id == user.id)
     if is_active is not None:
         stmt = stmt.where(RecurringRule.is_active == is_active)
-    stmt = stmt.order_by(RecurringRule.next_due.asc().nulls_last())
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(RecurringRule.id < cursor_uuid)
+    stmt = stmt.order_by(RecurringRule.created_at.desc(), RecurringRule.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    rules = result.scalars().all()
-    return [_to_dict(r) for r in rules]
+    rules = list(result.scalars().all())
+
+    next_cursor = None
+    if len(rules) > limit:
+        rules = rules[:limit]
+        next_cursor = str(rules[-1].id)
+
+    return {
+        "items": [_to_dict(r) for r in rules],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.post("/", status_code=201)

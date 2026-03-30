@@ -24,6 +24,23 @@ export interface Family {
   contribution_model?: string | null
 }
 
+export interface JoinRequest {
+  id: string
+  user_name: string
+  user_phone: string
+  requested_at: string
+  status: string
+}
+
+export interface CreateDirectMemberData {
+  name: string
+  phone: string
+  password: string
+  role?: string
+  family_relation?: string
+  display_name?: string
+}
+
 export interface UpdateMemberData {
   relation?: string | null
   can_add_transactions?: boolean
@@ -91,4 +108,19 @@ export const familiesApi = {
       body: JSON.stringify({ role }),
       ...opts,
     }),
+
+  regenerateCode: (familyId: string, opts?: H) =>
+    apiFetch<{ invite_code: string }>("/api/v1/families/" + familyId + "/regenerate-code", { method: "POST", ...opts }),
+
+  joinRequests: (familyId: string, opts?: H) =>
+    apiFetch<JoinRequest[]>("/api/v1/families/" + familyId + "/join-requests", opts),
+
+  approveJoinRequest: (familyId: string, inviteId: string, opts?: H) =>
+    apiFetch<FamilyMember>("/api/v1/families/" + familyId + "/join-requests/" + inviteId + "/approve", { method: "PUT", ...opts }),
+
+  rejectJoinRequest: (familyId: string, inviteId: string, opts?: H) =>
+    apiFetch<void>("/api/v1/families/" + familyId + "/join-requests/" + inviteId + "/reject", { method: "PUT", ...opts }),
+
+  createDirectMember: (familyId: string, data: CreateDirectMemberData, opts?: H) =>
+    apiFetch<FamilyMember>("/api/v1/families/" + familyId + "/members/create-direct", { method: "POST", body: JSON.stringify(data), ...opts }),
 }

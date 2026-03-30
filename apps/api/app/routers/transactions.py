@@ -1,4 +1,12 @@
-"""Transactions router: CRUD with filters and pagination."""
+"""Transactions router: CRUD with filters and pagination.
+
+# TODO: Add get_context dependency for family permission checks
+# When migrated to get_context:
+#   - POST (create): require_permission(ctx, "can_add_transactions")
+#   - PUT (update): require_permission(ctx, "can_add_transactions")
+#   - DELETE: require_permission(ctx, "can_add_transactions")
+#   - GET (list/get): always allowed (read access)
+"""
 
 import uuid
 from datetime import date

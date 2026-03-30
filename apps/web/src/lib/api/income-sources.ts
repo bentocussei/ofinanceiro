@@ -24,9 +24,21 @@ export interface CreateIncomeSourceData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const incomeSourcesApi = {
   list: (opts?: H) =>
-    apiFetch<IncomeSource[]>("/api/v1/income-sources/", opts),
+    apiFetch<PaginatedResponse<IncomeSource>>("/api/v1/income-sources/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<IncomeSource>>(
+      "/api/v1/income-sources/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateIncomeSourceData, opts?: H) =>
     apiFetch<IncomeSource>("/api/v1/income-sources/", {

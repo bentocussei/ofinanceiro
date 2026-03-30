@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,16 +17,32 @@ router = APIRouter(prefix="/api/v1/income-sources", tags=["income-sources"])
 @router.get("/")
 async def list_income_sources(
     is_active: bool | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[dict]:
+) -> dict:
     stmt = select(IncomeSource).where(IncomeSource.user_id == user.id)
     if is_active is not None:
         stmt = stmt.where(IncomeSource.is_active == is_active)
-    stmt = stmt.order_by(IncomeSource.created_at.desc())
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(IncomeSource.id < cursor_uuid)
+    stmt = stmt.order_by(IncomeSource.created_at.desc(), IncomeSource.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    sources = result.scalars().all()
-    return [_to_dict(s) for s in sources]
+    sources = list(result.scalars().all())
+
+    next_cursor = None
+    if len(sources) > limit:
+        sources = sources[:limit]
+        next_cursor = str(sources[-1].id)
+
+    return {
+        "items": [_to_dict(s) for s in sources],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.post("/", status_code=201)

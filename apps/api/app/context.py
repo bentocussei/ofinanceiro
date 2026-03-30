@@ -31,6 +31,11 @@ class FinanceContext:
 
     user_id: uuid.UUID
     family_id: uuid.UUID | None = None
+    role: str | None = None
+    can_add_transactions: bool = True
+    can_edit_budgets: bool = False
+    can_view_all_accounts: bool = False
+    can_invite_members: bool = False
 
     @property
     def is_family(self) -> bool:
@@ -39,6 +44,26 @@ class FinanceContext:
     @property
     def is_personal(self) -> bool:
         return self.family_id is None
+
+
+def require_permission(ctx: FinanceContext, permission: str) -> None:
+    """Raise 403 if user lacks the required permission in family context.
+
+    In personal context, no restrictions apply.
+    In family context, admins always pass; others need the specific flag.
+    """
+    if not ctx.is_family:
+        return
+    if ctx.role == "admin":
+        return
+    if not getattr(ctx, permission, False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "INSUFFICIENT_PERMISSIONS",
+                "message": "Não tem permissão para esta acção",
+            },
+        )
 
 
 async def get_context(
@@ -67,24 +92,33 @@ async def get_context(
                 detail={"code": "INVALID_CONTEXT", "message": "ID de família inválido"},
             )
 
-        # Verify user is a member of this family
+        # Verify user is a member of this family and load permissions
         from sqlalchemy import select
 
         from app.models.family import FamilyMember
 
         result = await db.execute(
-            select(FamilyMember.id).where(
+            select(FamilyMember).where(
                 FamilyMember.family_id == family_id,
                 FamilyMember.user_id == user.id,
                 FamilyMember.is_active.is_(True),
             )
         )
-        if not result.scalar_one_or_none():
+        member = result.scalar_one_or_none()
+        if not member:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"code": "NOT_FAMILY_MEMBER", "message": "Não é membro desta família"},
             )
 
-        return FinanceContext(user_id=user.id, family_id=family_id)
+        return FinanceContext(
+            user_id=user.id,
+            family_id=family_id,
+            role=member.role.value if member.role else None,
+            can_add_transactions=member.can_add_transactions,
+            can_edit_budgets=member.can_edit_budgets,
+            can_view_all_accounts=member.can_view_all_accounts,
+            can_invite_members=member.can_invite_members,
+        )
 
     return FinanceContext(user_id=user.id)

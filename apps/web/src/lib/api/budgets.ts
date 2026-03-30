@@ -75,9 +75,21 @@ export interface UpdateBudgetData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const budgetsApi = {
   list: (params?: string, opts?: H) =>
-    apiFetch<Budget[]>("/api/v1/budgets/" + (params ? "?" + params : ""), opts),
+    apiFetch<PaginatedResponse<Budget>>("/api/v1/budgets/" + (params ? "?" + params : ""), opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Budget>>(
+      "/api/v1/budgets/" + (params ? "?" + params : ""), opts
+    ),
 
   status: (id: string, opts?: H) =>
     apiFetch<BudgetStatus>("/api/v1/budgets/" + id + "/status", opts),

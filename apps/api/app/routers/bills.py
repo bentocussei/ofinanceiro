@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,18 +20,34 @@ router = APIRouter(prefix="/api/v1/bills", tags=["bills"])
 async def list_bills(
     is_active: bool | None = None,
     bill_status: str | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[dict]:
+) -> dict:
     stmt = select(Bill).where(Bill.user_id == user.id)
     if is_active is not None:
         stmt = stmt.where(Bill.is_active == is_active)
     if bill_status is not None:
         stmt = stmt.where(Bill.status == bill_status)
-    stmt = stmt.order_by(Bill.next_due_date.asc().nulls_last())
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Bill.id < cursor_uuid)
+    stmt = stmt.order_by(Bill.created_at.desc(), Bill.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    bills = result.scalars().all()
-    return [_to_dict(b) for b in bills]
+    bills = list(result.scalars().all())
+
+    next_cursor = None
+    if len(bills) > limit:
+        bills = bills[:limit]
+        next_cursor = str(bills[-1].id)
+
+    return {
+        "items": [_to_dict(b) for b in bills],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.post("/", status_code=201)

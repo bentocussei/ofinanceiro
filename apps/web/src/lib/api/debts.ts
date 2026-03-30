@@ -86,9 +86,21 @@ export interface SimulateParams {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const debtsApi = {
   list: (opts?: H) =>
-    apiFetch<Debt[]>("/api/v1/debts/", opts),
+    apiFetch<PaginatedResponse<Debt>>("/api/v1/debts/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Debt>>(
+      "/api/v1/debts/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateDebtData, opts?: H) =>
     apiFetch<Debt>("/api/v1/debts/", {

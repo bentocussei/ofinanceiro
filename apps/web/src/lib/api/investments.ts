@@ -44,9 +44,21 @@ export interface UpdateInvestmentData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const investmentsApi = {
   list: (opts?: H) =>
-    apiFetch<Investment[]>("/api/v1/investments/", opts),
+    apiFetch<PaginatedResponse<Investment>>("/api/v1/investments/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Investment>>(
+      "/api/v1/investments/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateInvestmentData, opts?: H) =>
     apiFetch<Investment>("/api/v1/investments/", {

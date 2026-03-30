@@ -19,14 +19,32 @@ from app.schemas.budget import (
 
 
 async def list_budgets(
-    db: AsyncSession, user_id: uuid.UUID, active_only: bool = True
-) -> list[Budget]:
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    active_only: bool = True,
+    cursor: str | None = None,
+    limit: int = 50,
+) -> tuple[list[Budget], str | None]:
+    """List budgets with cursor-based pagination.
+    Returns (budgets, next_cursor).
+    """
     stmt = select(Budget).where(Budget.user_id == user_id)
     if active_only:
         stmt = stmt.where(Budget.is_active.is_(True))
-    stmt = stmt.order_by(Budget.period_start.desc())
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Budget.id < cursor_uuid)
+    stmt = stmt.order_by(Budget.created_at.desc(), Budget.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    return list(result.scalars().unique().all())
+    budgets = list(result.scalars().unique().all())
+
+    next_cursor = None
+    if len(budgets) > limit:
+        budgets = budgets[:limit]
+        next_cursor = str(budgets[-1].id)
+
+    return budgets, next_cursor
 
 
 async def get_budget(db: AsyncSession, budget_id: uuid.UUID, user_id: uuid.UUID) -> Budget | None:

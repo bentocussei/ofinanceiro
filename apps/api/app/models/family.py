@@ -77,8 +77,11 @@ class FamilyInvite(BaseModel):
     family_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("families.id", ondelete="CASCADE"), index=True
     )
-    invited_by: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id")
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    invited_by: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
     invite_phone: Mapped[str | None] = mapped_column(String(20))
     invite_email: Mapped[str | None] = mapped_column(String(255))
@@ -87,6 +90,6 @@ class FamilyInvite(BaseModel):
         default=FamilyRole.ADULT,
     )
     status: Mapped[str] = mapped_column(String(20), default="pending")
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     family: Mapped["Family"] = relationship(back_populates="invites")

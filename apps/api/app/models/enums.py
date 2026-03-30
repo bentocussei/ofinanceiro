@@ -84,6 +84,8 @@ class NotificationType(enum.StrEnum):
     GOAL_MILESTONE = "goal_milestone"
     UNUSUAL_SPENDING = "unusual_spending"
     FAMILY_CONTRIBUTION = "family_contribution"
+    FAMILY_JOIN_REQUEST = "family_join_request"
+    FAMILY_JOIN_RESPONSE = "family_join_response"
     MANUAL_REMINDER = "manual_reminder"
     STREAK = "streak"
     DEBT_DUE = "debt_due"

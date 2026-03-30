@@ -11,14 +11,32 @@ from app.schemas.account import AccountCreate, AccountSummary, AccountUpdate
 
 
 async def list_accounts(
-    db: AsyncSession, user_id: uuid.UUID, include_archived: bool = False
-) -> list[Account]:
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    include_archived: bool = False,
+    cursor: str | None = None,
+    limit: int = 50,
+) -> tuple[list[Account], str | None]:
+    """List accounts with cursor-based pagination.
+    Returns (accounts, next_cursor).
+    """
     stmt = select(Account).where(Account.user_id == user_id)
     if not include_archived:
         stmt = stmt.where(Account.is_archived.is_(False))
-    stmt = stmt.order_by(Account.sort_order, Account.created_at)
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Account.id < cursor_uuid)
+    stmt = stmt.order_by(Account.created_at.desc(), Account.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    accounts = list(result.scalars().all())
+
+    next_cursor = None
+    if len(accounts) > limit:
+        accounts = accounts[:limit]
+        next_cursor = str(accounts[-1].id)
+
+    return accounts, next_cursor
 
 
 async def get_account(db: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID) -> Account | None:

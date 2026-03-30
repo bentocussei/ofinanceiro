@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,14 +59,26 @@ class PaymentCreate(BaseModel):
 
 @router.get("/")
 async def list_debts(
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[dict]:
-    result = await db.execute(
-        select(Debt).where(Debt.user_id == user.id).order_by(Debt.created_at.desc())
-    )
-    debts = result.scalars().unique().all()
-    return [
+) -> dict:
+    stmt = select(Debt).where(Debt.user_id == user.id)
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Debt.id < cursor_uuid)
+    stmt = stmt.order_by(Debt.created_at.desc(), Debt.id.desc())
+    stmt = stmt.limit(limit + 1)
+    result = await db.execute(stmt)
+    debts = list(result.scalars().unique().all())
+
+    next_cursor = None
+    if len(debts) > limit:
+        debts = debts[:limit]
+        next_cursor = str(debts[-1].id)
+
+    items = [
         {
             "id": str(d.id), "name": d.name, "type": d.type, "creditor": d.creditor,
             "original_amount": d.original_amount, "current_balance": d.current_balance,
@@ -82,6 +94,12 @@ async def list_debts(
         }
         for d in debts
     ]
+
+    return {
+        "items": items,
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.post("/", status_code=201)

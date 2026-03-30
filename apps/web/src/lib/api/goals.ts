@@ -52,9 +52,21 @@ export interface UpdateGoalData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const goalsApi = {
   list: (params?: string, opts?: H) =>
-    apiFetch<Goal[]>("/api/v1/goals/" + (params ? "?" + params : ""), opts),
+    apiFetch<PaginatedResponse<Goal>>("/api/v1/goals/" + (params ? "?" + params : ""), opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Goal>>(
+      "/api/v1/goals/" + (params ? "?" + params : ""), opts
+    ),
 
   progress: (id: string, opts?: H) =>
     apiFetch<GoalProgress>("/api/v1/goals/" + id + "/progress", opts),

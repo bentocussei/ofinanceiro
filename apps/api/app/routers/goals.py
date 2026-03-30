@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -21,14 +21,22 @@ from app.services import goal as goal_service
 router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
 
 
-@router.get("/", response_model=list[GoalResponse])
+@router.get("/")
 async def list_goals(
     goal_status: str | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[GoalResponse]:
-    goals = await goal_service.list_goals(db, user.id, goal_status)
-    return [GoalResponse.model_validate(g) for g in goals]
+) -> dict:
+    goals, next_cursor = await goal_service.list_goals(
+        db, user.id, goal_status, cursor, limit
+    )
+    return {
+        "items": [GoalResponse.model_validate(g) for g in goals],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.get("/emergency-fund-recommendation")

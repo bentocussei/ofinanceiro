@@ -12,13 +12,33 @@ from app.models.transaction import Transaction
 from app.schemas.goal import GoalCreate, GoalProgressResponse, GoalUpdate
 
 
-async def list_goals(db: AsyncSession, user_id: uuid.UUID, status: str | None = None) -> list[Goal]:
+async def list_goals(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    status: str | None = None,
+    cursor: str | None = None,
+    limit: int = 50,
+) -> tuple[list[Goal], str | None]:
+    """List goals with cursor-based pagination.
+    Returns (goals, next_cursor).
+    """
     stmt = select(Goal).where(Goal.user_id == user_id)
     if status:
         stmt = stmt.where(Goal.status == status)
-    stmt = stmt.order_by(Goal.created_at.desc())
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Goal.id < cursor_uuid)
+    stmt = stmt.order_by(Goal.created_at.desc(), Goal.id.desc())
+    stmt = stmt.limit(limit + 1)
     result = await db.execute(stmt)
-    return list(result.scalars().unique().all())
+    goals = list(result.scalars().unique().all())
+
+    next_cursor = None
+    if len(goals) > limit:
+        goals = goals[:limit]
+        next_cursor = str(goals[-1].id)
+
+    return goals, next_cursor
 
 
 async def get_goal(db: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID) -> Goal | None:

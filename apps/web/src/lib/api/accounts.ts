@@ -51,12 +51,24 @@ export interface TransferData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const accountsApi = {
   summary: (opts?: H) =>
     apiFetch<AccountSummary>("/api/v1/accounts/summary", opts),
 
   list: (opts?: H) =>
-    apiFetch<Account[]>("/api/v1/accounts/", opts),
+    apiFetch<PaginatedResponse<Account>>("/api/v1/accounts/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Account>>(
+      "/api/v1/accounts/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateAccountData, opts?: H) =>
     apiFetch<Account>("/api/v1/accounts/", {

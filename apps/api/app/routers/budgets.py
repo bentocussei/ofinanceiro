@@ -1,8 +1,17 @@
-"""Budgets router: CRUD + status."""
+"""Budgets router: CRUD + status.
+
+# TODO: Add get_context dependency for family permission checks
+# When migrated to get_context:
+#   - POST (create): require_permission(ctx, "can_edit_budgets")
+#   - PUT (update): require_permission(ctx, "can_edit_budgets")
+#   - DELETE: require_permission(ctx, "can_edit_budgets")
+#   - POST/PUT/DELETE items: require_permission(ctx, "can_edit_budgets")
+#   - GET (list/get/status): always allowed (read access)
+"""
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,14 +33,22 @@ from app.services import budget as budget_service
 router = APIRouter(prefix="/api/v1/budgets", tags=["budgets"])
 
 
-@router.get("/", response_model=list[BudgetResponse])
+@router.get("/")
 async def list_budgets(
     active_only: bool = True,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[BudgetResponse]:
-    budgets = await budget_service.list_budgets(db, user.id, active_only)
-    return [BudgetResponse.model_validate(b) for b in budgets]
+) -> dict:
+    budgets, next_cursor = await budget_service.list_budgets(
+        db, user.id, active_only, cursor, limit
+    )
+    return {
+        "items": [BudgetResponse.model_validate(b) for b in budgets],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.get("/{budget_id}", response_model=BudgetResponse)

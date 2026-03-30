@@ -44,9 +44,21 @@ export interface UpdateBillData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const billsApi = {
   list: (opts?: H) =>
-    apiFetch<Bill[]>("/api/v1/bills/", opts),
+    apiFetch<PaginatedResponse<Bill>>("/api/v1/bills/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<Bill>>(
+      "/api/v1/bills/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateBillData, opts?: H) =>
     apiFetch<Bill>("/api/v1/bills/", {

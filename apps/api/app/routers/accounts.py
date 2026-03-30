@@ -1,8 +1,16 @@
-"""Accounts router: CRUD + summary."""
+"""Accounts router: CRUD + summary.
+
+# TODO: Add get_context dependency for family permission checks
+# When migrated to get_context:
+#   - GET (list/summary): require_permission(ctx, "can_view_all_accounts") in family context
+#     (or allow if viewing own accounts only)
+#   - POST (create), PUT (update), DELETE: standard write access
+#   - POST /transfer: require_permission(ctx, "can_add_transactions")
+"""
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -17,14 +25,22 @@ from app.services import account as account_service
 router = APIRouter(prefix="/api/v1/accounts", tags=["accounts"])
 
 
-@router.get("/", response_model=list[AccountResponse])
+@router.get("/")
 async def list_accounts(
     include_archived: bool = False,
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[AccountResponse]:
-    accounts = await account_service.list_accounts(db, user.id, include_archived)
-    return [AccountResponse.model_validate(a) for a in accounts]
+) -> dict:
+    accounts, next_cursor = await account_service.list_accounts(
+        db, user.id, include_archived, cursor, limit
+    )
+    return {
+        "items": [AccountResponse.model_validate(a) for a in accounts],
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.get("/summary", response_model=AccountSummary)

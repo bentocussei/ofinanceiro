@@ -66,17 +66,13 @@ export function ContextSwitcher({ collapsed = false }: { collapsed?: boolean }) 
     setLoading(true)
     try {
       await familiesApi.join(joinCode.trim())
-      const f = await familiesApi.me()
-      if (f) {
-        setFamily(f)
-        toast.success(`Juntou-se à família "${f.name}"`)
-        handleSelect(`family:${f.id}`)
-      }
+      toast.success("Pedido de integração enviado. Aguarde aprovação.")
+      setJoinCode("")
+      setShowJoin(false)
+      setOpen(false)
     } catch {
       toast.error("Código de convite inválido")
     } finally {
-      setJoinCode("")
-      setShowJoin(false)
       setLoading(false)
     }
   }

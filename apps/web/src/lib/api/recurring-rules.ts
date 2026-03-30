@@ -28,9 +28,21 @@ export interface CreateRecurringRuleData {
 
 type H = { headers?: Record<string, string> }
 
+interface PaginatedResponse<T> {
+  items: T[]
+  cursor: string | null
+  has_more: boolean
+}
+
 export const recurringRulesApi = {
   list: (opts?: H) =>
-    apiFetch<RecurringRule[]>("/api/v1/recurring-rules/", opts),
+    apiFetch<PaginatedResponse<RecurringRule>>("/api/v1/recurring-rules/", opts)
+      .then(r => r.items),
+
+  listPage: (params?: string, opts?: H) =>
+    apiFetch<PaginatedResponse<RecurringRule>>(
+      "/api/v1/recurring-rules/" + (params ? "?" + params : ""), opts
+    ),
 
   create: (data: CreateRecurringRuleData, opts?: H) =>
     apiFetch<RecurringRule>("/api/v1/recurring-rules/", {

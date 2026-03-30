@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,14 +42,26 @@ class InvestmentUpdate(BaseModel):
 
 @router.get("/")
 async def list_investments(
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[dict]:
-    result = await db.execute(
-        select(Investment).where(Investment.user_id == user.id).order_by(Investment.created_at.desc())
-    )
-    investments = result.scalars().all()
-    return [
+) -> dict:
+    stmt = select(Investment).where(Investment.user_id == user.id)
+    if cursor:
+        cursor_uuid = uuid.UUID(cursor)
+        stmt = stmt.where(Investment.id < cursor_uuid)
+    stmt = stmt.order_by(Investment.created_at.desc(), Investment.id.desc())
+    stmt = stmt.limit(limit + 1)
+    result = await db.execute(stmt)
+    investments = list(result.scalars().all())
+
+    next_cursor = None
+    if len(investments) > limit:
+        investments = investments[:limit]
+        next_cursor = str(investments[-1].id)
+
+    items = [
         {
             "id": str(i.id), "name": i.name, "type": i.type, "institution": i.institution,
             "invested_amount": i.invested_amount, "current_value": i.current_value,
@@ -61,6 +73,12 @@ async def list_investments(
         }
         for i in investments
     ]
+
+    return {
+        "items": items,
+        "cursor": next_cursor,
+        "has_more": next_cursor is not None,
+    }
 
 
 @router.get("/performance")
