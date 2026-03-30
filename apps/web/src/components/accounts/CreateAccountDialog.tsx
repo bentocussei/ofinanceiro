@@ -32,6 +32,14 @@ const ACCOUNT_TYPES = [
   { value: "loan", label: "Empréstimo" },
 ]
 
+const CURRENCY_OPTIONS = [
+  { value: "AOA", label: "Kwanza (AOA)" },
+  { value: "USD", label: "Dólar (USD)" },
+  { value: "EUR", label: "Euro (EUR)" },
+  { value: "MZN", label: "Metical (MZN)" },
+  { value: "CVE", label: "Escudo (CVE)" },
+]
+
 const USAGE_TYPES = [
   { value: "PERSONAL", label: "Pessoal" },
   { value: "SALARY", label: "Salário" },
@@ -55,6 +63,7 @@ export function CreateAccountDialog({ onCreated }: Props) {
   const [nib, setNib] = useState("")
   const [swiftCode, setSwiftCode] = useState("")
   const [accountHolder, setAccountHolder] = useState("")
+  const [currency, setCurrency] = useState("AOA")
   const [usageType, setUsageType] = useState("PERSONAL")
   const [creditLimit, setCreditLimit] = useState("")
   const [lowBalanceAlert, setLowBalanceAlert] = useState("")
@@ -70,6 +79,7 @@ export function CreateAccountDialog({ onCreated }: Props) {
     setNib("")
     setSwiftCode("")
     setAccountHolder("")
+    setCurrency("AOA")
     setUsageType("PERSONAL")
     setCreditLimit("")
     setLowBalanceAlert("")
@@ -91,6 +101,7 @@ export function CreateAccountDialog({ onCreated }: Props) {
       await accountsApi.create({
         name: name.trim(),
         type,
+        currency,
         institution: institution.trim() || undefined,
         balance: balanceCentavos,
         icon: type,
@@ -144,6 +155,20 @@ export function CreateAccountDialog({ onCreated }: Props) {
                   <SelectItem key={t.value} value={t.value}>
                     <span className="flex items-center gap-2"><IconDisplay name={t.value} className="h-4 w-4" /> {t.label}</span>
                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Moeda</Label>
+            <Select value={currency} onValueChange={(v) => { if (v) setCurrency(v) }}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

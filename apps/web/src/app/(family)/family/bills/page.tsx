@@ -14,8 +14,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { billsApi, type Bill } from "@/lib/api/bills"
+import { accountsApi } from "@/lib/api/accounts"
+import { categoriesApi, type Category } from "@/lib/api/categories"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
+
+interface AccountOption {
+  id: string
+  name: string
+}
 
 const FREQUENCY_OPTIONS = [
   { value: "monthly", label: "Mensal" },
@@ -35,6 +42,8 @@ const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS
 
 export default function FamilyBillsPage() {
   const [items, setItems] = useState<Bill[]>([])
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [editItem, setEditItem] = useState<Bill | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -42,7 +51,9 @@ export default function FamilyBillsPage() {
   // Form
   const [name, setName] = useState("")
   const [amount, setAmount] = useState("")
-  const [category, setCategory] = useState("")
+  const [description, setDescription] = useState("")
+  const [categoryId, setCategoryId] = useState("")
+  const [payFromAccountId, setPayFromAccountId] = useState("")
   const [dueDay, setDueDay] = useState("1")
   const [frequency, setFrequency] = useState("monthly")
   const [autoPay, setAutoPay] = useState(false)
@@ -54,12 +65,23 @@ export default function FamilyBillsPage() {
     billsApi.list(ctx).then(setItems).catch(() => {})
   }
 
-  useEffect(() => { fetchItems() }, [])
+  useEffect(() => {
+    fetchItems()
+    const ctx = { headers: getContextHeader() }
+    accountsApi.summary(ctx)
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => {})
+    categoriesApi.list(ctx)
+      .then(setCategories)
+      .catch(() => {})
+  }, [])
 
   const resetForm = () => {
     setName("")
     setAmount("")
-    setCategory("")
+    setDescription("")
+    setCategoryId("")
+    setPayFromAccountId("")
     setDueDay("1")
     setFrequency("monthly")
     setAutoPay(false)
@@ -74,7 +96,9 @@ export default function FamilyBillsPage() {
       await billsApi.create({
         name: name.trim(),
         amount: Math.round(parseFloat(amount) * 100),
-        category: category.trim() || undefined,
+        description: description.trim() || undefined,
+        category_id: categoryId || undefined,
+        pay_from_account_id: payFromAccountId || undefined,
         due_day: parseInt(dueDay) || 1,
         frequency,
         auto_pay: autoPay,
@@ -94,7 +118,9 @@ export default function FamilyBillsPage() {
     setEditItem(item)
     setName(item.name)
     setAmount(String(item.amount / 100))
-    setCategory(item.category || "")
+    setDescription(item.description || "")
+    setCategoryId(item.category_id || "")
+    setPayFromAccountId(item.pay_from_account_id || "")
     setDueDay(String(item.due_day))
     setFrequency(item.frequency)
     setAutoPay(item.auto_pay)
@@ -110,7 +136,10 @@ export default function FamilyBillsPage() {
       await billsApi.update(editItem.id, {
         name: name.trim(),
         amount: Math.round(parseFloat(amount) * 100),
-        category: category.trim() || null,
+        description: description.trim() || undefined,
+        category: null,
+        category_id: categoryId || undefined,
+        pay_from_account_id: payFromAccountId || undefined,
         due_day: parseInt(dueDay) || 1,
         frequency,
         auto_pay: autoPay,
@@ -165,8 +194,37 @@ export default function FamilyBillsPage() {
         <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" />
       </div>
       <div>
+        <Label>Descrição (opcional)</Label>
+        <textarea
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+          placeholder="Detalhes adicionais sobre esta conta"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div>
         <Label>Categoria (opcional)</Label>
-        <Input placeholder="Ex: Utilidades" value={category} onChange={(e) => setCategory(e.target.value)} />
+        <Select value={categoryId} onValueChange={(v) => setCategoryId(v || "")}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar categoria" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Conta de débito (opcional)</Label>
+        <Select value={payFromAccountId} onValueChange={(v) => setPayFromAccountId(v || "")}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label>Dia de vencimento</Label>
@@ -238,9 +296,13 @@ export default function FamilyBillsPage() {
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
+                      {item.category && <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">{item.category}</span>}
                       Dia {item.due_day} -- {FREQ_LABELS[item.frequency] || item.frequency}
                       {item.next_due_date ? ` -- Próximo: ${new Date(item.next_due_date + "T00:00:00").toLocaleDateString("pt-AO")}` : ""}
                     </p>
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-1">{item.description}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

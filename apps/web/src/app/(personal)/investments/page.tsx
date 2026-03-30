@@ -34,8 +34,13 @@ export default function InvestmentsPage() {
   // Create form
   const [name, setName] = useState("")
   const [type, setType] = useState("fixed_income")
+  const [institution, setInstitution] = useState("")
   const [investedAmount, setInvestedAmount] = useState("")
+  const [currentValue, setCurrentValue] = useState("")
   const [annualRate, setAnnualRate] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [maturityDate, setMaturityDate] = useState("")
+  const [notes, setNotes] = useState("")
 
   // Compound interest simulator
   const [simPrincipal, setSimPrincipal] = useState("")
@@ -67,13 +72,23 @@ export default function InvestmentsPage() {
       await investmentsApi.create({
         name: name.trim(),
         type,
+        institution: institution.trim() || undefined,
         invested_amount: Math.round(parseFloat(investedAmount) * 100),
+        current_value: currentValue ? Math.round(parseFloat(currentValue) * 100) : undefined,
         annual_return_rate: parseFloat(annualRate) || 0,
+        start_date: startDate || undefined,
+        maturity_date: maturityDate || undefined,
+        notes: notes.trim() || undefined,
       })
       setCreateOpen(false)
       setName("")
+      setInstitution("")
       setInvestedAmount("")
+      setCurrentValue("")
       setAnnualRate("")
+      setStartDate("")
+      setMaturityDate("")
+      setNotes("")
       fetchInvestments()
     } catch { /* handled by apiFetch */ }
     setIsSubmitting(false)
@@ -133,7 +148,7 @@ export default function InvestmentsPage() {
             <DialogContent className="sm:max-w-md">
               <DialogHeader><DialogTitle>Novo investimento</DialogTitle></DialogHeader>
               <div className="space-y-4 py-2">
-                <div><Label>Nome</Label><Input placeholder="Ex: Depósito a prazo BAI" value={name} onChange={(e) => setName(e.target.value)} /></div>
+                <div><Label>Nome</Label><Input placeholder="Ex: Depósito a prazo BAI" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
                 <div><Label>Tipo</Label>
                   <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="fixed_income">Renda fixa</option>
@@ -144,8 +159,13 @@ export default function InvestmentsPage() {
                     <option value="other">Outro</option>
                   </select>
                 </div>
+                <div><Label>Instituição (opcional)</Label><Input placeholder="Ex: Banco BAI" value={institution} onChange={(e) => setInstitution(e.target.value)} /></div>
                 <div><Label>Valor investido (Kz)</Label><Input type="number" placeholder="0" value={investedAmount} onChange={(e) => setInvestedAmount(e.target.value)} className="font-mono" /></div>
+                <div><Label>Valor actual (Kz, opcional)</Label><Input type="number" placeholder="Igual ao investido" value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} className="font-mono" /></div>
                 <div><Label>Taxa de retorno anual (%)</Label><Input type="number" step="0.1" placeholder="0" value={annualRate} onChange={(e) => setAnnualRate(e.target.value)} className="font-mono" /></div>
+                <div><Label>Data de início (opcional)</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                <div><Label>Data de maturidade (opcional)</Label><Input type="date" value={maturityDate} onChange={(e) => setMaturityDate(e.target.value)} /></div>
+                <div><Label>Notas (opcional)</Label><textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground" placeholder="Observações sobre o investimento" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
                 <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>{isSubmitting ? "A criar..." : "Criar investimento"}</Button>
               </div>
             </DialogContent>
@@ -202,7 +222,8 @@ export default function InvestmentsPage() {
                        inv.type === "stocks" ? "Acções" :
                        inv.type === "bonds" ? "Obrigações" :
                        inv.type === "real_estate" ? "Imobiliário" :
-                       inv.type === "mutual_fund" ? "Fundo" : inv.type}
+                       inv.type === "mutual_fund" ? "Fundo de investimento" : inv.type}
+                      {inv.institution ? ` -- ${inv.institution}` : ""}
                       {inv.annual_return_rate ? ` -- ${inv.annual_return_rate}% a.a.` : ""}
                     </p>
                   </div>

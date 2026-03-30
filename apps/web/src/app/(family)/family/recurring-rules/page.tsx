@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Repeat, Plus, Trash2 } from "lucide-react"
+import { Repeat, Plus, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { recurringRulesApi, type RecurringRule } from "@/lib/api/recurring-rules"
 import { accountsApi } from "@/lib/api/accounts"
+import { categoriesApi, type Category } from "@/lib/api/categories"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 
@@ -37,11 +38,15 @@ const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS
 export default function FamilyRecurringRulesPage() {
   const [items, setItems] = useState<RecurringRule[]>([])
   const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [editItem, setEditItem] = useState<RecurringRule | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Form
   const [accountId, setAccountId] = useState("")
+  const [categoryId, setCategoryId] = useState("")
   const [type, setType] = useState("expense")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
@@ -60,10 +65,14 @@ export default function FamilyRecurringRulesPage() {
     accountsApi.summary(ctx)
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
+    categoriesApi.list(ctx)
+      .then(setCategories)
+      .catch(() => {})
   }, [])
 
   const resetForm = () => {
     setAccountId("")
+    setCategoryId("")
     setType("expense")
     setAmount("")
     setDescription("")
@@ -79,6 +88,7 @@ export default function FamilyRecurringRulesPage() {
       const ctx = { headers: getContextHeader() }
       await recurringRulesApi.create({
         account_id: accountId || undefined,
+        category_id: categoryId || undefined,
         type,
         amount: Math.round(parseFloat(amount) * 100),
         description: description.trim(),
@@ -92,6 +102,45 @@ export default function FamilyRecurringRulesPage() {
       toast.success("Regra recorrente familiar criada com sucesso")
     } catch {
       toast.error("Erro ao criar regra recorrente")
+    }
+    setIsSubmitting(false)
+  }
+
+  const startEdit = (item: RecurringRule) => {
+    setEditItem(item)
+    setAccountId(item.account_id || "")
+    setCategoryId(item.category_id || "")
+    setType(item.type)
+    setAmount(String(item.amount / 100))
+    setDescription(item.description)
+    setFrequency(item.frequency)
+    setDayOfMonth(item.day_of_month ? String(item.day_of_month) : "")
+    setStartDate(item.start_date || "")
+    setEditOpen(true)
+  }
+
+  const handleEdit = async () => {
+    if (!editItem || !description.trim()) return
+    setIsSubmitting(true)
+    try {
+      const ctx = { headers: getContextHeader() }
+      await recurringRulesApi.update(editItem.id, {
+        account_id: accountId || undefined,
+        category_id: categoryId || undefined,
+        type,
+        amount: Math.round(parseFloat(amount) * 100),
+        description: description.trim(),
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        start_date: startDate || undefined,
+      }, ctx)
+      setEditOpen(false)
+      resetForm()
+      setEditItem(null)
+      fetchItems()
+      toast.success("Regra recorrente actualizada com sucesso")
+    } catch {
+      toast.error("Erro ao actualizar regra recorrente")
     }
     setIsSubmitting(false)
   }
@@ -112,6 +161,72 @@ export default function FamilyRecurringRulesPage() {
     })
   }
 
+  const formFields = (
+    <div className="space-y-4 py-2">
+      <div>
+        <Label>Descrição</Label>
+        <Input placeholder="Ex: Renda mensal" value={description} onChange={(e) => setDescription(e.target.value)} autoFocus />
+      </div>
+      <div>
+        <Label>Tipo</Label>
+        <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="income">Receita</SelectItem>
+            <SelectItem value="expense">Despesa</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Valor (Kz)</Label>
+        <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" />
+      </div>
+      <div>
+        <Label>Conta (opcional)</Label>
+        <Select value={accountId} onValueChange={(v) => setAccountId(v || "")}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Categoria (opcional)</Label>
+        <Select value={categoryId} onValueChange={(v) => setCategoryId(v || "")}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar categoria" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Frequência</Label>
+        <Select value={frequency} onValueChange={(v) => { if (v) setFrequency(v) }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {FREQUENCY_OPTIONS.map((f) => (
+              <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Dia do mês (opcional)</Label>
+        <Input type="number" min="1" max="31" placeholder="Ex: 1" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} />
+      </div>
+      <div>
+        <Label>Data de início (opcional)</Label>
+        <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+      </div>
+    </div>
+  )
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -122,60 +237,10 @@ export default function FamilyRecurringRulesPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Nova regra recorrente familiar</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-2">
-              <div>
-                <Label>Descrição</Label>
-                <Input placeholder="Ex: Renda mensal" value={description} onChange={(e) => setDescription(e.target.value)} autoFocus />
-              </div>
-              <div>
-                <Label>Tipo</Label>
-                <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Receita</SelectItem>
-                    <SelectItem value="expense">Despesa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Valor (Kz)</Label>
-                <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" />
-              </div>
-              <div>
-                <Label>Conta (opcional)</Label>
-                <Select value={accountId} onValueChange={(v) => setAccountId(v || "")}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
-                    {accounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Frequência</Label>
-                <Select value={frequency} onValueChange={(v) => { if (v) setFrequency(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {FREQUENCY_OPTIONS.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Dia do mês (opcional)</Label>
-                <Input type="number" min="1" max="31" placeholder="Ex: 1" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} />
-              </div>
-              <div>
-                <Label>Data de início (opcional)</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              </div>
-              <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? "A criar..." : "Criar regra"}
-              </Button>
-            </div>
+            {formFields}
+            <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
+              {isSubmitting ? "A criar..." : "Criar regra"}
+            </Button>
           </DialogContent>
         </Dialog>
       </div>
@@ -199,6 +264,7 @@ export default function FamilyRecurringRulesPage() {
                       {item.type === "income" ? "Receita" : "Despesa"}
                     </span>
                     {FREQ_LABELS[item.frequency] || item.frequency}
+                    {item.category_name ? ` -- ${item.category_name}` : ""}
                     {item.next_due ? ` -- Próximo: ${new Date(item.next_due + "T00:00:00").toLocaleDateString("pt-AO")}` : ""}
                   </p>
                 </div>
@@ -207,6 +273,9 @@ export default function FamilyRecurringRulesPage() {
                 <p className={`font-mono font-semibold ${item.type === "income" ? "text-green-500" : "text-red-500"}`}>
                   {formatKz(item.amount)}
                 </p>
+                <Button variant="ghost" size="sm" onClick={() => startEdit(item)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-600">
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -215,6 +284,17 @@ export default function FamilyRecurringRulesPage() {
           ))}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) { resetForm(); setEditItem(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Editar regra recorrente</DialogTitle></DialogHeader>
+          {formFields}
+          <Button className="w-full" onClick={handleEdit} disabled={isSubmitting}>
+            {isSubmitting ? "A guardar..." : "Guardar alterações"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

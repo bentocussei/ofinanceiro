@@ -1,19 +1,26 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { ArrowLeftRight } from "lucide-react"
+import { useMemo, useEffect, useState } from "react"
+import { Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
+import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
 import { transactionsApi, type Transaction } from "@/lib/api/transactions"
 import { formatKz, formatRelativeDate } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 
+type ViewMode = "grouped" | "table"
 type TypeFilter = "all" | "expense" | "income" | "transfer"
+type PeriodFilter = "week" | "month" | "3months" | "year" | "all"
 
 export default function FamilyTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>("grouped")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("month")
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
@@ -32,110 +39,247 @@ export default function FamilyTransactionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const filtered =
-    typeFilter === "all"
-      ? transactions
-      : transactions.filter((t) => t.type === typeFilter)
+  // Client-side filtering
+  const filtered = useMemo(() => {
+    let result = transactions
 
+    if (typeFilter !== "all") {
+      result = result.filter((t) => t.type === typeFilter)
+    }
+
+    if (periodFilter !== "all") {
+      const cutoff = new Date()
+      if (periodFilter === "week") cutoff.setDate(cutoff.getDate() - 7)
+      else if (periodFilter === "month") cutoff.setMonth(cutoff.getMonth() - 1)
+      else if (periodFilter === "3months") cutoff.setMonth(cutoff.getMonth() - 3)
+      else if (periodFilter === "year") cutoff.setFullYear(cutoff.getFullYear() - 1)
+      const cutoffStr = cutoff.toISOString().split("T")[0]
+      result = result.filter((t) => t.transaction_date >= cutoffStr)
+    }
+
+    return result
+  }, [transactions, typeFilter, periodFilter])
+
+  // Group by date
   const grouped = filtered.reduce<Record<string, Transaction[]>>((acc, txn) => {
-    const key = txn.transaction_date
-    if (!acc[key]) acc[key] = []
-    acc[key].push(txn)
+    const date = txn.transaction_date
+    if (!acc[date]) acc[date] = []
+    acc[date].push(txn)
     return acc
   }, {})
 
-  const filterOptions: { value: TypeFilter; label: string }[] = [
+  const typeOptions: { value: TypeFilter; label: string }[] = [
     { value: "all", label: "Todas" },
     { value: "expense", label: "Despesas" },
     { value: "income", label: "Receitas" },
     { value: "transfer", label: "Transferências" },
   ]
 
+  const periodOptions: { value: PeriodFilter; label: string }[] = [
+    { value: "week", label: "7 dias" },
+    { value: "month", label: "Mês" },
+    { value: "3months", label: "3 meses" },
+    { value: "year", label: "Ano" },
+    { value: "all", label: "Tudo" },
+  ]
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Transacções Familiares</h2>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex rounded-lg shadow-sm overflow-hidden">
+            <button
+              className={`px-3 py-1.5 text-xs ${viewMode === "grouped" ? "bg-foreground text-background" : "hover:bg-accent"}`}
+              onClick={() => setViewMode("grouped")}
+            >
+              Agrupado
+            </button>
+            <button
+              className={`px-3 py-1.5 text-xs ${viewMode === "table" ? "bg-foreground text-background" : "hover:bg-accent"}`}
+              onClick={() => setViewMode("table")}
+            >
+              Planilha
+            </button>
+          </div>
+          <CreateTransactionDialog onCreated={() => fetchTransactions(true)} />
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-4">
-        {filterOptions.map((opt) => (
+      <div className="flex flex-wrap gap-2 mb-4">
+        {typeOptions.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => setTypeFilter(opt.value)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
               typeFilter === opt.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent"
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:bg-accent"
             }`}
+            onClick={() => setTypeFilter(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        <span className="w-px h-6 bg-border self-center mx-1" />
+
+        {periodOptions.map((opt) => (
+          <button
+            key={opt.value}
+            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              periodFilter === opt.value
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:bg-accent"
+            }`}
+            onClick={() => setPeriodFilter(opt.value)}
           >
             {opt.label}
           </button>
         ))}
       </div>
 
-      {/* Transaction List */}
-      {Object.keys(grouped).length > 0 ? (
+      {filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <Receipt className="h-10 w-10 mx-auto text-muted-foreground/30" />
+          <p className="text-muted-foreground mt-3">
+            {typeFilter !== "all" || periodFilter !== "all"
+              ? "Nenhuma transacção encontrada com estes filtros"
+              : "Nenhuma transacção familiar registada"}
+          </p>
+        </div>
+      ) : viewMode === "table" ? (
+        /* Table/Spreadsheet View */
+        <div className="rounded-xl bg-card shadow-sm overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Data</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Descrição</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Membro</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Categoria</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Tipo</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((txn) => (
+                <tr key={txn.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                    {formatRelativeDate(txn.transaction_date)}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {txn.description || "Sem descrição"}
+                  </td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {txn.member_name || "--"}
+                  </td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {txn.category_name || "--"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        txn.type === "income"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : txn.type === "expense"
+                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      }`}
+                    >
+                      {txn.type === "income" ? "Receita" : txn.type === "expense" ? "Despesa" : "Transf."}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-4 py-2.5 text-right font-mono font-semibold ${
+                      txn.type === "income" ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {txn.type === "income" ? "+" : "-"}
+                    {formatKz(txn.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Grouped View */
         <div className="space-y-4">
           {Object.entries(grouped)
             .sort(([a], [b]) => b.localeCompare(a))
-            .map(([date, txns]) => (
-              <div key={date}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                  {formatRelativeDate(date)}
-                </p>
-                <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
-                  {txns.map((txn) => (
-                    <div
-                      key={txn.id}
-                      className="flex items-center justify-between px-5 h-14 hover:bg-accent/40 transition-colors"
+            .map(([date, items]) => {
+              const dayTotal = items.reduce(
+                (sum, t) => sum + (t.type === "income" ? t.amount : -t.amount),
+                0
+              )
+              return (
+                <div key={date}>
+                  <div className="flex items-center justify-between px-2 py-2">
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {formatRelativeDate(date)}
+                    </span>
+                    <span
+                      className={`text-xs font-mono ${dayTotal >= 0 ? "text-green-500" : "text-red-500"}`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div
-                          className={`h-2 w-2 shrink-0 rounded-full ${
-                            txn.type === "income" ? "bg-income" : "bg-expense"
-                          }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">
-                            {txn.description || "Sem descrição"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {txn.member_name && (
-                              <span className="font-medium">{txn.member_name} -- </span>
-                            )}
-                            {txn.category_name || (txn.type === "income" ? "Receita" : "Despesa")}
-                          </p>
+                      {formatKz(Math.abs(dayTotal))}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+                    {items.map((txn) => (
+                      <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div
+                            className={`h-2 w-2 shrink-0 rounded-full ${
+                              txn.type === "income" ? "bg-green-500" : "bg-red-500"
+                            }`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">
+                              {txn.description || "Sem descrição"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {txn.member_name && (
+                                <span className="font-medium">{txn.member_name} -- </span>
+                              )}
+                              {txn.category_name || (txn.type === "income" ? "Receita" : "Despesa")}
+                            </p>
+                          </div>
                         </div>
+                        <span
+                          className={`font-mono font-semibold text-sm ml-4 ${
+                            txn.type === "income" ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {txn.type === "income" ? "+" : "-"}
+                          {formatKz(txn.amount)}
+                        </span>
                       </div>
-                      <span
-                        className={`text-sm font-semibold font-mono ml-4 ${
-                          txn.type === "income" ? "text-income" : "text-expense"
-                        }`}
-                      >
-                        {txn.type === "income" ? "+" : "-"}
-                        {formatKz(txn.amount)}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-        </div>
-      ) : (
-        <div className="rounded-xl bg-card p-12 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] flex flex-col items-center text-center">
-          <ArrowLeftRight className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma transacção familiar registada</p>
+              )
+            })}
         </div>
       )}
 
       {hasMore && (
-        <div className="flex justify-center mt-6">
-          <Button variant="outline" onClick={() => fetchTransactions()}>
-            Carregar mais
-          </Button>
-        </div>
+        <button
+          onClick={() => fetchTransactions(false)}
+          className="w-full py-3 mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Carregar mais
+        </button>
       )}
+
+      <TransactionDetailDialog
+        transaction={selectedTxn}
+        open={!!selectedTxn}
+        onOpenChange={(v) => { if (!v) setSelectedTxn(null) }}
+        onUpdated={() => { setSelectedTxn(null); fetchTransactions(true) }}
+        onDeleted={() => fetchTransactions(true)}
+      />
     </div>
   )
 }

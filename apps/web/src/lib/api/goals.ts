@@ -10,6 +10,10 @@ export interface Goal {
   status: string
   description?: string | null
   savings_account_id?: string | null
+  target_date?: string | null
+  auto_contribute?: boolean
+  auto_contribute_day?: number | null
+  contribution_amount?: number | null
   contribution_frequency?: string | null
   contributions?: { member_name: string; amount: number }[]
 }
@@ -29,6 +33,9 @@ export interface CreateGoalData {
   description?: string
   savings_account_id?: string
   contribution_frequency?: string
+  target_date?: string
+  auto_contribute?: boolean
+  auto_contribute_day?: number
 }
 
 export interface UpdateGoalData {
@@ -37,6 +44,10 @@ export interface UpdateGoalData {
   description?: string
   savings_account_id?: string
   contribution_frequency?: string
+  target_date?: string
+  auto_contribute?: boolean
+  auto_contribute_day?: number
+  contribution_amount?: number
 }
 
 type H = { headers?: Record<string, string> }

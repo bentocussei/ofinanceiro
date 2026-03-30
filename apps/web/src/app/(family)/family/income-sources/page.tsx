@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Banknote, Plus, Trash2 } from "lucide-react"
+import { Banknote, Plus, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,8 +14,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { incomeSourcesApi, type IncomeSource } from "@/lib/api/income-sources"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
+
+interface AccountOption {
+  id: string
+  name: string
+}
 
 const TYPE_OPTIONS = [
   { value: "SALARY", label: "Salário" },
@@ -40,7 +46,10 @@ const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS
 
 export default function FamilyIncomeSourcesPage() {
   const [items, setItems] = useState<IncomeSource[]>([])
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [editItem, setEditItem] = useState<IncomeSource | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Form state
@@ -49,13 +58,25 @@ export default function FamilyIncomeSourcesPage() {
   const [expectedAmount, setExpectedAmount] = useState("")
   const [frequency, setFrequency] = useState("monthly")
   const [dayOfMonth, setDayOfMonth] = useState("")
+  const [accountId, setAccountId] = useState("")
+  const [description, setDescription] = useState("")
 
   const fetchItems = () => {
     const ctx = { headers: getContextHeader() }
     incomeSourcesApi.list(ctx).then(setItems).catch(() => {})
   }
 
-  useEffect(() => { fetchItems() }, [])
+  const fetchAccounts = () => {
+    const ctx = { headers: getContextHeader() }
+    accountsApi.summary(ctx)
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchItems()
+    fetchAccounts()
+  }, [])
 
   const resetForm = () => {
     setName("")
@@ -63,6 +84,8 @@ export default function FamilyIncomeSourcesPage() {
     setExpectedAmount("")
     setFrequency("monthly")
     setDayOfMonth("")
+    setAccountId("")
+    setDescription("")
   }
 
   const handleCreate = async () => {
@@ -76,6 +99,8 @@ export default function FamilyIncomeSourcesPage() {
         expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
         frequency,
         day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        account_id: accountId || undefined,
+        description: description.trim() || undefined,
       }, ctx)
       setCreateOpen(false)
       resetForm()
@@ -83,6 +108,43 @@ export default function FamilyIncomeSourcesPage() {
       toast.success("Rendimento familiar criado com sucesso")
     } catch {
       toast.error("Erro ao criar rendimento")
+    }
+    setIsSubmitting(false)
+  }
+
+  const startEdit = (item: IncomeSource) => {
+    setEditItem(item)
+    setName(item.name)
+    setType(item.type)
+    setExpectedAmount(String(item.expected_amount / 100))
+    setFrequency(item.frequency)
+    setDayOfMonth(item.day_of_month ? String(item.day_of_month) : "")
+    setAccountId(item.account_id || "")
+    setDescription(item.description || "")
+    setEditOpen(true)
+  }
+
+  const handleEdit = async () => {
+    if (!editItem || !name.trim()) return
+    setIsSubmitting(true)
+    try {
+      const ctx = { headers: getContextHeader() }
+      await incomeSourcesApi.update(editItem.id, {
+        name: name.trim(),
+        type,
+        expected_amount: expectedAmount ? Math.round(parseFloat(expectedAmount) * 100) : 0,
+        frequency,
+        day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
+        account_id: accountId || undefined,
+        description: description.trim() || undefined,
+      }, ctx)
+      setEditOpen(false)
+      resetForm()
+      setEditItem(null)
+      fetchItems()
+      toast.success("Rendimento actualizado com sucesso")
+    } catch {
+      toast.error("Erro ao actualizar rendimento")
     }
     setIsSubmitting(false)
   }
@@ -103,6 +165,66 @@ export default function FamilyIncomeSourcesPage() {
     })
   }
 
+  const formFields = (
+    <div className="space-y-4 py-2">
+      <div>
+        <Label>Nome</Label>
+        <Input placeholder="Ex: Salário do membro" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
+      <div>
+        <Label>Tipo</Label>
+        <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {TYPE_OPTIONS.map((t) => (
+              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Valor esperado (Kz)</Label>
+        <Input type="number" placeholder="0" value={expectedAmount} onChange={(e) => setExpectedAmount(e.target.value)} className="font-mono" />
+      </div>
+      <div>
+        <Label>Frequência</Label>
+        <Select value={frequency} onValueChange={(v) => { if (v) setFrequency(v) }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {FREQUENCY_OPTIONS.map((f) => (
+              <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Dia do mês (opcional)</Label>
+        <Input type="number" min="1" max="31" placeholder="Ex: 25" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} />
+      </div>
+      <div>
+        <Label>Conta destino (opcional)</Label>
+        <Select value={accountId} onValueChange={(v) => setAccountId(v || "")}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Descrição (opcional)</Label>
+        <textarea
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+          placeholder="Detalhes adicionais sobre este rendimento"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+    </div>
+  )
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -113,45 +235,10 @@ export default function FamilyIncomeSourcesPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Novo rendimento familiar</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-2">
-              <div>
-                <Label>Nome</Label>
-                <Input placeholder="Ex: Salário do membro" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-              </div>
-              <div>
-                <Label>Tipo</Label>
-                <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {TYPE_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Valor esperado (Kz)</Label>
-                <Input type="number" placeholder="0" value={expectedAmount} onChange={(e) => setExpectedAmount(e.target.value)} className="font-mono" />
-              </div>
-              <div>
-                <Label>Frequência</Label>
-                <Select value={frequency} onValueChange={(v) => { if (v) setFrequency(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {FREQUENCY_OPTIONS.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Dia do mês (opcional)</Label>
-                <Input type="number" min="1" max="31" placeholder="Ex: 25" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} />
-              </div>
-              <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? "A criar..." : "Criar rendimento"}
-              </Button>
-            </div>
+            {formFields}
+            <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
+              {isSubmitting ? "A criar..." : "Criar rendimento"}
+            </Button>
           </DialogContent>
         </Dialog>
       </div>
@@ -176,11 +263,18 @@ export default function FamilyIncomeSourcesPage() {
                     </span>
                     {FREQ_LABELS[item.frequency] || item.frequency}
                     {item.day_of_month ? ` -- Dia ${item.day_of_month}` : ""}
+                    {item.account_name ? ` -- ${item.account_name}` : ""}
                   </p>
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-1">{item.description}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <p className="font-mono font-semibold text-green-500">{formatKz(item.expected_amount)}</p>
+                <Button variant="ghost" size="sm" onClick={() => startEdit(item)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-600">
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -189,6 +283,17 @@ export default function FamilyIncomeSourcesPage() {
           ))}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) { resetForm(); setEditItem(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Editar rendimento</DialogTitle></DialogHeader>
+          {formFields}
+          <Button className="w-full" onClick={handleEdit} disabled={isSubmitting}>
+            {isSubmitting ? "A guardar..." : "Guardar alterações"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -57,6 +57,7 @@ export default function IncomeSourcesPage() {
   const [frequency, setFrequency] = useState("monthly")
   const [dayOfMonth, setDayOfMonth] = useState("")
   const [accountId, setAccountId] = useState("")
+  const [description, setDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchItems = () => {
@@ -81,6 +82,7 @@ export default function IncomeSourcesPage() {
     setFrequency("monthly")
     setDayOfMonth("")
     setAccountId("")
+    setDescription("")
   }
 
   const handleCreate = async () => {
@@ -94,6 +96,7 @@ export default function IncomeSourcesPage() {
         frequency,
         day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
         account_id: accountId || undefined,
+        description: description.trim() || undefined,
       })
       setCreateOpen(false)
       resetForm()
@@ -113,6 +116,7 @@ export default function IncomeSourcesPage() {
     setFrequency(item.frequency)
     setDayOfMonth(item.day_of_month ? String(item.day_of_month) : "")
     setAccountId(item.account_id || "")
+    setDescription(item.description || "")
     setEditOpen(true)
   }
 
@@ -127,6 +131,7 @@ export default function IncomeSourcesPage() {
         frequency,
         day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
         account_id: accountId || undefined,
+        description: description.trim() || undefined,
       })
       setEditOpen(false)
       resetForm()
@@ -202,6 +207,15 @@ export default function IncomeSourcesPage() {
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <Label>Descrição (opcional)</Label>
+        <textarea
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+          placeholder="Detalhes adicionais sobre este rendimento"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
     </div>
   )
 
@@ -245,6 +259,9 @@ export default function IncomeSourcesPage() {
                     {item.day_of_month ? ` -- Dia ${item.day_of_month}` : ""}
                     {item.account_name ? ` -- ${item.account_name}` : ""}
                   </p>
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-1">{item.description}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">

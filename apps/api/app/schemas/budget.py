@@ -49,6 +49,14 @@ class BudgetUpdate(BaseModel):
     is_active: bool | None = None
     rollover: bool | None = None
     total_limit: int | None = None
+    period_start: date | None = None
+    period_end: date | None = None
+    method: BudgetMethod | None = None
+    period_type: BudgetPeriod | None = None
+
+
+class BudgetItemUpdate(BaseModel):
+    limit_amount: int = Field(gt=0, description="Novo limite em centavos")
 
 
 class BudgetResponse(BaseModel):

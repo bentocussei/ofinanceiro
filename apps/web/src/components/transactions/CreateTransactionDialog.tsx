@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
+import { CalendarIcon, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,20 +25,30 @@ import { IconDisplay } from "@/components/common/IconDisplay"
 import { accountsApi, type Account } from "@/lib/api/accounts"
 import { categoriesApi, type Category } from "@/lib/api/categories"
 import { transactionsApi } from "@/lib/api/transactions"
+import { tagsApi, type Tag } from "@/lib/api/tags"
 
 interface Props {
   onCreated?: () => void
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10)
 }
 
 export function CreateTransactionDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [type, setType] = useState<"expense" | "income">("expense")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [accountId, setAccountId] = useState("")
   const [categoryId, setCategoryId] = useState("")
+  const [merchant, setMerchant] = useState("")
+  const [transactionDate, setTransactionDate] = useState(todayISO())
+  const [notes, setNotes] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isPrivate, setIsPrivate] = useState(false)
   const [needsReview, setNeedsReview] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,6 +61,7 @@ export function CreateTransactionDialog({ onCreated }: Props) {
         setAccounts(data)
         if (data.length > 0 && !accountId) setAccountId(data[0].id)
       }).catch(() => {})
+      tagsApi.list().then(setAvailableTags).catch(() => {})
     }
   }, [open])
 
@@ -68,7 +81,21 @@ export function CreateTransactionDialog({ onCreated }: Props) {
     setType("expense")
     setAmount("")
     setDescription("")
+    setMerchant("")
+    setTransactionDate(todayISO())
+    setNotes("")
+    setSelectedTags([])
+    setIsPrivate(false)
+    setNeedsReview(false)
     setError("")
+  }
+
+  const toggleTag = (tagName: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    )
   }
 
   const handleSubmit = async () => {
@@ -91,12 +118,17 @@ export function CreateTransactionDialog({ onCreated }: Props) {
         type,
         description: description.trim() || undefined,
         category_id: categoryId || undefined,
+        merchant: merchant.trim() || undefined,
+        transaction_date: transactionDate || undefined,
+        notes: notes.trim() || undefined,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
         is_private: isPrivate || undefined,
         needs_review: needsReview || undefined,
       })
       reset()
       setOpen(false)
       onCreated?.()
+      toast.success("Transacção registada com sucesso")
     } catch (err: any) {
       setError(err.message || "Não foi possível registar a transacção")
     } finally {
@@ -109,7 +141,7 @@ export function CreateTransactionDialog({ onCreated }: Props) {
       <DialogTrigger render={<Button />}>
         + Nova transacção
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova transacção</DialogTitle>
         </DialogHeader>
@@ -156,6 +188,30 @@ export function CreateTransactionDialog({ onCreated }: Props) {
             />
           </div>
 
+          {/* Merchant */}
+          <div>
+            <Label>Estabelecimento (opcional)</Label>
+            <Input
+              placeholder="Ex: Restaurante Ponto Final"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+            />
+          </div>
+
+          {/* Transaction Date */}
+          <div>
+            <Label>Data</Label>
+            <div className="relative">
+              <Input
+                type="date"
+                value={transactionDate}
+                onChange={(e) => setTransactionDate(e.target.value)}
+                className="pl-9"
+              />
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+
           {/* Account */}
           <div>
             <Label>Conta</Label>
@@ -190,6 +246,48 @@ export function CreateTransactionDialog({ onCreated }: Props) {
                   ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Tags */}
+          {availableTags.length > 0 && (
+            <div>
+              <Label>Etiquetas (opcional)</Label>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {availableTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => toggleTag(tag.name)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      selectedTags.includes(tag.name)
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    {tag.name}
+                    {selectedTags.includes(tag.name) && (
+                      <X className="h-3 w-3" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <Label>Notas (opcional)</Label>
+            <textarea
+              placeholder="Notas adicionais sobre esta transacção..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            />
           </div>
 
           {/* Privacy toggles */}

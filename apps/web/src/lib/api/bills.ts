@@ -9,6 +9,9 @@ export interface Bill {
   frequency: string
   status: string
   auto_pay: boolean
+  description: string | null
+  pay_from_account_id: string | null
+  category_id: string | null
   reminder_days: number | null
   next_due_date: string | null
 }
@@ -21,6 +24,9 @@ export interface CreateBillData {
   frequency: string
   auto_pay: boolean
   reminder_days?: number
+  description?: string
+  pay_from_account_id?: string
+  category_id?: string
 }
 
 export interface UpdateBillData {
@@ -31,6 +37,9 @@ export interface UpdateBillData {
   frequency: string
   auto_pay: boolean
   reminder_days: number | null
+  description?: string
+  pay_from_account_id?: string
+  category_id?: string
 }
 
 type H = { headers?: Record<string, string> }

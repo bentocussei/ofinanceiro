@@ -28,6 +28,7 @@ export interface AccountSummary {
 export interface CreateAccountData {
   name: string
   type: string
+  currency?: string
   institution?: string
   balance?: number
   icon?: string

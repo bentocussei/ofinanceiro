@@ -14,8 +14,14 @@ export interface Debt {
   minimum_payment: number
   due_day: number
   status: string
+  monthly_payment?: number | null
+  payment_day?: number | null
+  start_date?: string | null
+  expected_end_date?: string | null
+  notes?: string | null
   is_active?: boolean
   auto_pay?: boolean
+  auto_pay_enabled?: boolean
   linked_account_id?: string | null
 }
 
@@ -36,9 +42,39 @@ export interface CreateDebtData {
   minimum_payment?: number
   due_day?: number
   nature?: string
+  creditor?: string
   creditor_type?: string
   auto_pay?: boolean
   linked_account_id?: string
+  current_balance?: number
+  monthly_payment?: number
+  payment_day?: number
+  start_date?: string
+  expected_end_date?: string
+  notes?: string
+}
+
+export interface UpdateDebtData {
+  name?: string
+  type?: string
+  nature?: string
+  creditor?: string
+  creditor_type?: string
+  original_amount?: number
+  remaining_balance?: number
+  current_balance?: number
+  interest_rate?: number
+  minimum_payment?: number
+  monthly_payment?: number
+  due_day?: number
+  payment_day?: number
+  start_date?: string
+  expected_end_date?: string
+  notes?: string
+  auto_pay?: boolean
+  auto_pay_enabled?: boolean
+  linked_account_id?: string
+  status?: string
 }
 
 export interface SimulateParams {
@@ -66,6 +102,13 @@ export const debtsApi = {
       "/api/v1/debts/" + id + "/payment",
       { method: "POST", body: JSON.stringify({ amount }), ...opts },
     ),
+
+  update: (id: string, data: UpdateDebtData, opts?: H) =>
+    apiFetch<Debt>("/api/v1/debts/" + id, {
+      method: "PUT",
+      body: JSON.stringify(data),
+      ...opts,
+    }),
 
   remove: (id: string, opts?: H) =>
     apiFetch<void>("/api/v1/debts/" + id, { method: "DELETE", ...opts }),

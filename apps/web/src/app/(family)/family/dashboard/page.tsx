@@ -250,7 +250,7 @@ export default function FamilyDashboardPage() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Metas Familiares
+                Metas Familiar
               </h2>
               <Link
                 href="/family/goals"

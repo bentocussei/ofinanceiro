@@ -22,7 +22,22 @@ class InvestmentCreate(BaseModel):
     invested_amount: int = Field(gt=0)
     current_value: int = Field(gt=0)
     interest_rate: int | None = None  # basis points
+    start_date: str | None = None
+    maturity_date: str | None = None
     notes: str | None = None
+
+
+class InvestmentUpdate(BaseModel):
+    name: str | None = Field(None, max_length=100)
+    type: str | None = Field(None, max_length=50)
+    institution: str | None = None
+    invested_amount: int | None = Field(None, gt=0)
+    current_value: int | None = Field(None, gt=0)
+    interest_rate: int | None = None
+    start_date: str | None = None
+    maturity_date: str | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
 @router.get("/")
@@ -39,6 +54,9 @@ async def list_investments(
             "id": str(i.id), "name": i.name, "type": i.type, "institution": i.institution,
             "invested_amount": i.invested_amount, "current_value": i.current_value,
             "interest_rate": i.interest_rate, "is_active": i.is_active,
+            "start_date": str(i.start_date) if i.start_date else None,
+            "maturity_date": str(i.maturity_date) if i.maturity_date else None,
+            "notes": i.notes,
             "return_pct": round((i.current_value - i.invested_amount) / i.invested_amount * 100, 1) if i.invested_amount > 0 else 0,
         }
         for i in investments
@@ -76,11 +94,41 @@ async def create_investment(
     inv = Investment(
         user_id=user.id, name=data.name, type=data.type, institution=data.institution,
         invested_amount=data.invested_amount, current_value=data.current_value,
-        interest_rate=data.interest_rate, notes=data.notes,
+        interest_rate=data.interest_rate, start_date=data.start_date,
+        maturity_date=data.maturity_date, notes=data.notes,
     )
     db.add(inv)
     await db.flush()
     return {"id": str(inv.id), "name": inv.name}
+
+
+@router.put("/{investment_id}")
+async def update_investment(
+    investment_id: uuid.UUID,
+    data: InvestmentUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    result = await db.execute(
+        select(Investment).where(Investment.id == investment_id, Investment.user_id == user.id)
+    )
+    inv = result.scalar_one_or_none()
+    if not inv:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Investimento não encontrado")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(inv, field, value)
+    await db.flush()
+    return {
+        "id": str(inv.id), "name": inv.name, "type": inv.type, "institution": inv.institution,
+        "invested_amount": inv.invested_amount, "current_value": inv.current_value,
+        "interest_rate": inv.interest_rate, "is_active": inv.is_active,
+        "start_date": str(inv.start_date) if inv.start_date else None,
+        "maturity_date": str(inv.maturity_date) if inv.maturity_date else None,
+        "notes": inv.notes,
+        "return_pct": round((inv.current_value - inv.invested_amount) / inv.invested_amount * 100, 1) if inv.invested_amount > 0 else 0,
+    }
 
 
 @router.get("/simulate")

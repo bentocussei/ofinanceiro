@@ -20,12 +20,21 @@ import { goalsApi, type Goal, type GoalProgress } from "@/lib/api/goals"
 import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 
+const FREQUENCY_LABELS: Record<string, string> = {
+  weekly: "Semanal",
+  biweekly: "Quinzenal",
+  monthly: "Mensal",
+  quarterly: "Trimestral",
+  annually: "Anual",
+}
+
 interface Props {
   item: Goal | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdated?: () => void
   onDeleted?: () => void
+  contextHeaders?: Record<string, string>
 }
 
 export function GoalDetailDialog({
@@ -34,6 +43,7 @@ export function GoalDetailDialog({
   onOpenChange,
   onUpdated,
   onDeleted,
+  contextHeaders,
 }: Props) {
   const [progress, setProgress] = useState<GoalProgress | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -42,6 +52,10 @@ export function GoalDetailDialog({
   const [editDescription, setEditDescription] = useState("")
   const [editSavingsAccountId, setEditSavingsAccountId] = useState("")
   const [editContributionFrequency, setEditContributionFrequency] = useState("monthly")
+  const [editTargetDate, setEditTargetDate] = useState("")
+  const [editAutoContribute, setEditAutoContribute] = useState(false)
+  const [editAutoContributeDay, setEditAutoContributeDay] = useState("1")
+  const [editContributionAmount, setEditContributionAmount] = useState("")
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([])
   const [contributeAmount, setContributeAmount] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -49,15 +63,18 @@ export function GoalDetailDialog({
   const [isContributing, setIsContributing] = useState(false)
   const [error, setError] = useState("")
 
+  const opts = contextHeaders ? { headers: contextHeaders } : undefined
+
   useEffect(() => {
-    accountsApi.summary()
+    const accOpts = contextHeaders ? { headers: contextHeaders } : undefined
+    accountsApi.summary(accOpts)
       .then((data) => setAccounts(data.accounts || []))
       .catch(() => {})
-  }, [])
+  }, [contextHeaders])
 
   const fetchProgress = () => {
     if (item) {
-      goalsApi.progress(item.id)
+      goalsApi.progress(item.id, opts)
         .then(setProgress)
         .catch(() => {})
     }
@@ -82,6 +99,10 @@ export function GoalDetailDialog({
     setEditDescription(item.description || "")
     setEditSavingsAccountId(item.savings_account_id || "")
     setEditContributionFrequency(item.contribution_frequency || "monthly")
+    setEditTargetDate(item.target_date || "")
+    setEditAutoContribute(item.auto_contribute ?? false)
+    setEditAutoContributeDay(String(item.auto_contribute_day || 1))
+    setEditContributionAmount(item.contribution_amount ? String(item.contribution_amount / 100) : (item.monthly_contribution ? String(item.monthly_contribution / 100) : ""))
     setIsEditing(true)
     setError("")
   }
@@ -98,14 +119,23 @@ export function GoalDetailDialog({
       if (editDescription.trim() !== (item.description || "")) updates.description = editDescription.trim() || null
       if (editSavingsAccountId !== (item.savings_account_id || "")) updates.savings_account_id = editSavingsAccountId || null
       if (editContributionFrequency !== (item.contribution_frequency || "monthly")) updates.contribution_frequency = editContributionFrequency
+      if (editTargetDate !== (item.target_date || "")) updates.target_date = editTargetDate || null
+      if (editAutoContribute !== (item.auto_contribute ?? false)) updates.auto_contribute = editAutoContribute
+      const newDay = parseInt(editAutoContributeDay) || 1
+      if (editAutoContribute && newDay !== (item.auto_contribute_day || 1)) updates.auto_contribute_day = newDay
+      const newContrib = editContributionAmount ? Math.round(parseFloat(editContributionAmount) * 100) : 0
+      const currentContrib = item.contribution_amount || item.monthly_contribution || 0
+      if (newContrib !== currentContrib) updates.contribution_amount = newContrib || null
 
       if (Object.keys(updates).length > 0) {
-        await goalsApi.update(item.id, updates)
+        await goalsApi.update(item.id, updates, opts)
       }
       setIsEditing(false)
       onUpdated?.()
-    } catch (err: any) {
-      setError(err.message || "Erro ao guardar")
+      toast.success("Meta actualizada com sucesso")
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao guardar"
+      setError(msg)
     } finally {
       setIsSaving(false)
     }
@@ -116,12 +146,14 @@ export function GoalDetailDialog({
     setIsContributing(true)
     setError("")
     try {
-      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100))
+      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100), opts)
       setContributeAmount("")
       fetchProgress()
       onUpdated?.()
-    } catch (err: any) {
-      setError(err.message || "Erro ao contribuir")
+      toast.success("Contribuição registada com sucesso")
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao contribuir"
+      setError(msg)
     } finally {
       setIsContributing(false)
     }
@@ -136,12 +168,13 @@ export function GoalDetailDialog({
         onClick: async () => {
           setIsDeleting(true)
           try {
-            await goalsApi.remove(item.id)
+            await goalsApi.remove(item.id, opts)
             onOpenChange(false)
             onDeleted?.()
             toast.success("Meta eliminada com sucesso")
-          } catch (err: any) {
-            setError(err.message || "Erro ao eliminar")
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Erro ao eliminar"
+            setError(msg)
           } finally {
             setIsDeleting(false)
           }
@@ -161,7 +194,7 @@ export function GoalDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setIsEditing(false) }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Detalhe da meta</DialogTitle>
         </DialogHeader>
@@ -170,7 +203,7 @@ export function GoalDetailDialog({
           {/* Name + progress */}
           <div className="text-center py-2">
             {isEditing ? (
-              <div className="space-y-3">
+              <div className="space-y-3 text-left">
                 <div>
                   <Label>Nome</Label>
                   <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
@@ -178,6 +211,23 @@ export function GoalDetailDialog({
                 <div>
                   <Label>Valor alvo (Kz)</Label>
                   <Input type="number" value={editTarget} onChange={(e) => setEditTarget(e.target.value)} className="font-mono" />
+                </div>
+                <div>
+                  <Label>Data alvo (opcional)</Label>
+                  <Input type="date" value={editTargetDate} onChange={(e) => setEditTargetDate(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Descrição (opcional)</Label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
+                    placeholder="Descreva o objectivo desta meta..."
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Contribuição (Kz, opcional)</Label>
+                  <Input type="number" placeholder="0" value={editContributionAmount} onChange={(e) => setEditContributionAmount(e.target.value)} className="font-mono" />
                 </div>
                 <div>
                   <Label>Frequência da contribuição</Label>
@@ -204,15 +254,24 @@ export function GoalDetailDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Descrição (opcional)</Label>
-                  <textarea
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
-                    placeholder="Descreva o objectivo desta meta..."
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                  />
+                <div className="flex items-center gap-3">
+                  <Label className="flex-1">Contribuição automática</Label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={editAutoContribute}
+                    onClick={() => setEditAutoContribute(!editAutoContribute)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${editAutoContribute ? "bg-primary" : "bg-muted"}`}
+                  >
+                    <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${editAutoContribute ? "translate-x-4" : "translate-x-0"}`} />
+                  </button>
                 </div>
+                {editAutoContribute && (
+                  <div>
+                    <Label>Dia da contribuição (1-31)</Label>
+                    <Input type="number" min="1" max="31" value={editAutoContributeDay} onChange={(e) => setEditAutoContributeDay(e.target.value)} className="font-mono" />
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -239,6 +298,42 @@ export function GoalDetailDialog({
                 <p className="text-sm font-semibold text-muted-foreground">{pct}%</p>
               </div>
 
+              {/* Details grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {item.target_date && (
+                  <div className="rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Data alvo</p>
+                    <p className="font-semibold text-sm">{new Date(item.target_date).toLocaleDateString("pt-AO")}</p>
+                  </div>
+                )}
+                {item.contribution_frequency && (
+                  <div className="rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Frequência</p>
+                    <p className="font-semibold text-sm">{FREQUENCY_LABELS[item.contribution_frequency] || item.contribution_frequency}</p>
+                  </div>
+                )}
+                {(item.contribution_amount || item.monthly_contribution) && (
+                  <div className="rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Contribuição</p>
+                    <p className="font-mono font-semibold text-sm">{formatKz(item.contribution_amount || item.monthly_contribution || 0)}</p>
+                  </div>
+                )}
+                {item.auto_contribute && (
+                  <div className="rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Auto-contribuição</p>
+                    <p className="font-semibold text-sm">Dia {item.auto_contribute_day || 1}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              {item.description && (
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Descrição</p>
+                  <p className="text-sm whitespace-pre-wrap">{item.description}</p>
+                </div>
+              )}
+
               {/* Months remaining */}
               {progress?.months_remaining != null && (
                 <p className="text-sm text-muted-foreground text-center">
@@ -249,18 +344,21 @@ export function GoalDetailDialog({
 
               {/* Contribute */}
               {!isComplete && (
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Valor Kz"
-                    value={contributeAmount}
-                    onChange={(e) => setContributeAmount(e.target.value)}
-                    className="font-mono"
-                  />
-                  <Button onClick={handleContribute} disabled={isContributing || !contributeAmount}>
-                    <PiggyBank className="h-4 w-4 mr-1" />
-                    {isContributing ? "..." : "Contribuir"}
-                  </Button>
+                <div className="border-t pt-3">
+                  <Label>Contribuir (Kz)</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      type="number"
+                      placeholder="Valor Kz"
+                      value={contributeAmount}
+                      onChange={(e) => setContributeAmount(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button onClick={handleContribute} disabled={isContributing || !contributeAmount}>
+                      <PiggyBank className="h-4 w-4 mr-1" />
+                      {isContributing ? "..." : "Contribuir"}
+                    </Button>
+                  </div>
                 </div>
               )}
 

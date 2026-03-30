@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import {
-  CreditCard, Plus, Trash2, Calculator, Banknote, Eye,
+  CreditCard, Plus, Trash2, Calculator, Banknote,
 } from "lucide-react"
 
 import { DebtDetailDialog } from "@/components/debts/DebtDetailDialog"
@@ -20,6 +20,30 @@ import { debtsApi, type Debt, type DebtSimulation } from "@/lib/api/debts"
 import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 
+const TYPE_OPTIONS = [
+  { value: "mortgage", label: "Hipoteca" },
+  { value: "car_loan", label: "Empréstimo auto" },
+  { value: "personal_loan", label: "Empréstimo pessoal" },
+  { value: "credit_card", label: "Cartão de crédito" },
+  { value: "informal", label: "Informal" },
+  { value: "other", label: "Outro" },
+]
+
+const NATURE_OPTIONS = [
+  { value: "formal", label: "Formal" },
+  { value: "informal", label: "Informal" },
+]
+
+const CREDITOR_TYPE_OPTIONS = [
+  { value: "bank", label: "Banco" },
+  { value: "financial", label: "Financeira" },
+  { value: "family", label: "Família" },
+  { value: "friends", label: "Amigos" },
+  { value: "supplier", label: "Fornecedor" },
+  { value: "employer", label: "Empregador" },
+  { value: "other", label: "Outro" },
+]
+
 export default function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [createOpen, setCreateOpen] = useState(false)
@@ -31,12 +55,16 @@ export default function DebtsPage() {
   // Create form
   const [name, setName] = useState("")
   const [type, setType] = useState("personal_loan")
+  const [nature, setNature] = useState("formal")
+  const [creditor, setCreditor] = useState("")
+  const [creditorType, setCreditorType] = useState("bank")
   const [originalAmount, setOriginalAmount] = useState("")
   const [interestRate, setInterestRate] = useState("")
   const [minimumPayment, setMinimumPayment] = useState("")
   const [dueDay, setDueDay] = useState("1")
-  const [nature, setNature] = useState("FORMAL")
-  const [creditorType, setCreditorType] = useState("BANK")
+  const [startDate, setStartDate] = useState("")
+  const [expectedEndDate, setExpectedEndDate] = useState("")
+  const [notes, setNotes] = useState("")
   const [autoPay, setAutoPay] = useState(false)
   const [linkedAccountId, setLinkedAccountId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -68,6 +96,23 @@ export default function DebtsPage() {
   const totalBalance = debts.reduce((s, d) => s + d.remaining_balance, 0)
   const totalMinPayment = debts.reduce((s, d) => s + d.minimum_payment, 0)
 
+  const resetForm = () => {
+    setName("")
+    setType("personal_loan")
+    setNature("formal")
+    setCreditor("")
+    setCreditorType("bank")
+    setOriginalAmount("")
+    setInterestRate("")
+    setMinimumPayment("")
+    setDueDay("1")
+    setStartDate("")
+    setExpectedEndDate("")
+    setNotes("")
+    setAutoPay(false)
+    setLinkedAccountId("")
+  }
+
   const handleCreate = async () => {
     if (!name.trim() || !originalAmount) return
     setIsSubmitting(true)
@@ -75,22 +120,23 @@ export default function DebtsPage() {
       await debtsApi.create({
         name: name.trim(),
         type,
+        nature,
+        creditor: creditor.trim() || undefined,
+        creditor_type: creditorType,
         original_amount: Math.round(parseFloat(originalAmount) * 100),
         interest_rate: parseFloat(interestRate) || 0,
         minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
         due_day: parseInt(dueDay) || 1,
-        nature,
-        creditor_type: creditorType,
+        start_date: startDate || undefined,
+        expected_end_date: expectedEndDate || undefined,
+        notes: notes.trim() || undefined,
         auto_pay: autoPay,
         linked_account_id: linkedAccountId || undefined,
       })
       setCreateOpen(false)
-      setName("")
-      setOriginalAmount("")
-      setInterestRate("")
-      setMinimumPayment("")
-      setDueDay("1")
+      resetForm()
       fetchDebts()
+      toast.success("Dívida criada com sucesso")
     } catch { /* handled by apiFetch */ }
     setIsSubmitting(false)
   }
@@ -102,6 +148,7 @@ export default function DebtsPage() {
       setPayOpen(null)
       setPayAmount("")
       fetchDebts()
+      toast.success("Pagamento registado com sucesso")
     } catch { /* handled by apiFetch */ }
   }
 
@@ -135,6 +182,8 @@ export default function DebtsPage() {
     } catch { /* handled by apiFetch */ }
   }
 
+  const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map((t) => [t.value, t.label]))
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -144,51 +193,62 @@ export default function DebtsPage() {
             <Calculator className="h-4 w-4 mr-1" />
             Simular
           </Button>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
             <DialogTrigger render={<Button />}>
               <Plus className="h-4 w-4 mr-1" /> Nova dívida
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nova dívida</DialogTitle></DialogHeader>
               <div className="space-y-4 py-2">
-                <div><Label>Nome</Label><Input placeholder="Ex: Empréstimo bancário" value={name} onChange={(e) => setName(e.target.value)} /></div>
-                <div><Label>Tipo</Label>
-                  <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={type} onChange={(e) => setType(e.target.value)}>
-                    <option value="personal_loan">Empréstimo pessoal</option>
-                    <option value="mortgage">Hipoteca</option>
-                    <option value="credit_card">Cartão de crédito</option>
-                    <option value="auto_loan">Empréstimo auto</option>
-                    <option value="other">Outro</option>
-                  </select>
+                <div><Label>Nome</Label><Input placeholder="Ex: Empréstimo bancário" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TYPE_OPTIONS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div><Label>Valor original (Kz)</Label><Input type="number" placeholder="0" value={originalAmount} onChange={(e) => setOriginalAmount(e.target.value)} className="font-mono" /></div>
-                <div><Label>Taxa de juros (%)</Label><Input type="number" step="0.1" placeholder="0" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} className="font-mono" /></div>
-                <div><Label>Pagamento mínimo (Kz)</Label><Input type="number" placeholder="0" value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} className="font-mono" /></div>
-                <div><Label>Dia de vencimento</Label><Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} className="font-mono" /></div>
                 <div>
                   <Label>Natureza</Label>
                   <Select value={nature} onValueChange={(v) => { if (v) setNature(v) }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="FORMAL">Formal</SelectItem>
-                      <SelectItem value="INFORMAL">Informal</SelectItem>
+                      {NATURE_OPTIONS.map((n) => (
+                        <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+                <div><Label>Credor (opcional)</Label><Input placeholder="Ex: Banco BAI" value={creditor} onChange={(e) => setCreditor(e.target.value)} /></div>
                 <div>
                   <Label>Tipo de credor</Label>
                   <Select value={creditorType} onValueChange={(v) => { if (v) setCreditorType(v) }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="BANK">Banco</SelectItem>
-                      <SelectItem value="FINANCIAL">Financeira</SelectItem>
-                      <SelectItem value="FAMILY">Família</SelectItem>
-                      <SelectItem value="FRIENDS">Amigos</SelectItem>
-                      <SelectItem value="SUPPLIER">Fornecedor</SelectItem>
-                      <SelectItem value="EMPLOYER">Empregador</SelectItem>
-                      <SelectItem value="OTHER">Outro</SelectItem>
+                      {CREDITOR_TYPE_OPTIONS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div><Label>Valor original (Kz)</Label><Input type="number" placeholder="0" value={originalAmount} onChange={(e) => setOriginalAmount(e.target.value)} className="font-mono" /></div>
+                <div><Label>Taxa de juros (%, opcional)</Label><Input type="number" step="0.1" placeholder="0" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} className="font-mono" /></div>
+                <div><Label>Prestação mensal (Kz)</Label><Input type="number" placeholder="0" value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} className="font-mono" /></div>
+                <div><Label>Dia de pagamento (1-31)</Label><Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} className="font-mono" /></div>
+                <div><Label>Data início (opcional)</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                <div><Label>Data prevista fim (opcional)</Label><Input type="date" value={expectedEndDate} onChange={(e) => setExpectedEndDate(e.target.value)} /></div>
+                <div>
+                  <Label>Notas (opcional)</Label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
+                    placeholder="Observações sobre esta dívida..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
                 </div>
                 <div className="flex items-center gap-3">
                   <Label className="flex-1">Pagamento automático</Label>
@@ -256,6 +316,10 @@ export default function DebtsPage() {
                     <div>
                       <p className="font-medium">{debt.name}</p>
                       <p className="text-xs text-muted-foreground">
+                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">
+                          {TYPE_LABELS[debt.type] || debt.type}
+                        </span>
+                        {debt.creditor ? `${debt.creditor} -- ` : ""}
                         {debt.interest_rate}% juros
                         {debt.due_day ? ` -- Dia ${debt.due_day}` : ""}
                         {debt.status === "paid_off" ? " -- Quitada" : ""}
@@ -295,7 +359,7 @@ export default function DebtsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Registar pagamento</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <div><Label>Valor (Kz)</Label><Input type="number" placeholder="0" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="font-mono" /></div>
+            <div><Label>Valor (Kz)</Label><Input type="number" placeholder="0" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="font-mono" autoFocus /></div>
             <Button className="w-full" onClick={() => payOpen && handlePay(payOpen)}>Pagar</Button>
           </div>
         </DialogContent>

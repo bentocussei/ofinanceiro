@@ -20,14 +20,36 @@ class DebtCreate(BaseModel):
     type: str
     creditor: str | None = None
     original_amount: int = Field(gt=0)
-    current_balance: int = Field(gt=0)
+    current_balance: int | None = None
     interest_rate: int | None = None  # basis points
     monthly_payment: int | None = None
     payment_day: int | None = Field(None, ge=1, le=31)
+    start_date: str | None = None
+    expected_end_date: str | None = None
     notes: str | None = None
     nature: str | None = None
     creditor_type: str | None = None
     creditor_name: str | None = None
+    linked_account_id: uuid.UUID | None = None
+    auto_pay_enabled: bool | None = None
+
+
+class DebtUpdate(BaseModel):
+    name: str | None = Field(None, max_length=100)
+    type: str | None = None
+    creditor: str | None = None
+    original_amount: int | None = Field(None, gt=0)
+    current_balance: int | None = Field(None, gt=0)
+    interest_rate: int | None = None
+    monthly_payment: int | None = None
+    payment_day: int | None = Field(None, ge=1, le=31)
+    start_date: str | None = None
+    expected_end_date: str | None = None
+    notes: str | None = None
+    nature: str | None = None
+    creditor_type: str | None = None
+    linked_account_id: uuid.UUID | None = None
+    auto_pay_enabled: bool | None = None
 
 
 class PaymentCreate(BaseModel):
@@ -50,7 +72,12 @@ async def list_debts(
             "original_amount": d.original_amount, "current_balance": d.current_balance,
             "interest_rate": d.interest_rate, "monthly_payment": d.monthly_payment,
             "payment_day": d.payment_day, "is_active": d.is_active,
+            "start_date": str(d.start_date) if d.start_date else None,
+            "expected_end_date": str(d.expected_end_date) if d.expected_end_date else None,
+            "notes": d.notes,
             "nature": d.nature, "creditor_type": d.creditor_type,
+            "linked_account_id": str(d.linked_account_id) if d.linked_account_id else None,
+            "auto_pay_enabled": d.auto_pay_enabled,
             "payments_count": len(d.payments),
         }
         for d in debts
@@ -63,10 +90,11 @@ async def create_debt(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
+    current_balance = data.current_balance if data.current_balance is not None else data.original_amount
     kwargs = {
         "user_id": user.id, "name": data.name, "type": data.type,
         "creditor": data.creditor or data.creditor_name,
-        "original_amount": data.original_amount, "current_balance": data.current_balance,
+        "original_amount": data.original_amount, "current_balance": current_balance,
         "interest_rate": data.interest_rate, "monthly_payment": data.monthly_payment,
         "payment_day": data.payment_day, "notes": data.notes,
     }
@@ -74,12 +102,50 @@ async def create_debt(
         kwargs["nature"] = data.nature
     if data.creditor_type:
         kwargs["creditor_type"] = data.creditor_type
+    if data.start_date:
+        kwargs["start_date"] = data.start_date
+    if data.expected_end_date:
+        kwargs["expected_end_date"] = data.expected_end_date
+    if data.linked_account_id:
+        kwargs["linked_account_id"] = data.linked_account_id
+    if data.auto_pay_enabled is not None:
+        kwargs["auto_pay_enabled"] = data.auto_pay_enabled
     debt = Debt(**kwargs)
     db.add(debt)
     await db.flush()
     return {
         "id": str(debt.id), "name": debt.name,
         "nature": debt.nature, "creditor_type": debt.creditor_type,
+    }
+
+
+@router.put("/{debt_id}")
+async def update_debt(
+    debt_id: uuid.UUID,
+    data: DebtUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    result = await db.execute(select(Debt).where(Debt.id == debt_id, Debt.user_id == user.id))
+    debt = result.scalar_one_or_none()
+    if not debt:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(debt, field, value)
+    await db.flush()
+    return {
+        "id": str(debt.id), "name": debt.name, "type": debt.type, "creditor": debt.creditor,
+        "original_amount": debt.original_amount, "current_balance": debt.current_balance,
+        "interest_rate": debt.interest_rate, "monthly_payment": debt.monthly_payment,
+        "payment_day": debt.payment_day, "is_active": debt.is_active,
+        "start_date": str(debt.start_date) if debt.start_date else None,
+        "expected_end_date": str(debt.expected_end_date) if debt.expected_end_date else None,
+        "notes": debt.notes,
+        "nature": debt.nature, "creditor_type": debt.creditor_type,
+        "linked_account_id": str(debt.linked_account_id) if debt.linked_account_id else None,
+        "auto_pay_enabled": debt.auto_pay_enabled,
     }
 
 

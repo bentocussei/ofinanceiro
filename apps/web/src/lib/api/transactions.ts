@@ -8,10 +8,16 @@ export interface Transaction {
   merchant: string | null
   transaction_date: string
   created_at: string
+  category_id?: string | null
   category_name?: string | null
   category_icon?: string | null
   member_name?: string | null
   account_id?: string
+  notes?: string | null
+  tags?: string[] | null
+  is_private?: boolean
+  needs_review?: boolean
+  is_recurring?: boolean
 }
 
 export interface TransactionPage {
@@ -26,6 +32,10 @@ export interface CreateTransactionData {
   type: string
   description?: string
   category_id?: string
+  merchant?: string
+  notes?: string
+  tags?: string[]
+  transaction_date?: string
   is_private?: boolean
   needs_review?: boolean
 }

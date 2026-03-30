@@ -8,7 +8,10 @@ export interface Investment {
   invested_amount: number
   current_value: number
   annual_return_rate: number
+  interest_rate: number | null
   start_date: string
+  maturity_date: string | null
+  notes: string | null
   status: string
 }
 
@@ -19,6 +22,24 @@ export interface CreateInvestmentData {
   invested_amount: number
   current_value?: number
   annual_return_rate?: number
+  interest_rate?: number
+  start_date?: string
+  maturity_date?: string
+  notes?: string
+}
+
+export interface UpdateInvestmentData {
+  name?: string
+  type?: string
+  institution?: string
+  invested_amount?: number
+  current_value?: number
+  annual_return_rate?: number
+  interest_rate?: number
+  start_date?: string
+  maturity_date?: string
+  notes?: string
+  status?: string
 }
 
 type H = { headers?: Record<string, string> }
@@ -30,6 +51,13 @@ export const investmentsApi = {
   create: (data: CreateInvestmentData, opts?: H) =>
     apiFetch<Investment>("/api/v1/investments/", {
       method: "POST",
+      body: JSON.stringify(data),
+      ...opts,
+    }),
+
+  update: (id: string, data: UpdateInvestmentData, opts?: H) =>
+    apiFetch<Investment>("/api/v1/investments/" + id, {
+      method: "PUT",
       body: JSON.stringify(data),
       ...opts,
     }),

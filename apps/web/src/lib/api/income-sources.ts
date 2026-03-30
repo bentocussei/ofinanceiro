@@ -8,6 +8,7 @@ export interface IncomeSource {
   frequency: string
   day_of_month: number | null
   account_id: string | null
+  description?: string | null
   account_name?: string | null
 }
 
@@ -18,6 +19,7 @@ export interface CreateIncomeSourceData {
   frequency: string
   day_of_month?: number
   account_id?: string
+  description?: string
 }
 
 type H = { headers?: Record<string, string> }

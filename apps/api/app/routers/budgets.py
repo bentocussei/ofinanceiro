@@ -3,13 +3,18 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.models.budget import BudgetItem
 from app.models.user import User
 from app.schemas.budget import (
     BudgetCreate,
+    BudgetItemCreate,
+    BudgetItemResponse,
+    BudgetItemUpdate,
     BudgetResponse,
     BudgetStatusResponse,
     BudgetUpdate,
@@ -87,3 +92,83 @@ async def delete_budget(
     if not budget:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
     await budget_service.delete_budget(db, budget)
+
+
+@router.post("/{budget_id}/items", response_model=BudgetItemResponse, status_code=201)
+async def create_budget_item(
+    budget_id: uuid.UUID,
+    data: BudgetItemCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BudgetItemResponse:
+    budget = await budget_service.get_budget(db, budget_id, user.id)
+    if not budget:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
+
+    # Verificar se já existe item para esta categoria
+    existing = await db.execute(
+        select(BudgetItem).where(
+            BudgetItem.budget_id == budget_id,
+            BudgetItem.category_id == data.category_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail={"code": "DUPLICATE", "message": "Já existe um item para esta categoria neste orçamento"},
+        )
+
+    item = BudgetItem(
+        budget_id=budget_id,
+        category_id=data.category_id,
+        limit_amount=data.limit_amount,
+    )
+    db.add(item)
+    await db.flush()
+    return BudgetItemResponse.model_validate(item)
+
+
+@router.put("/{budget_id}/items/{item_id}", response_model=BudgetItemResponse)
+async def update_budget_item(
+    budget_id: uuid.UUID,
+    item_id: uuid.UUID,
+    data: BudgetItemUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BudgetItemResponse:
+    budget = await budget_service.get_budget(db, budget_id, user.id)
+    if not budget:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
+
+    result = await db.execute(
+        select(BudgetItem).where(BudgetItem.id == item_id, BudgetItem.budget_id == budget_id)
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Item não encontrado"})
+
+    item.limit_amount = data.limit_amount
+    await db.flush()
+    return BudgetItemResponse.model_validate(item)
+
+
+@router.delete("/{budget_id}/items/{item_id}", status_code=204)
+async def delete_budget_item(
+    budget_id: uuid.UUID,
+    item_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    budget = await budget_service.get_budget(db, budget_id, user.id)
+    if not budget:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Orçamento não encontrado"})
+
+    result = await db.execute(
+        select(BudgetItem).where(BudgetItem.id == item_id, BudgetItem.budget_id == budget_id)
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Item não encontrado"})
+
+    await db.delete(item)
+    await db.flush()

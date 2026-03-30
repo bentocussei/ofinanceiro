@@ -58,7 +58,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Gestão",
     items: [
       { href: "/family/budget", label: "Orçamento doméstico", icon: PieChart },
-      { href: "/family/goals", label: "Metas familiares", icon: Target },
+      { href: "/family/goals", label: "Metas familiar", icon: Target },
       { href: "/family/debts", label: "Dívidas", icon: CreditCard },
       { href: "/family/investments", label: "Investimentos", icon: TrendingUp },
       { href: "/family/income-sources", label: "Rendimentos", icon: Banknote },

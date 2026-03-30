@@ -1,20 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import { PieChart } from "lucide-react"
 
 import { BudgetDetailDialog } from "@/components/budgets/BudgetDetailDialog"
+import { BudgetFormDialog } from "@/components/budgets/BudgetFormDialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { budgetsApi, type Budget, type BudgetStatus } from "@/lib/api/budgets"
 import { formatKz } from "@/lib/format"
@@ -33,6 +24,14 @@ function getTextColor(pct: number): string {
   return "text-green-500"
 }
 
+const METHOD_LABELS: Record<string, string> = {
+  category: "Categoria",
+  "50_30_20": "50/30/20",
+  envelope: "Envelope",
+  flex: "Flex",
+  zero_based: "Base zero",
+}
+
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [statuses, setStatuses] = useState<Record<string, BudgetStatus>>({})
@@ -40,11 +39,6 @@ export default function BudgetPage() {
   const [detailBudget, setDetailBudget] = useState<Budget | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
-  const [createName, setCreateName] = useState("")
-  const [createLimit, setCreateLimit] = useState("")
-  const [createAlertThreshold, setCreateAlertThreshold] = useState("80")
-  const [createAlertEnabled, setCreateAlertEnabled] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchBudgets = () => {
     budgetsApi.list().then((data) => {
@@ -59,99 +53,19 @@ export default function BudgetPage() {
 
   useEffect(() => { fetchBudgets() }, [])
 
-  const handleCreate = async () => {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth(), 1)
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-
-    setIsSubmitting(true)
-    try {
-      await budgetsApi.create({
-        name: createName.trim() || `${start.toLocaleDateString("pt-AO", { month: "long", year: "numeric" })}`,
-        method: "category",
-        period_start: start.toISOString().split("T")[0],
-        period_end: end.toISOString().split("T")[0],
-        total_limit: createLimit ? Math.round(parseFloat(createLimit) * 100) : undefined,
-        alert_threshold: parseInt(createAlertThreshold) || 80,
-        alert_enabled: createAlertEnabled,
-      })
-      setCreateOpen(false)
-      setCreateName("")
-      setCreateLimit("")
-      setCreateAlertThreshold("80")
-      setCreateAlertEnabled(true)
-      fetchBudgets()
-    } catch {}
-    setIsSubmitting(false)
-  }
-
-  const handleDelete = (id: string) => {
-    toast("Eliminar este orçamento?", {
-      description: "Esta acção não pode ser revertida.",
-      action: {
-        label: "Eliminar",
-        onClick: async () => {
-          await budgetsApi.remove(id).catch(() => {})
-          fetchBudgets()
-          toast.success("Orçamento eliminado com sucesso")
-        },
-      },
-      cancel: {
-        label: "Cancelar",
-        onClick: () => {},
-      },
-    })
-  }
-
-  const activeStatus = selectedBudget ? statuses[selectedBudget] : null
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">Orçamentos</h2>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger render={<Button />}>+ Novo orçamento</DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Novo orçamento</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-2">
-              <div>
-                <Label>Nome (opcional)</Label>
-                <Input placeholder="Ex: Março 2026" value={createName} onChange={(e) => setCreateName(e.target.value)} />
-              </div>
-              <div>
-                <Label>Limite total (Kz)</Label>
-                <Input type="number" placeholder="0" value={createLimit} onChange={(e) => setCreateLimit(e.target.value)} className="font-mono" />
-              </div>
-              <div>
-                <Label>Limite de alerta (%)</Label>
-                <Input type="number" min="1" max="100" placeholder="80" value={createAlertThreshold} onChange={(e) => setCreateAlertThreshold(e.target.value)} />
-              </div>
-              <div className="flex items-center gap-3">
-                <Label className="flex-1">Alertas activados</Label>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={createAlertEnabled}
-                  onClick={() => setCreateAlertEnabled(!createAlertEnabled)}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${createAlertEnabled ? "bg-primary" : "bg-muted"}`}
-                >
-                  <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${createAlertEnabled ? "translate-x-4" : "translate-x-0"}`} />
-                </button>
-              </div>
-              <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? "A criar..." : "Criar orçamento"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <h2 className="text-2xl font-bold tracking-tight">Orcamentos</h2>
+        <Button onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
       </div>
 
       {budgets.length === 0 ? (
         <div className="text-center py-16">
           <PieChart className="h-10 w-10 mx-auto text-muted-foreground/30" />
-          <p className="text-muted-foreground mt-3">Nenhum orçamento criado</p>
+          <p className="text-muted-foreground mt-3">Nenhum orcamento criado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie um orçamento para controlar os seus gastos
+            Crie um orcamento para controlar os seus gastos
           </p>
         </div>
       ) : (
@@ -165,12 +79,25 @@ export default function BudgetPage() {
                 onClick={() => setSelectedBudget(selectedBudget === budget.id ? null : budget.id)}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold">{budget.name || "Orçamento"}</h3>
+                  <div>
+                    <h3 className="font-semibold">{budget.name || "Orcamento"}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs rounded-full bg-muted px-2 py-0.5">
+                        {METHOD_LABELS[budget.method] || budget.method}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {budget.period_start} - {budget.period_end}
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     {status && (
                       <span className="text-xs text-muted-foreground">{status.days_remaining}d</span>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); setDetailBudget(budget); setDetailOpen(true) }} className="text-blue-500 hover:text-blue-600 text-xs">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDetailBudget(budget); setDetailOpen(true) }}
+                      className="text-blue-500 hover:text-blue-600 text-xs font-medium"
+                    >
                       Detalhe
                     </button>
                   </div>
@@ -193,7 +120,10 @@ export default function BudgetPage() {
                         {status.items.map((item) => (
                           <div key={item.category_id}>
                             <div className="flex justify-between text-sm mb-1">
-                              <span className="flex items-center gap-1"><IconDisplay name={item.category_name} className="h-4 w-4 inline" /> {item.category_name}</span>
+                              <span className="flex items-center gap-1.5">
+                                <IconDisplay name={item.category_icon || item.category_name} className="h-4 w-4" />
+                                {item.category_name}
+                              </span>
                               <span className="font-mono text-xs text-muted-foreground">
                                 {formatKz(item.spent)} / {formatKz(item.limit_amount)}
                               </span>
@@ -212,6 +142,12 @@ export default function BudgetPage() {
           })}
         </div>
       )}
+
+      <BudgetFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSaved={fetchBudgets}
+      />
 
       <BudgetDetailDialog
         item={detailBudget}

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { CreditCard, Plus, Trash2, Banknote } from "lucide-react"
+import { CreditCard, Plus, Trash2, Banknote, Calculator } from "lucide-react"
 
+import { DebtDetailDialog } from "@/components/debts/DebtDetailDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -13,32 +14,33 @@ import { Label } from "@/components/ui/label"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { debtsApi, type Debt } from "@/lib/api/debts"
+import { debtsApi, type Debt, type DebtSimulation } from "@/lib/api/debts"
+import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
 import { getContextHeader } from "@/lib/context"
 
 const TYPE_OPTIONS = [
-  { value: "MORTGAGE", label: "Hipoteca" },
-  { value: "CAR_LOAN", label: "Empréstimo auto" },
-  { value: "PERSONAL_LOAN", label: "Empréstimo pessoal" },
-  { value: "CREDIT_CARD", label: "Cartão de crédito" },
-  { value: "INFORMAL", label: "Informal" },
-  { value: "OTHER", label: "Outro" },
+  { value: "mortgage", label: "Hipoteca" },
+  { value: "car_loan", label: "Empréstimo auto" },
+  { value: "personal_loan", label: "Empréstimo pessoal" },
+  { value: "credit_card", label: "Cartão de crédito" },
+  { value: "informal", label: "Informal" },
+  { value: "other", label: "Outro" },
 ]
 
 const NATURE_OPTIONS = [
-  { value: "FORMAL", label: "Formal" },
-  { value: "INFORMAL", label: "Informal" },
+  { value: "formal", label: "Formal" },
+  { value: "informal", label: "Informal" },
 ]
 
 const CREDITOR_TYPE_OPTIONS = [
-  { value: "BANK", label: "Banco" },
-  { value: "FINANCIAL", label: "Financeira" },
-  { value: "FAMILY", label: "Família" },
-  { value: "FRIENDS", label: "Amigos" },
-  { value: "SUPPLIER", label: "Fornecedor" },
-  { value: "EMPLOYER", label: "Empregador" },
-  { value: "OTHER", label: "Outro" },
+  { value: "bank", label: "Banco" },
+  { value: "financial", label: "Financeira" },
+  { value: "family", label: "Família" },
+  { value: "friends", label: "Amigos" },
+  { value: "supplier", label: "Fornecedor" },
+  { value: "employer", label: "Empregador" },
+  { value: "other", label: "Outro" },
 ]
 
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map((t) => [t.value, t.label]))
@@ -46,22 +48,46 @@ const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map(
 export default function FamilyDebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [detailDebt, setDetailDebt] = useState<Debt | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [payOpen, setPayOpen] = useState<string | null>(null)
+  const [simOpen, setSimOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Create form
   const [name, setName] = useState("")
-  const [type, setType] = useState("PERSONAL_LOAN")
-  const [nature, setNature] = useState("FORMAL")
+  const [type, setType] = useState("personal_loan")
+  const [nature, setNature] = useState("formal")
   const [creditor, setCreditor] = useState("")
-  const [creditorType, setCreditorType] = useState("BANK")
+  const [creditorType, setCreditorType] = useState("bank")
   const [originalAmount, setOriginalAmount] = useState("")
   const [interestRate, setInterestRate] = useState("")
   const [minimumPayment, setMinimumPayment] = useState("")
   const [dueDay, setDueDay] = useState("1")
+  const [startDate, setStartDate] = useState("")
+  const [expectedEndDate, setExpectedEndDate] = useState("")
+  const [notes, setNotes] = useState("")
+  const [autoPay, setAutoPay] = useState(false)
+  const [linkedAccountId, setLinkedAccountId] = useState("")
 
   // Payment form
   const [payAmount, setPayAmount] = useState("")
+
+  // Simulation
+  const [simBalance, setSimBalance] = useState("")
+  const [simRate, setSimRate] = useState("")
+  const [simPayment, setSimPayment] = useState("")
+  const [simulation, setSimulation] = useState<DebtSimulation | null>(null)
+
+  interface AccountOption { id: string; name: string }
+  const [debtAccounts, setDebtAccounts] = useState<AccountOption[]>([])
+
+  useEffect(() => {
+    const ctx = { headers: getContextHeader() }
+    accountsApi.summary(ctx)
+      .then((data) => setDebtAccounts(data.accounts || []))
+      .catch(() => {})
+  }, [])
 
   const fetchDebts = () => {
     const ctx = { headers: getContextHeader() }
@@ -75,14 +101,19 @@ export default function FamilyDebtsPage() {
 
   const resetForm = () => {
     setName("")
-    setType("PERSONAL_LOAN")
-    setNature("FORMAL")
+    setType("personal_loan")
+    setNature("formal")
     setCreditor("")
-    setCreditorType("BANK")
+    setCreditorType("bank")
     setOriginalAmount("")
     setInterestRate("")
     setMinimumPayment("")
     setDueDay("1")
+    setStartDate("")
+    setExpectedEndDate("")
+    setNotes("")
+    setAutoPay(false)
+    setLinkedAccountId("")
   }
 
   const handleCreate = async () => {
@@ -94,11 +125,17 @@ export default function FamilyDebtsPage() {
         name: name.trim(),
         type,
         nature,
+        creditor: creditor.trim() || undefined,
         creditor_type: creditorType,
         original_amount: Math.round(parseFloat(originalAmount) * 100),
         interest_rate: parseFloat(interestRate) || 0,
         minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
         due_day: parseInt(dueDay) || 1,
+        start_date: startDate || undefined,
+        expected_end_date: expectedEndDate || undefined,
+        notes: notes.trim() || undefined,
+        auto_pay: autoPay,
+        linked_account_id: linkedAccountId || undefined,
       }, ctx)
       setCreateOpen(false)
       resetForm()
@@ -140,62 +177,117 @@ export default function FamilyDebtsPage() {
     })
   }
 
+  const handleSimulate = async () => {
+    if (!simBalance || !simRate || !simPayment) return
+    try {
+      const result = await debtsApi.simulate({
+        current_balance: Math.round(parseFloat(simBalance) * 100),
+        interest_rate: parseFloat(simRate),
+        monthly_payment: Math.round(parseFloat(simPayment) * 100),
+      })
+      setSimulation(result)
+    } catch { /* handled by apiFetch */ }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Dívidas Familiares</h2>
-        <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-1" /> Nova dívida
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Nova dívida familiar</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-2">
-              <div><Label>Nome</Label><Input placeholder="Ex: Empréstimo habitação" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
-              <div>
-                <Label>Tipo</Label>
-                <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {TYPE_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setSimOpen(true)}>
+            <Calculator className="h-4 w-4 mr-1" />
+            Simular
+          </Button>
+          <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
+            <DialogTrigger render={<Button />}>
+              <Plus className="h-4 w-4 mr-1" /> Nova dívida
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Nova dívida familiar</DialogTitle></DialogHeader>
+              <div className="space-y-4 py-2">
+                <div><Label>Nome</Label><Input placeholder="Ex: Empréstimo habitação" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={type} onValueChange={(v) => { if (v) setType(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TYPE_OPTIONS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Natureza</Label>
+                  <Select value={nature} onValueChange={(v) => { if (v) setNature(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {NATURE_OPTIONS.map((n) => (
+                        <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Credor (opcional)</Label><Input placeholder="Ex: Banco BAI" value={creditor} onChange={(e) => setCreditor(e.target.value)} /></div>
+                <div>
+                  <Label>Tipo de credor</Label>
+                  <Select value={creditorType} onValueChange={(v) => { if (v) setCreditorType(v) }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CREDITOR_TYPE_OPTIONS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Valor original (Kz)</Label><Input type="number" placeholder="0" value={originalAmount} onChange={(e) => setOriginalAmount(e.target.value)} className="font-mono" /></div>
+                <div><Label>Taxa de juros (%, opcional)</Label><Input type="number" step="0.1" placeholder="0" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} className="font-mono" /></div>
+                <div><Label>Prestação mensal (Kz)</Label><Input type="number" placeholder="0" value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} className="font-mono" /></div>
+                <div><Label>Dia de pagamento (1-31)</Label><Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} className="font-mono" /></div>
+                <div><Label>Data início (opcional)</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                <div><Label>Data prevista fim (opcional)</Label><Input type="date" value={expectedEndDate} onChange={(e) => setExpectedEndDate(e.target.value)} /></div>
+                <div>
+                  <Label>Notas (opcional)</Label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 resize-none"
+                    placeholder="Observações sobre esta dívida..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="flex-1">Pagamento automático</Label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={autoPay}
+                    onClick={() => setAutoPay(!autoPay)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${autoPay ? "bg-primary" : "bg-muted"}`}
+                  >
+                    <span className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform ${autoPay ? "translate-x-4" : "translate-x-0"}`} />
+                  </button>
+                </div>
+                {autoPay && (
+                  <div>
+                    <Label>Conta vinculada</Label>
+                    <Select value={linkedAccountId} onValueChange={(v) => setLinkedAccountId(v || "")}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar conta" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Nenhuma</SelectItem>
+                        {debtAccounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
+                  {isSubmitting ? "A criar..." : "Criar dívida"}
+                </Button>
               </div>
-              <div>
-                <Label>Natureza</Label>
-                <Select value={nature} onValueChange={(v) => { if (v) setNature(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {NATURE_OPTIONS.map((n) => (
-                      <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Credor (opcional)</Label><Input placeholder="Ex: Banco BAI" value={creditor} onChange={(e) => setCreditor(e.target.value)} /></div>
-              <div>
-                <Label>Tipo de credor</Label>
-                <Select value={creditorType} onValueChange={(v) => { if (v) setCreditorType(v) }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CREDITOR_TYPE_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Valor original (Kz)</Label><Input type="number" placeholder="0" value={originalAmount} onChange={(e) => setOriginalAmount(e.target.value)} className="font-mono" /></div>
-              <div><Label>Taxa de juros (%)</Label><Input type="number" step="0.1" placeholder="0" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} className="font-mono" /></div>
-              <div><Label>Pagamento mínimo mensal (Kz)</Label><Input type="number" placeholder="0" value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} className="font-mono" /></div>
-              <div><Label>Dia de vencimento</Label><Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} className="font-mono" /></div>
-              <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? "A criar..." : "Criar dívida"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -223,7 +315,7 @@ export default function FamilyDebtsPage() {
               : 0
 
             return (
-              <div key={debt.id} className="px-4 py-3.5 hover:bg-muted/50 transition-colors">
+              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -245,11 +337,11 @@ export default function FamilyDebtsPage() {
                       <p className="text-xs text-muted-foreground font-mono">Min: {formatKz(debt.minimum_payment)}</p>
                     </div>
                     {debt.status !== "paid_off" && (
-                      <Button variant="outline" size="sm" onClick={() => { setPayOpen(debt.id); setPayAmount("") }} title="Registar pagamento">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setPayOpen(debt.id); setPayAmount("") }} title="Registar pagamento">
                         <Banknote className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(debt.id)} className="text-red-500 hover:text-red-600">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(debt.id) }} className="text-red-500 hover:text-red-600">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -273,6 +365,71 @@ export default function FamilyDebtsPage() {
           <div className="space-y-4 py-2">
             <div><Label>Valor (Kz)</Label><Input type="number" placeholder="0" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="font-mono" autoFocus /></div>
             <Button className="w-full" onClick={() => payOpen && handlePay(payOpen)}>Pagar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <DebtDetailDialog
+        item={detailDebt}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={fetchDebts}
+        onDeleted={fetchDebts}
+        contextHeaders={getContextHeader()}
+      />
+
+      {/* Simulation dialog */}
+      <Dialog open={simOpen} onOpenChange={setSimOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Simulador de amortização</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label>Saldo devedor (Kz)</Label><Input type="number" placeholder="0" value={simBalance} onChange={(e) => setSimBalance(e.target.value)} className="font-mono" /></div>
+            <div><Label>Taxa de juros anual (%)</Label><Input type="number" step="0.1" placeholder="0" value={simRate} onChange={(e) => setSimRate(e.target.value)} className="font-mono" /></div>
+            <div><Label>Pagamento mensal (Kz)</Label><Input type="number" placeholder="0" value={simPayment} onChange={(e) => setSimPayment(e.target.value)} className="font-mono" /></div>
+            <Button className="w-full" onClick={handleSimulate}>Simular</Button>
+
+            {simulation && (
+              <div className="space-y-3 border-t pt-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg bg-muted p-2 text-center">
+                    <p className="text-xs text-muted-foreground">Meses</p>
+                    <p className="font-mono font-bold">{simulation.months_to_payoff}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted p-2 text-center">
+                    <p className="text-xs text-muted-foreground">Total juros</p>
+                    <p className="font-mono font-bold text-red-500 text-xs">{formatKz(simulation.total_interest)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted p-2 text-center">
+                    <p className="text-xs text-muted-foreground">Total pago</p>
+                    <p className="font-mono font-bold text-xs">{formatKz(simulation.total_paid)}</p>
+                  </div>
+                </div>
+                {simulation.schedule && simulation.schedule.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-muted-foreground">
+                          <th className="text-left py-1">Mês</th>
+                          <th className="text-right py-1">Pagamento</th>
+                          <th className="text-right py-1">Juros</th>
+                          <th className="text-right py-1">Saldo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {simulation.schedule.slice(0, 24).map((row) => (
+                          <tr key={row.month} className="border-t border-muted">
+                            <td className="py-1">{row.month}</td>
+                            <td className="text-right font-mono">{formatKz(row.payment)}</td>
+                            <td className="text-right font-mono text-red-500">{formatKz(row.interest)}</td>
+                            <td className="text-right font-mono">{formatKz(row.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
