@@ -5,6 +5,7 @@ import Link from "next/link"
 
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
+import { reportsApi, type PatrimonyData } from "@/lib/api/reports"
 import { transactionsApi } from "@/lib/api/transactions"
 import { budgetsApi } from "@/lib/api/budgets"
 import { goalsApi } from "@/lib/api/goals"
@@ -12,6 +13,7 @@ import { formatKz } from "@/lib/format"
 import {
   ArrowDownRight,
   ArrowUpRight,
+  CreditCard,
   PieChart,
   Plus,
   Target,
@@ -58,6 +60,7 @@ interface SpendingCategory {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<AccountSummary | null>(null)
+  const [patrimony, setPatrimony] = useState<PatrimonyData | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<BudgetItem[]>([])
   const [goals, setGoals] = useState<GoalItem[]>([])
@@ -68,6 +71,10 @@ export default function DashboardPage() {
   useEffect(() => {
     accountsApi.summary()
       .then(setSummary)
+      .catch(() => {})
+
+    reportsApi.patrimony()
+      .then(setPatrimony)
       .catch(() => {})
 
     transactionsApi.list("limit=5")
@@ -115,23 +122,65 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* --- Net Worth Hero (full width) --- */}
+      {/* --- Património Hero (full width) --- */}
       <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-          Saldo total
+          Património Líquido
         </p>
         <p className="text-[32px] font-bold font-mono tracking-tight leading-tight">
-          {formatKz(summary?.net_worth ?? 0)}
+          {formatKz(patrimony?.net_worth ?? 0)}
         </p>
-        <div className="flex items-center gap-4 mt-3 text-sm">
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Activos: <span className="font-mono font-semibold text-foreground">{formatKz(summary?.total_assets ?? 0)}</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            Passivos: <span className="font-mono font-semibold text-foreground">{formatKz(summary?.total_liabilities ?? 0)}</span>
-          </span>
+
+        {/* Sub-cards */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Wallet className="h-3.5 w-3.5 text-income" />
+              <span className="text-xs text-muted-foreground">Contas</span>
+            </div>
+            <p className="text-sm font-bold font-mono text-income">
+              {formatKz(patrimony?.assets.accounts.total ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-income" />
+              <span className="text-xs text-muted-foreground">Investimentos</span>
+            </div>
+            <p className="text-sm font-bold font-mono text-income">
+              {formatKz(patrimony?.assets.investments.total ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <CreditCard className="h-3.5 w-3.5 text-expense" />
+              <span className="text-xs text-muted-foreground">Dividas</span>
+            </div>
+            <p className="text-sm font-bold font-mono text-expense">
+              -{formatKz(patrimony?.liabilities.total ?? 0)}
+            </p>
+          </div>
         </div>
+
+        {/* Assets vs Liabilities bar */}
+        {patrimony && (patrimony.assets.total > 0 || patrimony.liabilities.total > 0) && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+              <span>Activos: <span className="font-mono font-semibold text-income">{formatKz(patrimony.assets.total)}</span></span>
+              <span>Passivos: <span className="font-mono font-semibold text-expense">{formatKz(patrimony.liabilities.total)}</span></span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-expense/20 overflow-hidden">
+              <div
+                className="h-2 rounded-full bg-income transition-all duration-500"
+                style={{
+                  width: `${patrimony.assets.total + patrimony.liabilities.total > 0
+                    ? (patrimony.assets.total / (patrimony.assets.total + patrimony.liabilities.total)) * 100
+                    : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* --- 2-Column Grid --- */}
