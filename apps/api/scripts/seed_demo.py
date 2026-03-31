@@ -720,6 +720,23 @@ async def main() -> None:
             trial_end_date=NOW + timedelta(days=90),
         )
         db.add_all([cussei_sub, ana_sub])
+        await db.flush()
+
+        # ==========================================
+        # PERMISSIONS
+        # ==========================================
+        from app.permissions import get_plan_permissions
+        from app.services.permission import seed_permissions, seed_plan_permissions, sync_user_permissions_from_plan
+
+        perm_count = await seed_permissions(db)
+        # Assign permissions to plans
+        personal_perms = get_plan_permissions("personal")
+        family_perms = get_plan_permissions("family")
+        await seed_plan_permissions(db, plan_personal_id, personal_perms)
+        await seed_plan_permissions(db, plan_family_id, family_perms)
+        # Sync permissions for demo users
+        await sync_user_permissions_from_plan(db, cussei_id, cussei_sub.plan_snapshot)
+        await sync_user_permissions_from_plan(db, ana_id, ana_sub.plan_snapshot)
 
         await db.commit()
         print("=" * 50)
@@ -742,6 +759,7 @@ async def main() -> None:
         print(f"Plans: 2 (Pessoal + Familiar)")
         print(f"Promotions: 2 (Lançamento 90 dias + Primeiro100 50%)")
         print(f"Subscriptions: 2 (Cussei Familiar + Ana Pessoal, trial 90 dias)")
+        print(f"Permissions: {perm_count} seeded + plan mappings + user sync")
         print("=" * 50)
 
 

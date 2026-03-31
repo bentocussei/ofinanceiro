@@ -34,6 +34,7 @@ from app.routers import (
     notifications,
     ocr,
     onboarding,
+    permissions_router,
     recurring_rules,
     reports,
     score,
@@ -193,3 +194,4 @@ app.include_router(finance_settings.router)
 app.include_router(snapshots.router)
 app.include_router(expense_splits.router)
 app.include_router(tags.router)
+app.include_router(permissions_router.router)

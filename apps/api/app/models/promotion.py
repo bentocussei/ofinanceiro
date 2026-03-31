@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    SmallInteger,
     String,
     UniqueConstraint,
     func,
@@ -47,6 +48,9 @@ class Promotion(BaseModel):
     current_usage_count: Mapped[int] = mapped_column(Integer, default=0)
     auto_apply_on_register: Mapped[bool] = mapped_column(Boolean, default=False)
     free_days: Mapped[int] = mapped_column(Integer, default=0)  # for free_days type
+    priority: Mapped[int] = mapped_column(
+        SmallInteger, default=0
+    )  # lower number = higher priority
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
