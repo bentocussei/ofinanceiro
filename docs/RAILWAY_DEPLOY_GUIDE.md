@@ -429,6 +429,75 @@ curl -X POST https://ofinanceiro-api-production.up.railway.app/api/v1/auth/regis
 
 ---
 
+## 13. Configurar Ambiente Staging
+
+### Criar via Dashboard (recomendado)
+
+No dashboard do Railway: Settings → Environments → Duplicate Environment → copiar de `production`.
+Isto cria cópias de todos os serviços, databases e variáveis.
+
+### Actualizar variáveis que diferem de produção
+
+Após copiar, as variáveis vêm idênticas às de produção. É **obrigatório** mudar:
+
+```bash
+STAGING_ENV="<id-do-novo-ambiente>"
+
+# Gerar novos secrets (staging NÃO deve partilhar secrets com produção)
+JWT_SECRET_STG=$(openssl rand -hex 32)
+JWT_REFRESH_STG=$(openssl rand -hex 32)
+
+# API
+set_var $API_SERVICE "ENVIRONMENT" "staging"
+set_var $API_SERVICE "DEBUG" "true"
+set_var $API_SERVICE "JWT_SECRET" "$JWT_SECRET_STG"
+set_var $API_SERVICE "JWT_REFRESH_SECRET" "$JWT_REFRESH_STG"
+set_var $API_SERVICE "ALLOWED_ORIGINS" "https://ofinanceiro-web-staging.up.railway.app,http://localhost:3000"
+
+# Web
+set_var $WEB_SERVICE "NEXT_PUBLIC_API_URL" "https://ofinanceiro-api-staging.up.railway.app"
+```
+
+### Corrigir deploy triggers (branch)
+
+Ao copiar o ambiente, os triggers apontam para `main`. Mudar para `staging`:
+
+```bash
+# Listar triggers do staging
+curl -s -X POST https://backboard.railway.app/graphql/v2 \
+  -H "Authorization: Bearer $RAILWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ environment(id: \"'"$STAGING_ENV"'\") { deploymentTriggers { edges { node { id branch } } } } }"}' | python3 -c "
+import json, sys
+for t in json.load(sys.stdin)['data']['environment']['deploymentTriggers']['edges']:
+    print(t['node']['id'], t['node']['branch'])
+"
+
+# Actualizar cada trigger para branch staging
+for TRIGGER_ID in "<id-trigger-1>" "<id-trigger-2>"; do
+  curl -s -X POST https://backboard.railway.app/graphql/v2 \
+    -H "Authorization: Bearer $RAILWAY_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "mutation { deploymentTriggerUpdate(id: \"'"$TRIGGER_ID"'\", input: { branch: \"staging\" }) { id branch } }"}'
+done
+```
+
+### Checklist de diferenças staging vs produção
+
+| Variável | Production | Staging |
+|----------|-----------|---------|
+| `ENVIRONMENT` | `production` | `staging` |
+| `DEBUG` | `false` | `true` |
+| `JWT_SECRET` | Único produção | **Diferente** |
+| `JWT_REFRESH_SECRET` | Único produção | **Diferente** |
+| `ALLOWED_ORIGINS` | `*-production.up.railway.app` | `*-staging.up.railway.app` |
+| `NEXT_PUBLIC_API_URL` | `*-api-production.up.railway.app` | `*-api-staging.up.railway.app` |
+| `DATABASE_URL` | Auto (instância produção) | Auto (instância staging) |
+| `REDIS_URL` | Auto (instância produção) | Auto (instância staging) |
+| Deploy branch | `main` | `staging` |
+
+---
+
 ## Erros Comuns e Soluções
 
 | Erro | Causa | Solução |
