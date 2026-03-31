@@ -203,8 +203,8 @@ class FamilyRelation(enum.StrEnum):
 
 
 class PlanType(enum.StrEnum):
-    PESSOAL = "pessoal"
-    FAMILIAR = "familiar"
+    PERSONAL = "personal"
+    FAMILY = "family"
 
 
 class SubscriptionStatus(enum.StrEnum):
