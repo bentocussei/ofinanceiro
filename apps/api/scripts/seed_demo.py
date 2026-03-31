@@ -34,12 +34,16 @@ from app.models import (
     IncomeSource,
     Investment,
     Notification,
+    Plan,
+    Promotion,
     Transaction,
     User,
+    UserSubscription,
 )
 from app.models.enums import (
     AccountType,
     AssetType,
+    BillingCycle,
     BillStatus,
     BudgetMethod,
     BudgetPeriod,
@@ -51,7 +55,10 @@ from app.models.enums import (
     GoalStatus,
     IncomeSourceType,
     NotificationType,
+    PlanType,
+    PromotionType,
     RecurrenceFrequency,
+    SubscriptionStatus,
     TransactionType,
 )
 from app.services.auth import hash_password
@@ -600,6 +607,120 @@ async def main() -> None:
         ]
         db.add_all(notifications)
 
+        # ==========================================
+        # PLANS
+        # ==========================================
+        personal_features = {
+            "accounts": {"limit": -1},
+            "transactions": {"limit": -1},
+            "ai": {"messages_limit": -1, "model": "sonnet", "opus_analyses": -1},
+            "ocr": {"receipts_limit": -1},
+            "voice": {"commands_limit": -1},
+            "budgets": {"enabled": True},
+            "goals": {"enabled": True},
+            "investments": {"enabled": True},
+            "assets": {"enabled": True},
+            "debts": {"enabled": True},
+            "reports": {"advanced": True},
+            "education": {"enabled": True},
+            "news": {"enabled": True},
+            "family": {"enabled": False},
+        }
+        family_features = {**personal_features, "family": {"enabled": True}}
+
+        plan_personal_id = uuid.uuid4()
+        plan_family_id = uuid.uuid4()
+
+        plan_personal = Plan(
+            id=plan_personal_id, type=PlanType.PERSONAL,
+            name="Pessoal", description="Controlo total das suas finanças pessoais",
+            base_price_monthly=149000, base_price_annual=1490000,
+            max_family_members=0, extra_member_cost=0,
+            features=personal_features,
+        )
+        plan_family = Plan(
+            id=plan_family_id, type=PlanType.FAMILY,
+            name="Familiar", description="Gestão financeira para toda a família",
+            base_price_monthly=349000, base_price_annual=3490000,
+            max_family_members=5, extra_member_cost=49000,
+            features=family_features,
+        )
+        db.add_all([plan_personal, plan_family])
+
+        # ==========================================
+        # PROMOTIONS
+        # ==========================================
+        promo_launch = Promotion(
+            name="Lançamento O Financeiro",
+            code=None,
+            type=PromotionType.FREE_DAYS,
+            value=90,
+            start_date=NOW,
+            end_date=None,
+            apply_to_all=True,
+            applicable_plan_types=["personal", "family"],
+            max_beneficiaries=None,
+            auto_apply_on_register=True,
+            free_days=90,
+        )
+        promo_first100 = Promotion(
+            name="Primeiros 100 utilizadores",
+            code="PRIMEIRO100",
+            type=PromotionType.PERCENTAGE,
+            value=50,
+            start_date=NOW,
+            end_date=NOW + timedelta(days=180),
+            apply_to_all=True,
+            applicable_plan_types=["personal", "family"],
+            max_beneficiaries=100,
+            auto_apply_on_register=False,
+            free_days=0,
+        )
+        db.add_all([promo_launch, promo_first100])
+        await db.flush()
+
+        # ==========================================
+        # USER SUBSCRIPTIONS (Cussei + Ana)
+        # ==========================================
+        # Cussei: Familiar plan (he has a family)
+        cussei_sub = UserSubscription(
+            user_id=cussei_id, plan_id=plan_family_id,
+            plan_snapshot={
+                "type": "family", "name": "Familiar",
+                "base_price_monthly": 349000, "base_price_annual": 3490000,
+                "max_family_members": 5, "extra_member_cost": 49000,
+                "features": family_features,
+            },
+            billing_cycle=BillingCycle.MONTHLY,
+            status=SubscriptionStatus.ACTIVE,
+            base_price=349000, discount_amount=349000,
+            extra_members_count=0, extra_members_cost=0,
+            feature_addons_cost=0, final_price=0,
+            promotion_id=promo_launch.id,
+            start_date=NOW, end_date=NOW + timedelta(days=90),
+            trial_end_date=NOW + timedelta(days=90),
+        )
+
+        # Ana: Personal plan (inherited from family, but has own sub)
+        ana_sub = UserSubscription(
+            user_id=ana_id, plan_id=plan_personal_id,
+            plan_snapshot={
+                "type": "personal", "name": "Pessoal",
+                "base_price_monthly": 149000, "base_price_annual": 1490000,
+                "max_family_members": 0, "extra_member_cost": 0,
+                "features": personal_features,
+            },
+            billing_cycle=BillingCycle.MONTHLY,
+            status=SubscriptionStatus.ACTIVE,
+            base_price=149000, discount_amount=149000,
+            extra_members_count=0, extra_members_cost=0,
+            feature_addons_cost=0, final_price=0,
+            promotion_id=promo_launch.id,
+            start_date=NOW, end_date=NOW + timedelta(days=90),
+            trial_end_date=NOW + timedelta(days=90),
+        )
+        db.add_all([cussei_sub, ana_sub])
+
         await db.commit()
         print("=" * 50)
         print("Demo data seeded successfully!")
@@ -618,6 +739,9 @@ async def main() -> None:
         print(f"Investments: 2 personal + 1 family")
         print(f"Assets: 3 personal + 1 family")
         print(f"Notifications: 4")
+        print(f"Plans: 2 (Pessoal + Familiar)")
+        print(f"Promotions: 2 (Lançamento 90 dias + Primeiro100 50%)")
+        print(f"Subscriptions: 2 (Cussei Familiar + Ana Pessoal, trial 90 dias)")
         print("=" * 50)
 
 
