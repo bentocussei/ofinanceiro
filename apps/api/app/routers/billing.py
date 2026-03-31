@@ -1,10 +1,11 @@
-"""Billing router: subscription management and Stripe integration."""
+"""Billing router: subscription management, plans, promotions, add-ons, Stripe."""
 
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,93 +13,311 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.enums import SubscriptionPlan
-from app.models.subscription import Subscription
+from app.models.plan import Plan
+from app.models.subscription import Subscription, UserSubscription
 from app.models.user import User
+from app.schemas.billing import (
+    FeatureAddonResponse,
+    PlanResponse,
+    PriceBreakdown,
+    SubscribeRequest,
+    SubscriptionResponse,
+    UpgradeRequest,
+)
+from app.services import billing as billing_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 
-PLAN_PRICES = {
-    "free": {"price": 0, "price_annual": 0, "name": "Gratuito", "currency": "AOA"},
-    "personal": {
-        "price": 1490, "price_annual": 14900, "name": "Pessoal", "currency": "AOA",
-        "stripe_price_id": "price_personal", "stripe_price_annual_id": "price_personal_annual",
-    },
-    "family": {
-        "price": 2990, "price_annual": 29900, "name": "Família", "currency": "AOA",
-        "stripe_price_id": "price_family", "stripe_price_annual_id": "price_family_annual",
-    },
-    "family_plus": {
-        "price": 4990, "price_annual": 49900, "name": "Família+", "currency": "AOA",
-        "stripe_price_id": "price_family_plus", "stripe_price_annual_id": "price_family_plus_annual",
-    },
-}
 
-PLAN_LIMITS = {
-    "free": {
-        "accounts": 2, "transactions": 50,
-        "ai_messages": 20, "ai_model": "haiku",
-        "ocr_receipts": 0, "voice_commands": 0,
-        "opus_analyses": 0, "family_members": 0,
-    },
-    "personal": {
-        "accounts": -1, "transactions": -1,
-        "ai_messages": 200, "ai_model": "sonnet",
-        "ocr_receipts": 20, "voice_commands": 10,
-        "opus_analyses": 10, "family_members": 0,
-    },
-    "family": {
-        "accounts": -1, "transactions": -1,
-        "ai_messages": 500, "ai_model": "sonnet",
-        "ocr_receipts": 50, "voice_commands": 30,
-        "opus_analyses": 30, "family_members": 6,
-    },
-    "family_plus": {
-        "accounts": -1, "transactions": -1,
-        "ai_messages": -1, "ai_model": "opus",
-        "ocr_receipts": 100, "voice_commands": -1,
-        "opus_analyses": -1, "family_members": -1,
-    },
-}
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _sub_to_response(sub: UserSubscription, features: dict) -> SubscriptionResponse:
+    """Convert a UserSubscription model to a SubscriptionResponse schema."""
+    snapshot = sub.plan_snapshot or {}
+    return SubscriptionResponse(
+        id=str(sub.id),
+        plan_type=snapshot.get("type", ""),
+        plan_name=snapshot.get("name", ""),
+        billing_cycle=sub.billing_cycle,
+        status=sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+        base_price=sub.base_price,
+        discount_amount=sub.discount_amount,
+        extra_members_count=sub.extra_members_count,
+        extra_members_cost=sub.extra_members_cost,
+        feature_addons_cost=sub.feature_addons_cost,
+        final_price=sub.final_price,
+        start_date=sub.start_date.isoformat(),
+        end_date=sub.end_date.isoformat(),
+        trial_end_date=sub.trial_end_date.isoformat() if sub.trial_end_date else None,
+        auto_renew=sub.auto_renew,
+        features=features,
+    )
 
 
-@router.get("/subscription")
+# ---------------------------------------------------------------------------
+# Plans
+# ---------------------------------------------------------------------------
+
+@router.get("/plans", response_model=list[PlanResponse])
+async def list_plans(
+    db: AsyncSession = Depends(get_db),
+) -> list[PlanResponse]:
+    """Listar todos os planos activos."""
+    plans = await billing_service.list_active_plans(db)
+    return [
+        PlanResponse(
+            id=str(p.id),
+            type=p.type,
+            name=p.name,
+            description=p.description,
+            base_price_monthly=p.base_price_monthly,
+            base_price_annual=p.base_price_annual,
+            currency=p.currency.value if hasattr(p.currency, "value") else str(p.currency),
+            max_family_members=p.max_family_members,
+            extra_member_cost=p.extra_member_cost,
+            features=p.features or {},
+            is_active=p.is_active,
+            sort_order=p.sort_order,
+        )
+        for p in plans
+    ]
+
+
+@router.get("/plans/{plan_id}", response_model=PlanResponse)
+async def get_plan(
+    plan_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> PlanResponse:
+    """Obter detalhes de um plano específico."""
+    plan = await billing_service._get_plan_or_404(db, plan_id)
+    return PlanResponse(
+        id=str(plan.id),
+        type=plan.type,
+        name=plan.name,
+        description=plan.description,
+        base_price_monthly=plan.base_price_monthly,
+        base_price_annual=plan.base_price_annual,
+        currency=plan.currency.value if hasattr(plan.currency, "value") else str(plan.currency),
+        max_family_members=plan.max_family_members,
+        extra_member_cost=plan.extra_member_cost,
+        features=plan.features or {},
+        is_active=plan.is_active,
+        sort_order=plan.sort_order,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Subscription
+# ---------------------------------------------------------------------------
+
+@router.get("/subscription", response_model=SubscriptionResponse | None)
 async def get_subscription(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> dict:
-    """Get current subscription details."""
-    result = await db.execute(
-        select(Subscription).where(Subscription.user_id == user.id).order_by(Subscription.created_at.desc()).limit(1)
+) -> SubscriptionResponse | None:
+    """Obter a subscrição activa do utilizador."""
+    sub = await billing_service.get_active_subscription(db, user.id)
+    if not sub:
+        return None
+
+    features = await billing_service.get_user_features(db, user.id)
+    return _sub_to_response(sub, features)
+
+
+@router.post("/subscribe", response_model=SubscriptionResponse)
+async def subscribe(
+    data: SubscribeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Subscrever a um plano."""
+    sub = await billing_service.subscribe(
+        db,
+        user_id=user.id,
+        plan_id=data.plan_id,
+        billing_cycle=data.billing_cycle,
+        promo_code=data.promo_code,
     )
-    sub = result.scalar_one_or_none()
+    features = await billing_service.get_user_features(db, user.id)
+    return _sub_to_response(sub, features)
 
-    current_plan = user.plan or "free"
-    limits = PLAN_LIMITS.get(current_plan, PLAN_LIMITS["free"])
 
+@router.post("/preview-price", response_model=PriceBreakdown)
+async def preview_price(
+    data: SubscribeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PriceBreakdown:
+    """Calcular o preço sem criar subscrição."""
+    plan = await billing_service._get_plan_or_404(db, data.plan_id)
+
+    promotion = None
+    if data.promo_code:
+        plan_type = plan.type.value if hasattr(plan.type, "value") else str(plan.type)
+        promotion = await billing_service.validate_promotion(db, data.promo_code, plan_type)
+
+    return await billing_service.calculate_price(
+        db, plan, data.billing_cycle, promotion=promotion
+    )
+
+
+@router.post("/upgrade", response_model=SubscriptionResponse)
+async def upgrade(
+    data: UpgradeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Fazer upgrade do plano (pessoal -> familiar, etc.)."""
+    sub = await billing_service.upgrade_subscription(
+        db,
+        user_id=user.id,
+        target_plan_id=data.target_plan_id,
+        extra_members=data.extra_members,
+    )
+    features = await billing_service.get_user_features(db, user.id)
+    return _sub_to_response(sub, features)
+
+
+@router.post("/cancel", response_model=SubscriptionResponse)
+async def cancel(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Cancelar subscrição (mantém acesso até ao fim do período)."""
+    sub = await billing_service.cancel_subscription(db, user.id)
+    features = await billing_service.get_user_features(db, user.id)
+    return _sub_to_response(sub, features)
+
+
+@router.post("/reactivate", response_model=SubscriptionResponse)
+async def reactivate(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Reactivar subscrição cancelada (se ainda dentro do período)."""
+    sub = await billing_service.reactivate_subscription(db, user.id)
+    features = await billing_service.get_user_features(db, user.id)
+    return _sub_to_response(sub, features)
+
+
+# ---------------------------------------------------------------------------
+# Promotions
+# ---------------------------------------------------------------------------
+
+class ApplyPromoBody(BaseModel):
+    code: str
+
+
+@router.post("/apply-promo", response_model=PriceBreakdown)
+async def apply_promo(
+    data: ApplyPromoBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PriceBreakdown:
+    """Aplicar código promocional e ver o desconto resultante.
+
+    Valida o código contra a subscrição activa do utilizador.
+    Se não tiver subscrição activa, valida contra o plano pessoal por defeito.
+    """
+    sub = await billing_service.get_active_subscription(db, user.id)
+
+    if sub and sub.plan_id:
+        plan = await billing_service._get_plan_or_404(db, sub.plan_id)
+        billing_cycle = sub.billing_cycle
+    else:
+        # Preview against cheapest plan
+        stmt = (
+            select(Plan)
+            .where(Plan.is_active.is_(True))
+            .order_by(Plan.base_price_monthly.asc())
+            .limit(1)
+        )
+        result = await db.execute(stmt)
+        plan = result.scalar_one_or_none()
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nenhum plano disponível.",
+            )
+        from app.models.enums import BillingCycle
+        billing_cycle = BillingCycle.MONTHLY
+
+    plan_type = plan.type.value if hasattr(plan.type, "value") else str(plan.type)
+    promotion = await billing_service.validate_promotion(db, data.code, plan_type)
+    if not promotion:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Código promocional inválido ou expirado.",
+        )
+
+    return await billing_service.calculate_price(
+        db, plan, billing_cycle, promotion=promotion
+    )
+
+
+# ---------------------------------------------------------------------------
+# Add-ons
+# ---------------------------------------------------------------------------
+
+@router.get("/addons", response_model=list[FeatureAddonResponse])
+async def list_addons(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[FeatureAddonResponse]:
+    """Listar extras disponíveis."""
+    addons = await billing_service.list_active_addons(db)
+    return [
+        FeatureAddonResponse(
+            id=str(a.id),
+            name=a.name,
+            module=a.module,
+            description=a.description,
+            price_monthly=a.price_monthly,
+            price_annual=a.price_annual,
+            features_override=a.features_override or {},
+            is_active=a.is_active,
+        )
+        for a in addons
+    ]
+
+
+@router.post("/addons/{addon_id}/add")
+async def add_addon(
+    addon_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Adicionar extra à subscrição activa."""
+    sub_addon = await billing_service.add_addon_to_subscription(
+        db, user.id, str(addon_id)
+    )
     return {
-        "plan": current_plan,
-        "plan_name": PLAN_PRICES.get(current_plan, {}).get("name", "Gratuito"),
-        "status": sub.status if sub else "active",
-        "limits": limits,
-        "stripe_subscription_id": sub.stripe_subscription_id if sub else None,
+        "message": "Extra adicionado com sucesso.",
+        "addon_id": str(sub_addon.feature_addon_id),
+        "price": sub_addon.price,
     }
 
 
-@router.get("/plans")
-async def get_plans() -> list[dict]:
-    """Get all available plans with prices."""
-    return [
-        {
-            "id": plan_id,
-            "name": info["name"],
-            "price": info["price"],
-            "limits": PLAN_LIMITS[plan_id],
-        }
-        for plan_id, info in PLAN_PRICES.items()
-    ]
+@router.delete("/addons/{addon_id}/remove")
+async def remove_addon(
+    addon_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Remover extra da subscrição activa."""
+    await billing_service.remove_addon_from_subscription(
+        db, user.id, str(addon_id)
+    )
+    return {"message": "Extra removido com sucesso."}
 
+
+# ---------------------------------------------------------------------------
+# Stripe checkout
+# ---------------------------------------------------------------------------
 
 @router.post("/checkout")
 async def create_checkout(
@@ -106,11 +325,15 @@ async def create_checkout(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    """Create a Stripe checkout session for upgrading.
-    In dev without Stripe keys, returns a mock URL.
+    """Criar sessão de checkout Stripe para upgrade.
+
+    Em dev sem chaves Stripe, devolve URL mock.
     """
-    if plan not in PLAN_PRICES or plan == "free":
-        return {"error": "Plano inválido"}
+    if plan == "free":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Plano inválido para checkout.",
+        )
 
     # Mock in development
     if not settings.stripe_secret_key:
@@ -124,6 +347,10 @@ async def create_checkout(
     # stripe.checkout.Session.create(...)
     return {"checkout_url": "https://checkout.stripe.com/...", "session_id": "..."}
 
+
+# ---------------------------------------------------------------------------
+# Stripe webhook
+# ---------------------------------------------------------------------------
 
 @router.post("/webhook")
 async def stripe_webhook(
@@ -192,7 +419,7 @@ async def stripe_webhook(
 
 
 # ---------------------------------------------------------------------------
-# Helpers internos para gestão de subscrições
+# Helpers internos para gestão de subscrições (Stripe webhook)
 # ---------------------------------------------------------------------------
 
 
