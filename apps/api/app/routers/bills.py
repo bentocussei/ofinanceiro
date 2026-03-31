@@ -1,7 +1,7 @@
 """Bills router: CRUD + marcar como pago."""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -10,8 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.account import Account
 from app.models.bill import Bill
-from app.models.enums import BillStatus
+from app.models.enums import BillStatus, TransactionType
+from app.models.transaction import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/bills", tags=["bills"])
@@ -113,6 +115,24 @@ async def pay_bill(
     """Marcar conta como paga."""
     require_permission(ctx, "can_edit_budgets")
     bill = await _get_or_404(db, bill_id, user.id, family_id=ctx.family_id)
+
+    # Debit linked account and create transaction if account is set
+    if bill.pay_from_account_id:
+        account = await db.get(Account, bill.pay_from_account_id)
+        if account:
+            account.balance -= bill.amount
+
+            txn = Transaction(
+                user_id=user.id,
+                account_id=bill.pay_from_account_id,
+                category_id=bill.category_id,
+                amount=bill.amount,
+                type=TransactionType.EXPENSE,
+                description=f"Pago: {bill.name}",
+                transaction_date=date.today(),
+            )
+            db.add(txn)
+
     bill.status = BillStatus.PAID
     bill.last_paid_at = datetime.now(UTC)
     await db.flush()

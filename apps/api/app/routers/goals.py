@@ -103,7 +103,9 @@ async def contribute_to_goal(
     goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})
-    contribution = await goal_service.contribute(db, goal, user.id, data.amount, data.note)
+    contribution = await goal_service.contribute(
+        db, goal, user.id, data.amount, data.note, from_account_id=data.from_account_id
+    )
     return GoalContributionResponse.model_validate(contribution)
 
 

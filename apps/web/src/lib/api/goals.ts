@@ -85,10 +85,13 @@ export const goalsApi = {
       ...opts,
     }),
 
-  contribute: (id: string, amount: number, opts?: H) =>
+  contribute: (id: string, amount: number, fromAccountId?: string, opts?: H) =>
     apiFetch<void>("/api/v1/goals/" + id + "/contribute", {
       method: "POST",
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({
+        amount,
+        ...(fromAccountId ? { from_account_id: fromAccountId } : {}),
+      }),
       ...opts,
     }),
 

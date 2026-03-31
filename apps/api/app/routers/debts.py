@@ -1,6 +1,7 @@
 """Debts router: CRUD + payments + amortization + simulation."""
 
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -10,7 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.account import Account
 from app.models.debt import Debt, DebtPayment
+from app.models.enums import TransactionType
+from app.models.transaction import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/debts", tags=["debts"])
@@ -55,7 +59,8 @@ class DebtUpdate(BaseModel):
 
 class PaymentCreate(BaseModel):
     amount: int = Field(gt=0)
-    payment_date: str
+    payment_date: date | None = None  # defaults to today in endpoint
+    from_account_id: uuid.UUID | None = None
 
 
 @router.get("/")
@@ -194,11 +199,40 @@ async def register_payment(
     require_permission(ctx, "can_add_transactions")
     debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
 
-    payment = DebtPayment(debt_id=debt.id, amount=data.amount, payment_date=data.payment_date)
+    payment_date = data.payment_date or date.today()
+
+    # Determine source account: explicit param > debt's linked_account_id
+    account_id = data.from_account_id or debt.linked_account_id
+    transaction_id: uuid.UUID | None = None
+
+    if account_id:
+        account = await db.get(Account, account_id)
+        if account:
+            account.balance -= data.amount
+
+            txn = Transaction(
+                user_id=user.id,
+                account_id=account_id,
+                amount=data.amount,
+                type=TransactionType.EXPENSE,
+                description=f"Pagamento: {debt.name}",
+                transaction_date=payment_date,
+            )
+            db.add(txn)
+            await db.flush()
+            transaction_id = txn.id
+
+    payment = DebtPayment(
+        debt_id=debt.id,
+        amount=data.amount,
+        payment_date=payment_date,
+        transaction_id=transaction_id,
+    )
     db.add(payment)
     debt.current_balance = max(0, debt.current_balance - data.amount)
     if debt.current_balance == 0:
         debt.is_active = False
+        debt.is_paid_off = True
     await db.flush()
     return {"success": True, "remaining_balance": debt.current_balance}
 

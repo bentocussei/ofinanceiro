@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.account import Account
 from app.models.enums import GoalStatus, TransactionType
 from app.models.goal import Goal, GoalContribution
 from app.models.transaction import Transaction
@@ -102,8 +103,32 @@ async def delete_goal(db: AsyncSession, goal: Goal) -> None:
 
 
 async def contribute(
-    db: AsyncSession, goal: Goal, user_id: uuid.UUID, amount: int, note: str | None = None
+    db: AsyncSession,
+    goal: Goal,
+    user_id: uuid.UUID,
+    amount: int,
+    note: str | None = None,
+    from_account_id: uuid.UUID | None = None,
 ) -> GoalContribution:
+    # Determine the source account: explicit param > goal's savings_account_id
+    account_id = from_account_id or goal.savings_account_id
+
+    # If there's a linked account, debit it and create a transaction
+    if account_id:
+        account = await db.get(Account, account_id)
+        if account:
+            account.balance -= amount
+
+            txn = Transaction(
+                user_id=user_id,
+                account_id=account_id,
+                amount=amount,
+                type=TransactionType.EXPENSE,
+                description=f"Contribuição: {goal.name}",
+                transaction_date=date.today(),
+            )
+            db.add(txn)
+
     contribution = GoalContribution(
         goal_id=goal.id,
         user_id=user_id,
@@ -162,8 +187,6 @@ async def calculate_emergency_fund(
     family_id: uuid.UUID | None = None,
 ) -> int:
     """Calculate recommended emergency fund: 3 months of average expenses."""
-    from app.models.account import Account
-
     stmt = (
         select(func.coalesce(func.avg(Transaction.amount), 0))
         .join(Account, Transaction.account_id == Account.id)
