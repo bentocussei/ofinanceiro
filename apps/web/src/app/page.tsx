@@ -73,69 +73,37 @@ const features = [
 
 const plans = [
   {
-    name: "Gratuito",
-    price: "0",
-    suffix: "Kz/mês",
-    description: "Para começar a organizar",
-    features: [
-      "2 contas",
-      "50 transacções/mês",
-      "20 mensagens com assistente",
-      "Orçamentos básicos",
-      "Relatórios simples",
-    ],
-    cta: "Começar grátis",
-    href: "/register",
-    highlighted: false,
-  },
-  {
     name: "Pessoal",
     price: "1.490",
     suffix: "Kz/mês",
     description: "Controlo total das suas finanças",
     features: [
-      "Contas ilimitadas",
-      "Transacções ilimitadas",
-      "200 mensagens com assistente",
-      "20 fotos de recibos/mês",
-      "10 análises avançadas/mês",
-      "Orçamentos e relatórios completos",
+      "Contas e transacções ilimitadas",
+      "Assistente IA completo",
+      "Fotografar recibos (OCR inteligente)",
+      "Orçamentos avançados com alertas",
+      "Metas de poupança e investimentos",
+      "Património e relatórios completos",
     ],
-    cta: "Experimentar 7 dias grátis",
+    cta: "Começar 90 dias grátis",
     href: "/register",
     highlighted: true,
   },
   {
-    name: "Família",
-    price: "2.990",
+    name: "Familiar",
+    price: "3.490",
     suffix: "Kz/mês",
-    description: "Para casais e famílias",
+    description: "Gestão financeira para toda a família",
     features: [
       "Tudo do Pessoal",
-      "Até 6 membros",
+      "Até 5 membros incluídos",
       "Contas e orçamentos partilhados",
       "Metas familiares em conjunto",
-      "50 fotos de recibos/mês",
+      "Divisão de despesas inteligente",
       "Relatórios por membro",
+      "Membros extra: +490 Kz/mês cada",
     ],
-    cta: "Experimentar 7 dias grátis",
-    href: "/register",
-    highlighted: false,
-  },
-  {
-    name: "Família+",
-    price: "4.990",
-    suffix: "Kz/mês",
-    description: "Sem limites para toda a família",
-    features: [
-      "Tudo ilimitado",
-      "Membros ilimitados",
-      "Análises avançadas ilimitadas",
-      "Consultoria IA premium",
-      "Comandos de voz ilimitados",
-      "Suporte prioritário",
-    ],
-    cta: "Experimentar 7 dias grátis",
+    cta: "Começar 90 dias grátis",
     href: "/register",
     highlighted: false,
   },
@@ -314,10 +282,23 @@ export default function LandingPage() {
             Planos simples, em Kwanzas
           </h2>
           <p className="mt-3 max-w-xl text-muted-foreground">
-            Comece grátis. Faça upgrade quando precisar de mais controlo.
+            Sem plano gratuito limitado. Acesso completo desde o primeiro dia.
           </p>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Launch promotion banner */}
+          <div className="mt-8 rounded-xl bg-primary/10 border border-primary/20 p-5 flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary">
+              <span className="text-lg text-primary-foreground">%</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-primary">Promoção de lançamento</p>
+              <p className="text-sm text-muted-foreground">
+                Registe-se agora e receba <span className="font-bold text-foreground">90 dias grátis</span> em qualquer plano. Sem compromisso, cancele quando quiser.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-2 max-w-3xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
