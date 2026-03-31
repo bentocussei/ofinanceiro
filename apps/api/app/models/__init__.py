@@ -44,6 +44,15 @@ from app.models.goal import Goal, GoalContribution
 from app.models.income_source import IncomeSource
 from app.models.investment import Investment
 from app.models.notification import Notification
+from app.models.permission import (
+    AdminRole,
+    AdminRolePermission,
+    AdminUser,
+    AdminUserRevokedPermission,
+    Permission,
+    PlanPermission,
+    UserPermission,
+)
 from app.models.plan import Plan
 from app.models.promotion import Promotion, PromotionUsage
 from app.models.recurring_rule import RecurringRule
@@ -55,9 +64,9 @@ from app.models.user import User
 __all__ = [
     "Base",
     "BaseModel",
+    # Enums
     "AccountType",
     "AccountUsageType",
-    "Asset",
     "AssetType",
     "BillingCycle",
     "BillStatus",
@@ -73,26 +82,24 @@ __all__ = [
     "FactType",
     "FamilyRelation",
     "FamilyRole",
-    "FeatureAddon",
     "GoalStatus",
     "IncomeSourceType",
     "NotificationType",
-    "Plan",
     "PlanType",
-    "Promotion",
     "PromotionType",
-    "PromotionUsage",
     "RecurrenceFrequency",
     "SnapshotPeriodType",
     "SplitType",
-    "Subscription",
-    "SubscriptionAddon",
     "SubscriptionPlan",
     "SubscriptionStatus",
     "TransactionType",
-    "User",
-    "UserSubscription",
+    # Models
     "Account",
+    "AdminRole",
+    "AdminRolePermission",
+    "AdminUser",
+    "AdminUserRevokedPermission",
+    "Asset",
     "Bill",
     "Budget",
     "BudgetItem",
@@ -104,6 +111,7 @@ __all__ = [
     "Family",
     "FamilyInvite",
     "FamilyMember",
+    "FeatureAddon",
     "FinanceSettings",
     "FinanceSnapshot",
     "Goal",
@@ -111,7 +119,17 @@ __all__ = [
     "IncomeSource",
     "Investment",
     "Notification",
+    "Permission",
+    "Plan",
+    "PlanPermission",
+    "Promotion",
+    "PromotionUsage",
     "RecurringRule",
+    "Subscription",
+    "SubscriptionAddon",
     "Tag",
     "Transaction",
+    "User",
+    "UserPermission",
+    "UserSubscription",
 ]

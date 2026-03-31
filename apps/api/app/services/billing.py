@@ -523,6 +523,7 @@ async def get_auto_register_promotion(
             Promotion.is_active.is_(True),
             Promotion.start_date <= now,
         )
+        .order_by(Promotion.priority.asc())
         .limit(1)
     )
     result = await db.execute(stmt)
