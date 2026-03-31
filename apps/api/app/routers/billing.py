@@ -20,17 +20,46 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 
 PLAN_PRICES = {
-    "free": {"price": 0, "name": "Gratuito"},
-    "personal": {"price": 299, "name": "Pessoal", "stripe_price_id": "price_personal"},
-    "family": {"price": 599, "name": "Família", "stripe_price_id": "price_family"},
-    "family_plus": {"price": 999, "name": "Família+", "stripe_price_id": "price_family_plus"},
+    "free": {"price": 0, "price_annual": 0, "name": "Gratuito", "currency": "AOA"},
+    "personal": {
+        "price": 1490, "price_annual": 14900, "name": "Pessoal", "currency": "AOA",
+        "stripe_price_id": "price_personal", "stripe_price_annual_id": "price_personal_annual",
+    },
+    "family": {
+        "price": 2990, "price_annual": 29900, "name": "Família", "currency": "AOA",
+        "stripe_price_id": "price_family", "stripe_price_annual_id": "price_family_annual",
+    },
+    "family_plus": {
+        "price": 4990, "price_annual": 49900, "name": "Família+", "currency": "AOA",
+        "stripe_price_id": "price_family_plus", "stripe_price_annual_id": "price_family_plus_annual",
+    },
 }
 
 PLAN_LIMITS = {
-    "free": {"transactions": 50, "ai_questions": 5, "family_members": 0},
-    "personal": {"transactions": -1, "ai_questions": -1, "family_members": 0},
-    "family": {"transactions": -1, "ai_questions": -1, "family_members": 6},
-    "family_plus": {"transactions": -1, "ai_questions": -1, "family_members": -1},
+    "free": {
+        "accounts": 2, "transactions": 50,
+        "ai_messages": 20, "ai_model": "haiku",
+        "ocr_receipts": 0, "voice_commands": 0,
+        "opus_analyses": 0, "family_members": 0,
+    },
+    "personal": {
+        "accounts": -1, "transactions": -1,
+        "ai_messages": 200, "ai_model": "sonnet",
+        "ocr_receipts": 20, "voice_commands": 10,
+        "opus_analyses": 10, "family_members": 0,
+    },
+    "family": {
+        "accounts": -1, "transactions": -1,
+        "ai_messages": 500, "ai_model": "sonnet",
+        "ocr_receipts": 50, "voice_commands": 30,
+        "opus_analyses": 30, "family_members": 6,
+    },
+    "family_plus": {
+        "accounts": -1, "transactions": -1,
+        "ai_messages": -1, "ai_model": "opus",
+        "ocr_receipts": 100, "voice_commands": -1,
+        "opus_analyses": -1, "family_members": -1,
+    },
 }
 
 
