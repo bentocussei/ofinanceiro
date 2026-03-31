@@ -396,7 +396,80 @@ railway open
 
 ---
 
-## 12. Verificação Final
+## 12. Cron Jobs
+
+Os cron jobs são serviços Railway separados que usam `curlimages/curl` para chamar endpoints da API periodicamente.
+
+### 12.1 Gerar SERVICE_TOKEN
+
+```bash
+SERVICE_TOKEN=$(openssl rand -hex 32)
+
+# Configurar na API de cada ambiente
+set_var $API_SERVICE "SERVICE_TOKEN" "$SERVICE_TOKEN"  # production
+# Repetir para staging com token diferente
+```
+
+### 12.2 Criar serviços cron via API
+
+```bash
+# Notifications — a cada hora
+curl -s -X POST https://backboard.railway.app/graphql/v2 \
+  -H "Authorization: Bearer $RAILWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { serviceCreate(input: { projectId: \"'"$PROJECT_ID"'\", name: \"cron-notifications\", source: { image: \"curlimages/curl:latest\" } }) { id } }"}'
+
+# Snapshots — diário à meia-noite
+curl -s -X POST https://backboard.railway.app/graphql/v2 \
+  -H "Authorization: Bearer $RAILWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { serviceCreate(input: { projectId: \"'"$PROJECT_ID"'\", name: \"cron-snapshots\", source: { image: \"curlimages/curl:latest\" } }) { id } }"}'
+```
+
+### 12.3 Configurar schedule e comando
+
+```bash
+CRON_NOTIF_ID="<id-retornado>"
+CRON_SNAP_ID="<id-retornado>"
+API_DOMAIN="ofinanceiro-api-production.up.railway.app"
+
+# Notifications: cada hora (0 * * * *)
+curl -s -X POST https://backboard.railway.app/graphql/v2 \
+  -H "Authorization: Bearer $RAILWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { serviceInstanceUpdate(serviceId: \"'"$CRON_NOTIF_ID"'\", input: { cronSchedule: \"0 * * * *\", startCommand: \"curl -s -X POST https://'"$API_DOMAIN"'/api/v1/notifications/check -H \\\"X-Service-Token: '"$SERVICE_TOKEN"'\\\"\" }) }"}'
+
+# Snapshots: meia-noite UTC (0 0 * * *)
+curl -s -X POST https://backboard.railway.app/graphql/v2 \
+  -H "Authorization: Bearer $RAILWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { serviceInstanceUpdate(serviceId: \"'"$CRON_SNAP_ID"'\", input: { cronSchedule: \"0 0 * * *\", startCommand: \"curl -s -X POST https://'"$API_DOMAIN"'/api/v1/snapshots/generate -H \\\"X-Service-Token: '"$SERVICE_TOKEN"'\\\"\" }) }"}'
+```
+
+### 12.4 Repetir para staging
+
+Usar domínio staging (`ofinanceiro-api-staging.up.railway.app`) e SERVICE_TOKEN diferente. Criar serviços com nomes `cron-notifications-stg` e `cron-snapshots-stg`.
+
+### 12.5 Serviços cron por ambiente
+
+| Ambiente | Serviço | Schedule | Endpoint |
+|----------|---------|----------|----------|
+| Production | cron-notifications | `0 * * * *` | `/api/v1/notifications/check` |
+| Production | cron-snapshots | `0 0 * * *` | `/api/v1/snapshots/generate` |
+| Staging | cron-notifications-stg | `0 * * * *` | `/api/v1/notifications/check` |
+| Staging | cron-snapshots-stg | `0 0 * * *` | `/api/v1/snapshots/generate` |
+
+### 12.6 Backend — Dual auth
+
+Os endpoints de cron aceitam DOIS modos de autenticação:
+- `X-Service-Token: {token}` → executa para TODOS os utilizadores (cron)
+- `Authorization: Bearer {jwt}` → executa para o utilizador autenticado (manual)
+
+Código em `apps/api/app/dependencies.py` (`verify_service_token`, `get_optional_user`).
+
+---
+
+## 13. Verificação Final
 
 ```bash
 # API health
@@ -450,7 +523,7 @@ curl -X POST https://ofinanceiro-api-production.up.railway.app/api/v1/auth/regis
 
 ---
 
-## 13. Configurar Ambiente Staging
+## 14. Configurar Ambiente Staging
 
 ### Criar via Dashboard (recomendado)
 
