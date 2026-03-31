@@ -203,6 +203,10 @@ async def subscribe(
 
     await db.flush()
 
+    # Sync plan permissions
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, user_id, sub.plan_snapshot)
+
     # Record promotion usage
     if promotion:
         await record_promotion_usage(
@@ -296,6 +300,11 @@ async def upgrade_subscription(
     )
     db.add(new_sub)
     await db.flush()
+
+    # Sync plan permissions for the new plan
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, user_id, new_sub.plan_snapshot)
+
     await db.refresh(new_sub)
     return new_sub
 
@@ -316,6 +325,10 @@ async def downgrade_subscription(
         )
 
     sub.auto_renew = False
+
+    # When downgrade takes effect at period end, permissions will be synced
+    # by the renewal job. For now, user keeps current plan permissions.
+
     await db.flush()
     await db.refresh(sub)
     return sub
@@ -478,6 +491,10 @@ async def apply_registration_promotion(
     )
     db.add(sub)
     await db.flush()
+
+    # Sync plan permissions for the trial subscription
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, user_id, sub.plan_snapshot)
 
     await record_promotion_usage(
         db, promo, user_id, sub.id, breakdown.discount_amount
@@ -782,6 +799,24 @@ async def add_addon_to_subscription(
     )
 
     await db.flush()
+
+    # Grant permissions from the addon's features_override
+    from app.services.permission import grant_user_permission
+    features_override = addon.features_override or {}
+    for module_key, module_features in features_override.items():
+        if isinstance(module_features, dict):
+            for feature_key, value in module_features.items():
+                if value is True:
+                    # Grant standard CRUD permissions for this feature
+                    for action in ("create", "read", "update", "delete"):
+                        code = f"{module_key}:{feature_key}:{action}"
+                        await grant_user_permission(db, user_id, code, source="addon")
+                elif isinstance(value, dict):
+                    for action, enabled in value.items():
+                        if enabled is True:
+                            code = f"{module_key}:{feature_key}:{action}"
+                            await grant_user_permission(db, user_id, code, source="addon")
+
     await db.refresh(sub_addon)
     return sub_addon
 
@@ -815,6 +850,22 @@ async def remove_addon_from_subscription(
         )
 
     sub_addon.is_active = False
+
+    # Revoke permissions from the addon's features_override
+    from app.services.permission import revoke_user_permission
+    features_override = sub_addon.addon_snapshot.get("features_override", {})
+    for module_key, module_features in features_override.items():
+        if isinstance(module_features, dict):
+            for feature_key, value in module_features.items():
+                if value is True:
+                    for action in ("create", "read", "update", "delete"):
+                        code = f"{module_key}:{feature_key}:{action}"
+                        await revoke_user_permission(db, user_id, code)
+                elif isinstance(value, dict):
+                    for action, enabled in value.items():
+                        if enabled is True:
+                            code = f"{module_key}:{feature_key}:{action}"
+                            await revoke_user_permission(db, user_id, code)
 
     # Recalculate subscription totals
     sub.feature_addons_cost = max(0, sub.feature_addons_cost - sub_addon.price)

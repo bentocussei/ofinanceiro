@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.investment import Investment
 from app.models.user import User
 
@@ -161,6 +161,7 @@ async def create_investment(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("investments:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
     inv = Investment(

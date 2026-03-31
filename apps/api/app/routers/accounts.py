@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -65,6 +65,7 @@ async def create_account(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("accounts:manage:create"),
 ) -> AccountResponse:
     require_permission(ctx, "can_add_transactions")
     account = await account_service.create_account(db, user.id, data, family_id=ctx.family_id)
@@ -93,6 +94,7 @@ async def transfer(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("accounts:transfer:create"),
 ) -> TransferResponse:
     """Transfer between own accounts. Creates expense on source, income on destination."""
     require_permission(ctx, "can_add_transactions")

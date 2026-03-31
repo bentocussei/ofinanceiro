@@ -1,4 +1,4 @@
-"""FastAPI dependencies: DB session, current user, rate limiting, service token."""
+"""FastAPI dependencies: DB session, current user, rate limiting, service token, plan permissions."""
 
 import logging
 
@@ -10,6 +10,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services.auth import decode_access_token, get_user_by_id
+from app.services.permission import has_permission as check_plan_perm
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +76,50 @@ async def get_optional_user(
     return user
 
 
+async def require_plan_permission(
+    permission_code: str,
+    db: AsyncSession,
+    user: User,
+) -> None:
+    """Check if user's plan includes this permission."""
+    if not await check_plan_perm(db, user.id, permission_code):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "PLAN_LIMIT",
+                "message": "O seu plano não inclui esta funcionalidade. Faça upgrade para aceder.",
+            },
+        )
+
+
+def PlanPermission(code: str):  # noqa: N802 — factory function, PascalCase intentional
+    """Dependency factory for plan permission checks.
+
+    Usage in routers:
+        @router.post("/")
+        async def create_item(..., _perm: None = PlanPermission("transactions:manage:create")):
+    """
+    async def _check(
+        db: AsyncSession = Depends(get_db),
+        user: User = Depends(get_current_user),
+    ) -> None:
+        if not await check_plan_perm(db, user.id, code):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "PLAN_LIMIT",
+                    "message": "Funcionalidade não disponível no seu plano.",
+                },
+            )
+
+    return Depends(_check)
+
+
 __all__ = [
     "get_db",
     "get_current_user",
     "verify_service_token",
     "get_optional_user",
+    "require_plan_permission",
+    "PlanPermission",
 ]

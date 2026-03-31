@@ -34,6 +34,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
+import { usePermissions } from "@/providers/PermissionProvider"
 
 interface NavItem {
   href: string
@@ -116,11 +117,30 @@ function applyTheme(t: Theme) {
   }
 }
 
+const FAMILY_MODULE_MAP: Record<string, string> = {
+  "/family/dashboard": "",
+  "/family/accounts": "accounts",
+  "/family/transactions": "transactions",
+  "/family/budget": "budgets",
+  "/family/goals": "goals",
+  "/family/debts": "debts",
+  "/family/investments": "investments",
+  "/family/assets": "assets",
+  "/family/income-sources": "income_sources",
+  "/family/bills": "bills",
+  "/family/recurring-rules": "recurring_rules",
+  "/family/members": "family",
+  "/family/expense-splits": "expense_splits",
+  "/family/reports": "reports",
+  "/family/notifications": "notifications",
+}
+
 export function FamilySidebar({ familyName }: { familyName: string }) {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { hasModuleAccess } = usePermissions()
 
   useEffect(() => {
     getCurrentUser().then(setUser)
@@ -130,6 +150,16 @@ export function FamilySidebar({ familyName }: { familyName: string }) {
     if (href === "/family/dashboard") return pathname === "/family/dashboard"
     return pathname.startsWith(href)
   }
+
+  const filteredSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      const module = FAMILY_MODULE_MAP[item.href]
+      if (module === undefined) return true
+      if (module === "") return true
+      return hasModuleAccess(module)
+    }),
+  })).filter((section) => section.items.length > 0)
 
   return (
     <aside
@@ -164,7 +194,7 @@ export function FamilySidebar({ familyName }: { familyName: string }) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2">
-        {NAV_SECTIONS.map((section) => (
+        {filteredSections.map((section) => (
           <div key={section.label} className="mb-4">
             {!collapsed && (
               <p className="px-3 mb-1 text-[12px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
