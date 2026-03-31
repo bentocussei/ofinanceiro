@@ -364,7 +364,17 @@ railway logs --filter "@level:error"  # Filtrar por erros
 railway redeploy -y               # Forçar redeploy sem confirmação
 
 # Deploy directo (upload do directório local)
-cd apps/web && railway up          # Faz upload e build
+# IMPORTANTE: executar SEMPRE a partir da RAIZ do monorepo!
+# O Railway aplica o rootDirectory configurado (apps/web ou apps/api)
+# Se executar de apps/web/, tenta encontrar apps/web/ dentro de apps/web/ e falha
+railway service ofinanceiro-web && railway up   # Deploy web
+railway service ofinanceiro-api && railway up   # Deploy API
+
+# Para staging:
+railway environment staging
+railway service ofinanceiro-web && railway up
+railway service ofinanceiro-api && railway up
+railway environment production  # voltar a production
 
 # Variáveis de ambiente
 railway variables                  # Ver variáveis do serviço linkado
