@@ -450,11 +450,13 @@ async def apply_registration_promotion(
     )
 
     now = datetime.now(timezone.utc)
-    end = _period_end(now, BillingCycle.MONTHLY)
 
     trial_end: datetime | None = None
     if breakdown.free_days > 0:
         trial_end = now + timedelta(days=breakdown.free_days)
+
+    # Trial period uses free_days as end_date, otherwise normal billing cycle
+    end = trial_end if trial_end else _period_end(now, BillingCycle.MONTHLY)
 
     sub = UserSubscription(
         user_id=user_id,
