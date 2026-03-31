@@ -11,7 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.account import Account
+from app.models.enums import TransactionType
 from app.models.investment import Investment
+from app.models.transaction import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/investments", tags=["investments"])
@@ -40,6 +43,7 @@ class InvestmentCreate(BaseModel):
     start_date: str | None = None
     maturity_date: str | None = None
     notes: str | None = None
+    from_account_id: uuid.UUID | None = None
 
     def get_interest_rate_bp(self) -> int | None:
         """Return interest rate in basis points, preferring annual_return_rate if provided."""
@@ -172,6 +176,23 @@ async def create_investment(
         maturity_date=data.maturity_date, notes=data.notes,
     )
     db.add(inv)
+
+    # Optionally debit account and create expense transaction
+    if data.from_account_id:
+        account = await db.get(Account, data.from_account_id)
+        if not account:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+        account.balance -= data.invested_amount
+        txn = Transaction(
+            user_id=user.id,
+            account_id=data.from_account_id,
+            amount=data.invested_amount,
+            type=TransactionType.EXPENSE,
+            description=f"Investimento: {data.name}",
+            transaction_date=date.today(),
+        )
+        db.add(txn)
+
     await db.flush()
     return {"id": str(inv.id), "name": inv.name}
 

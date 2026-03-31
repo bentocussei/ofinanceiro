@@ -74,6 +74,7 @@ export interface CreateAssetData {
   insurance_expiry?: string
   notes?: string
   family_id?: string
+  from_account_id?: string
 }
 
 export interface UpdateAssetData {

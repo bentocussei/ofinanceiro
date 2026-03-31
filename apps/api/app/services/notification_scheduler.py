@@ -5,6 +5,7 @@ Checks: bills due, low balance, budget alerts, goal milestones, recurring rules.
 Creates notifications + optionally sends push/SMS.
 """
 
+import calendar
 import logging
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -15,9 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.account import Account
 from app.models.bill import Bill
 from app.models.budget import Budget
-from app.models.enums import BillStatus, NotificationType, TransactionType
+from app.models.enums import BillStatus, NotificationType, RecurrenceFrequency, TransactionType
 from app.models.goal import Goal
 from app.models.notification import Notification
+from app.models.recurring_rule import RecurringRule
 from app.models.transaction import Transaction
 from app.models.user import User
 
@@ -34,9 +36,19 @@ async def run_notification_scheduler(db: AsyncSession) -> dict:
         count = await _check_user_notifications(db, user_id)
         total_created += count
 
+    # Process recurring rules globally (not per-user, query is already filtered)
+    recurring_count = await process_recurring_rules(db)
+
     await db.flush()
-    logger.info("Notification scheduler: created %d notifications for %d users", total_created, len(user_ids))
-    return {"users_checked": len(user_ids), "notifications_created": total_created}
+    logger.info(
+        "Notification scheduler: created %d notifications for %d users, processed %d recurring rules",
+        total_created, len(user_ids), recurring_count,
+    )
+    return {
+        "users_checked": len(user_ids),
+        "notifications_created": total_created,
+        "recurring_rules_processed": recurring_count,
+    }
 
 
 async def run_notification_scheduler_for_user(db: AsyncSession, user_id: uuid.UUID) -> dict:
@@ -256,3 +268,90 @@ async def _check_goal_milestones(db: AsyncSession, user_id: uuid.UUID) -> int:
                 break  # Only the highest milestone
 
     return created
+
+
+def _add_months(d: date, months: int) -> date:
+    """Add months to a date, clamping day to last valid day of target month."""
+    month = d.month - 1 + months
+    year = d.year + month // 12
+    month = month % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _calculate_next_due(current_due: date, frequency: RecurrenceFrequency) -> date:
+    """Calculate the next due date based on frequency."""
+    match frequency:
+        case RecurrenceFrequency.WEEKLY:
+            return current_due + timedelta(weeks=1)
+        case RecurrenceFrequency.BIWEEKLY:
+            return current_due + timedelta(weeks=2)
+        case RecurrenceFrequency.MONTHLY:
+            return _add_months(current_due, 1)
+        case RecurrenceFrequency.QUARTERLY:
+            return _add_months(current_due, 3)
+        case RecurrenceFrequency.SEMIANNUAL:
+            return _add_months(current_due, 6)
+        case RecurrenceFrequency.YEARLY:
+            return _add_months(current_due, 12)
+        case _:
+            return _add_months(current_due, 1)
+
+
+async def process_recurring_rules(db: AsyncSession) -> int:
+    """Process all due recurring rules: create transactions and update account balances.
+
+    Returns the count of rules processed.
+    """
+    today = date.today()
+
+    # Find all active rules that are due
+    result = await db.execute(
+        select(RecurringRule).where(
+            RecurringRule.is_active.is_(True),
+            RecurringRule.next_due.isnot(None),
+            RecurringRule.next_due <= today,
+        )
+    )
+    rules = list(result.scalars().all())
+
+    processed = 0
+    for rule in rules:
+        # Skip if end_date has passed
+        if rule.end_date and today > rule.end_date:
+            rule.is_active = False
+            continue
+
+        # Create transaction
+        txn = Transaction(
+            user_id=rule.user_id,
+            account_id=rule.account_id,
+            category_id=rule.category_id,
+            amount=rule.amount,
+            type=rule.type,
+            description=rule.description,
+            transaction_date=today,
+            is_recurring=True,
+        )
+        db.add(txn)
+
+        # Update account balance
+        account = await db.get(Account, rule.account_id)
+        if account:
+            if rule.type == TransactionType.INCOME:
+                account.balance += rule.amount
+            elif rule.type == TransactionType.EXPENSE:
+                account.balance -= rule.amount
+
+        # Update rule: mark as processed and calculate next due
+        rule.last_processed = today
+        rule.next_due = _calculate_next_due(rule.next_due, rule.frequency)
+
+        # Deactivate if next_due is past end_date
+        if rule.end_date and rule.next_due > rule.end_date:
+            rule.is_active = False
+
+        processed += 1
+
+    logger.info("Processed %d recurring rules", processed)
+    return processed
