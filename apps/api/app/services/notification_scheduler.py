@@ -39,6 +39,14 @@ async def run_notification_scheduler(db: AsyncSession) -> dict:
     return {"users_checked": len(user_ids), "notifications_created": total_created}
 
 
+async def run_notification_scheduler_for_user(db: AsyncSession, user_id: uuid.UUID) -> dict:
+    """Run notification checks for a single user. Returns summary."""
+    count = await _check_user_notifications(db, user_id)
+    await db.flush()
+    logger.info("Notification scheduler (single user %s): created %d notifications", user_id, count)
+    return {"users_checked": 1, "notifications_created": count}
+
+
 async def _check_user_notifications(db: AsyncSession, user_id: uuid.UUID) -> int:
     """Check all notification conditions for a single user."""
     created = 0

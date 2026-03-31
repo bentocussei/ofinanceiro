@@ -20,6 +20,20 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
   },
+  openGraph: {
+    title: "O Financeiro",
+    description:
+      "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+    type: "website",
+    locale: "pt_AO",
+    siteName: "O Financeiro",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "O Financeiro",
+    description:
+      "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+  },
 };
 
 export default function RootLayout({

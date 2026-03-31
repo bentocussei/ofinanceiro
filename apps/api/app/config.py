@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
 
+    # Service Token (cron jobs)
+    service_token: str = ""
+
     # AI
     anthropic_api_key: str = ""
     openai_api_key: str = ""
