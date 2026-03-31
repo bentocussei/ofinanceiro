@@ -1,17 +1,24 @@
 """Notifications router: CRUD + mark read + scheduler trigger."""
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_optional_user
 from app.models.notification import Notification
 from app.models.user import User
-from app.services.notification_scheduler import run_notification_scheduler
+from app.services.notification_scheduler import (
+    run_notification_scheduler,
+    run_notification_scheduler_for_user,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 
@@ -108,10 +115,27 @@ async def mark_all_read(
 
 @router.post("/check")
 async def trigger_notification_check(
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_optional_user),
 ) -> dict:
-    """Trigger notification checks for all users.
-    In production, this runs as a scheduled cron job.
+    """Verificação de notificações.
+
+    - Com SERVICE_TOKEN: executa para TODOS os utilizadores (cron job).
+    - Com JWT de utilizador: executa apenas para esse utilizador.
+    - Sem autenticação válida: retorna 401.
     """
-    return await run_notification_scheduler(db)
+    service_token = request.headers.get("X-Service-Token") or ""
+    has_valid_service_token = (
+        bool(settings.service_token) and service_token == settings.service_token
+    )
+
+    if has_valid_service_token:
+        logger.info("Verificação de notificações via cron (todos os utilizadores)")
+        return await run_notification_scheduler(db)
+
+    if user is not None:
+        logger.info("Verificação de notificações para utilizador %s", user.id)
+        return await run_notification_scheduler_for_user(db, user.id)
+
+    raise HTTPException(status_code=401, detail="Autenticação necessária")

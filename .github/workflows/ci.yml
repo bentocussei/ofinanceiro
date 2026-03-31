@@ -1,0 +1,84 @@
+# CI Pipeline for O Financeiro monorepo
+#
+# Deployment is handled by Railway via GitHub integration:
+# - Push to `staging` branch → auto-deploy to staging environment
+# - Push to `main` branch → auto-deploy to production environment
+# - `dev` branch has no deployment — development only
+#
+# This workflow only runs linting, type checking, tests, and builds.
+
+name: CI
+
+on:
+  push:
+    branches: [dev, staging, main]
+  pull_request:
+    branches: [dev, staging, main]
+
+jobs:
+  backend:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ofinanceiro
+          POSTGRES_PASSWORD: ofinanceiro
+          POSTGRES_DB: ofinanceiro_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Format check (ruff)
+        run: ruff format --check .
+      - name: Tests (pytest)
+        env:
+          DATABASE_URL: postgresql+asyncpg://ofinanceiro:ofinanceiro@localhost:5432/ofinanceiro_test
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: test
+          JWT_SECRET: test-secret
+          JWT_REFRESH_SECRET: test-refresh-secret
+        run: python -m pytest tests/ -v --tb=short
+
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+      - run: npm install
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        run: npm run build

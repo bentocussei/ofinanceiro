@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
+import { onboardingApi } from "@/lib/api/onboarding"
 import { reportsApi, type PatrimonyData } from "@/lib/api/reports"
 import { transactionsApi } from "@/lib/api/transactions"
 import { budgetsApi } from "@/lib/api/budgets"
@@ -60,6 +62,7 @@ interface SpendingCategory {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [patrimony, setPatrimony] = useState<PatrimonyData | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -70,6 +73,16 @@ export default function DashboardPage() {
   const [spending, setSpending] = useState<SpendingCategory[]>([])
 
   useEffect(() => {
+    // Check onboarding status — redirect if not completed
+    onboardingApi
+      .getStatus()
+      .then((status) => {
+        if (!status.completed) {
+          router.replace("/onboarding")
+        }
+      })
+      .catch(() => {})
+
     accountsApi.summary()
       .then(setSummary)
       .catch(() => {})
@@ -114,7 +127,7 @@ export default function DashboardPage() {
         setSpending(((d.by_category ?? []) as unknown as SpendingCategory[]).slice(0, 5))
       })
       .catch(() => {})
-  }, [])
+  }, [router])
 
   const currentMonth = new Date().toLocaleDateString("pt-AO", {
     month: "long",

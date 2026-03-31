@@ -68,3 +68,4 @@ watchfiles==1.1.1
 websockets==16.0
 yarl==1.23.0
 gunicorn==25.3.0
+stripe==15.0.0
