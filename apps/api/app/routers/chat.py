@@ -10,7 +10,7 @@ from app.ai.llm.factory import create_llm_router
 from app.ai.metering import check_quota, record_token_usage
 from app.ai.orchestrator import ChatOrchestrator
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.user import User
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 
@@ -32,6 +32,7 @@ async def send_message(
     data: ChatMessageRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    _perm: None = PlanPermission("ai:chat:create"),
 ) -> ChatMessageResponse:
     """Send a message to the AI assistant."""
     # Check quota

@@ -12,6 +12,7 @@ from app.config import settings
 from app.routers import (
     accounts,
     admin_billing,
+    admin_roles,
     assets,
     auth,
     billing,
@@ -181,6 +182,7 @@ app.include_router(insights.router)
 app.include_router(notifications.router)
 app.include_router(billing.router)
 app.include_router(admin_billing.router)
+app.include_router(admin_roles.router)
 app.include_router(onboarding.router)
 app.include_router(debts.router)
 app.include_router(investments.router)

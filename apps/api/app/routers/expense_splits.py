@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import FamilyMember
 from app.models.user import User
@@ -52,6 +52,7 @@ async def create_expense_split(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("family:expense_splits:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
     family_id = await _get_user_family_id(db, user.id)

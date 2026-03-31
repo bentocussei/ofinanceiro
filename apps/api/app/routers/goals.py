@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.user import User
 from app.schemas.goal import (
     GoalContributionCreate,
@@ -83,6 +83,7 @@ async def create_goal(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("goals:manage:create"),
 ) -> GoalResponse:
     require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.create_goal(db, user.id, data, family_id=ctx.family_id)
@@ -96,6 +97,7 @@ async def contribute_to_goal(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("goals:contribute:create"),
 ) -> GoalContributionResponse:
     require_permission(ctx, "can_edit_budgets")
     goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)

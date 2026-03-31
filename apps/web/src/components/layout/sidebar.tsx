@@ -35,6 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
+import { usePermissions } from "@/providers/PermissionProvider"
 
 interface NavItem {
   href: string
@@ -117,11 +118,30 @@ function applyTheme(t: Theme) {
   }
 }
 
+const MODULE_MAP: Record<string, string> = {
+  "/dashboard": "",
+  "/transactions": "transactions",
+  "/accounts": "accounts",
+  "/budget": "budgets",
+  "/goals": "goals",
+  "/debts": "debts",
+  "/investments": "investments",
+  "/assets": "assets",
+  "/income-sources": "income_sources",
+  "/bills": "bills",
+  "/recurring-rules": "recurring_rules",
+  "/reports": "reports",
+  "/news": "news",
+  "/education": "education",
+  "/notifications": "notifications",
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { hasModuleAccess } = usePermissions()
 
   useEffect(() => {
     getCurrentUser().then(setUser)
@@ -131,6 +151,16 @@ export function Sidebar() {
     if (href === "/dashboard") return pathname === "/dashboard"
     return pathname.startsWith(href)
   }
+
+  const filteredSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      const module = MODULE_MAP[item.href]
+      if (module === undefined) return true
+      if (module === "") return true
+      return hasModuleAccess(module)
+    }),
+  })).filter((section) => section.items.length > 0)
 
   const themeOptions: { value: Theme; label: string; icon: ElementType }[] = [
     { value: "light", label: "Claro", icon: Sun },
@@ -171,7 +201,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2">
-        {NAV_SECTIONS.map((section) => (
+        {filteredSections.map((section) => (
           <div key={section.label} className="mb-4">
             {!collapsed && (
               <p className="px-3 mb-1 text-[12px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">

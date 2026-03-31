@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import PlanPermission, get_current_user
 from app.models.category import Category
 from app.models.enums import TransactionType
 from app.models.transaction import Transaction
@@ -202,6 +202,7 @@ async def create_transaction(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("transactions:manage:create"),
 ) -> TransactionResponse:
     require_permission(ctx, "can_add_transactions")
     txn = await txn_service.create_transaction(db, user.id, data, family_id=ctx.family_id)
@@ -215,6 +216,7 @@ async def update_transaction(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("transactions:manage:update"),
 ) -> TransactionResponse:
     require_permission(ctx, "can_add_transactions")
     txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
@@ -230,6 +232,7 @@ async def delete_transaction(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
+    _perm: None = PlanPermission("transactions:manage:delete"),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
     txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)

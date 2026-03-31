@@ -29,6 +29,7 @@ from app.schemas.billing import (
     SubscriptionResponse,
 )
 from app.services import billing as billing_service
+from app.services.permission import has_admin_permission
 
 logger = logging.getLogger(__name__)
 
@@ -36,20 +37,21 @@ router = APIRouter(prefix="/api/v1/admin/billing", tags=["admin-billing"])
 
 
 # ---------------------------------------------------------------------------
-# Admin dependency
+# Admin permission dependency
 # ---------------------------------------------------------------------------
 
-async def require_admin(user: User = Depends(get_current_user)) -> User:
-    """Verificar se o utilizador é administrador.
 
-    Verifica o campo preferences.is_admin no registo do utilizador.
-    """
-    if not user.preferences.get("is_admin", False):
+async def require_admin_perm(
+    permission_code: str,
+    db: AsyncSession,
+    user: User,
+) -> None:
+    """Verificar se o utilizador tem a permissao de administrador requerida."""
+    if not await has_admin_permission(db, user.id, permission_code):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso restrito a administradores.",
+            detail="Sem permissao de administrador.",
         )
-    return user
 
 
 # ---------------------------------------------------------------------------
@@ -135,9 +137,10 @@ def _sub_to_response(sub: UserSubscription) -> SubscriptionResponse:
 async def create_plan(
     data: PlanCreate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> PlanResponse:
     """Criar um novo plano."""
+    await require_admin_perm("admin_billing:plans:create", db, user)
     plan = Plan(
         type=data.type,
         name=data.name,
@@ -154,7 +157,7 @@ async def create_plan(
     db.add(plan)
     await db.flush()
     await db.refresh(plan)
-    logger.info("Plano criado: id=%s, name=%s (por admin=%s)", plan.id, plan.name, admin.id)
+    logger.info("Plano criado: id=%s, name=%s (por admin=%s)", plan.id, plan.name, user.id)
     return _plan_to_response(plan)
 
 
@@ -163,9 +166,10 @@ async def update_plan(
     plan_id: uuid.UUID,
     data: PlanUpdate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> PlanResponse:
     """Actualizar um plano existente."""
+    await require_admin_perm("admin_billing:plans:update", db, user)
     result = await db.execute(select(Plan).where(Plan.id == plan_id))
     plan = result.scalar_one_or_none()
     if not plan:
@@ -180,7 +184,7 @@ async def update_plan(
 
     await db.flush()
     await db.refresh(plan)
-    logger.info("Plano actualizado: id=%s (por admin=%s)", plan.id, admin.id)
+    logger.info("Plano actualizado: id=%s (por admin=%s)", plan.id, user.id)
     return _plan_to_response(plan)
 
 
@@ -188,9 +192,10 @@ async def update_plan(
 async def deactivate_plan(
     plan_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> dict:
-    """Desactivar um plano (não elimina, apenas marca como inactivo)."""
+    """Desactivar um plano (nao elimina, apenas marca como inactivo)."""
+    await require_admin_perm("admin_billing:plans:delete", db, user)
     result = await db.execute(select(Plan).where(Plan.id == plan_id))
     plan = result.scalar_one_or_none()
     if not plan:
@@ -201,7 +206,7 @@ async def deactivate_plan(
 
     plan.is_active = False
     await db.flush()
-    logger.info("Plano desactivado: id=%s (por admin=%s)", plan.id, admin.id)
+    logger.info("Plano desactivado: id=%s (por admin=%s)", plan.id, user.id)
     return {"message": "Plano desactivado com sucesso."}
 
 
@@ -212,9 +217,10 @@ async def deactivate_plan(
 @router.get("/promotions", response_model=list[PromotionResponse])
 async def list_promotions(
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> list[PromotionResponse]:
-    """Listar todas as promoções (activas e inactivas)."""
+    """Listar todas as promocoes (activas e inactivas)."""
+    await require_admin_perm("admin_billing:promotions:read", db, user)
     stmt = select(Promotion).order_by(Promotion.created_at.desc())
     result = await db.execute(stmt)
     promos = result.scalars().all()
@@ -225,9 +231,10 @@ async def list_promotions(
 async def create_promotion(
     data: PromotionCreate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> PromotionResponse:
-    """Criar uma nova promoção."""
+    """Criar uma nova promocao."""
+    await require_admin_perm("admin_billing:promotions:create", db, user)
     # Parse dates
     start_date = datetime.fromisoformat(data.start_date)
     end_date = datetime.fromisoformat(data.end_date) if data.end_date else None
@@ -250,7 +257,7 @@ async def create_promotion(
     db.add(promo)
     await db.flush()
     await db.refresh(promo)
-    logger.info("Promoção criada: id=%s, code=%s (por admin=%s)", promo.id, promo.code, admin.id)
+    logger.info("Promocao criada: id=%s, code=%s (por admin=%s)", promo.id, promo.code, user.id)
     return _promotion_to_response(promo)
 
 
@@ -259,9 +266,10 @@ async def update_promotion(
     promotion_id: uuid.UUID,
     data: PromotionUpdate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> PromotionResponse:
-    """Actualizar uma promoção existente."""
+    """Actualizar uma promocao existente."""
+    await require_admin_perm("admin_billing:promotions:update", db, user)
     result = await db.execute(select(Promotion).where(Promotion.id == promotion_id))
     promo = result.scalar_one_or_none()
     if not promo:
@@ -278,7 +286,7 @@ async def update_promotion(
 
     await db.flush()
     await db.refresh(promo)
-    logger.info("Promoção actualizada: id=%s (por admin=%s)", promo.id, admin.id)
+    logger.info("Promocao actualizada: id=%s (por admin=%s)", promo.id, user.id)
     return _promotion_to_response(promo)
 
 
@@ -286,9 +294,10 @@ async def update_promotion(
 async def get_promotion_usage(
     promotion_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> dict:
-    """Ver estatísticas de utilização de uma promoção."""
+    """Ver estatisticas de utilizacao de uma promocao."""
+    await require_admin_perm("admin_billing:promotions:read", db, user)
     # Check promotion exists
     result = await db.execute(select(Promotion).where(Promotion.id == promotion_id))
     promo = result.scalar_one_or_none()
@@ -334,9 +343,10 @@ async def get_promotion_usage(
 async def create_addon(
     data: FeatureAddonCreate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> FeatureAddonResponse:
     """Criar um novo extra (add-on)."""
+    await require_admin_perm("admin_billing:addons:create", db, user)
     addon = FeatureAddon(
         name=data.name,
         module=data.module,
@@ -350,7 +360,7 @@ async def create_addon(
     db.add(addon)
     await db.flush()
     await db.refresh(addon)
-    logger.info("Add-on criado: id=%s, name=%s (por admin=%s)", addon.id, addon.name, admin.id)
+    logger.info("Add-on criado: id=%s, name=%s (por admin=%s)", addon.id, addon.name, user.id)
     return _addon_to_response(addon)
 
 
@@ -359,9 +369,10 @@ async def update_addon(
     addon_id: uuid.UUID,
     data: FeatureAddonUpdate,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
 ) -> FeatureAddonResponse:
     """Actualizar um extra (add-on) existente."""
+    await require_admin_perm("admin_billing:addons:update", db, user)
     result = await db.execute(select(FeatureAddon).where(FeatureAddon.id == addon_id))
     addon = result.scalar_one_or_none()
     if not addon:
@@ -376,7 +387,7 @@ async def update_addon(
 
     await db.flush()
     await db.refresh(addon)
-    logger.info("Add-on actualizado: id=%s (por admin=%s)", addon.id, admin.id)
+    logger.info("Add-on actualizado: id=%s (por admin=%s)", addon.id, user.id)
     return _addon_to_response(addon)
 
 
@@ -387,12 +398,13 @@ async def update_addon(
 @router.get("/subscriptions", response_model=list[SubscriptionResponse])
 async def list_subscriptions(
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    user: User = Depends(get_current_user),
     status_filter: SubscriptionStatus | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[SubscriptionResponse]:
-    """Listar subscrições (com filtro opcional por estado)."""
+    """Listar subscricoes (com filtro opcional por estado)."""
+    await require_admin_perm("admin_billing:subscriptions:read", db, user)
     stmt = select(UserSubscription).order_by(UserSubscription.created_at.desc())
 
     if status_filter:
