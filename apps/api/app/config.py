@@ -11,6 +11,16 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://ofinanceiro:ofinanceiro@localhost:5432/ofinanceiro"
 
+    @property
+    def async_database_url(self) -> str:
+        """Ensure the database URL uses asyncpg driver (Railway gives postgresql://)."""
+        url = self.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://") and "+asyncpg" not in url:
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
