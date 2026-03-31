@@ -200,3 +200,27 @@ class FamilyRelation(enum.StrEnum):
     SIBLING = "sibling"
     GRANDPARENT = "grandparent"
     OTHER = "other"
+
+
+class PlanType(enum.StrEnum):
+    PESSOAL = "pessoal"
+    FAMILIAR = "familiar"
+
+
+class SubscriptionStatus(enum.StrEnum):
+    ACTIVE = "active"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+    PAST_DUE = "past_due"
+    TRIALING = "trialing"
+
+
+class PromotionType(enum.StrEnum):
+    PERCENTAGE = "percentage"
+    FIXED_AMOUNT = "fixed_amount"
+    FREE_DAYS = "free_days"
+
+
+class BillingCycle(enum.StrEnum):
+    MONTHLY = "monthly"
+    ANNUAL = "annual"

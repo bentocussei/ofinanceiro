@@ -9,6 +9,7 @@ from app.models.enums import (
     AccountType,
     AccountUsageType,
     AssetType,
+    BillingCycle,
     BillStatus,
     BudgetMethod,
     BudgetPeriod,
@@ -25,22 +26,28 @@ from app.models.enums import (
     GoalStatus,
     IncomeSourceType,
     NotificationType,
+    PlanType,
+    PromotionType,
     RecurrenceFrequency,
     SnapshotPeriodType,
     SplitType,
     SubscriptionPlan,
+    SubscriptionStatus,
     TransactionType,
 )
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import Family, FamilyInvite, FamilyMember
+from app.models.feature_addon import FeatureAddon
 from app.models.finance_settings import FinanceSettings
 from app.models.finance_snapshot import FinanceSnapshot
 from app.models.goal import Goal, GoalContribution
 from app.models.income_source import IncomeSource
 from app.models.investment import Investment
 from app.models.notification import Notification
+from app.models.plan import Plan
+from app.models.promotion import Promotion, PromotionUsage
 from app.models.recurring_rule import RecurringRule
-from app.models.subscription import Subscription
+from app.models.subscription import Subscription, SubscriptionAddon, UserSubscription
 from app.models.tag import Tag
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -52,6 +59,7 @@ __all__ = [
     "AccountUsageType",
     "Asset",
     "AssetType",
+    "BillingCycle",
     "BillStatus",
     "BudgetMethod",
     "BudgetPeriod",
@@ -65,15 +73,25 @@ __all__ = [
     "FactType",
     "FamilyRelation",
     "FamilyRole",
+    "FeatureAddon",
     "GoalStatus",
     "IncomeSourceType",
     "NotificationType",
+    "Plan",
+    "PlanType",
+    "Promotion",
+    "PromotionType",
+    "PromotionUsage",
     "RecurrenceFrequency",
     "SnapshotPeriodType",
     "SplitType",
+    "Subscription",
+    "SubscriptionAddon",
     "SubscriptionPlan",
+    "SubscriptionStatus",
     "TransactionType",
     "User",
+    "UserSubscription",
     "Account",
     "Bill",
     "Budget",
@@ -94,7 +112,6 @@ __all__ = [
     "Investment",
     "Notification",
     "RecurringRule",
-    "Subscription",
     "Tag",
     "Transaction",
 ]

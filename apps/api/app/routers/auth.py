@@ -25,6 +25,7 @@ from app.services.auth import (
     hash_password,
     verify_password,
 )
+from app.services import billing as billing_service
 from app.services.otp import can_send_otp, generate_otp, send_otp_sms, store_otp, verify_otp
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -61,6 +62,13 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
     )
     db.add(user)
     await db.flush()
+
+    # Aplicar promoção de registo automática, se existir
+    try:
+        await billing_service.apply_registration_promotion(db, user.id)
+    except Exception:
+        # Não bloquear o registo se a promoção falhar
+        pass
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
@@ -131,11 +139,18 @@ async def otp_verify(
         )
 
     user = await get_user_by_phone(db, data.phone)
+    is_new_user = user is None
     if not user:
         # Auto-create user on first OTP login (onboarding will complete profile)
         user = User(phone=data.phone, name="")
         db.add(user)
         await db.flush()
+
+        # Aplicar promoção de registo automática, se existir
+        try:
+            await billing_service.apply_registration_promotion(db, user.id)
+        except Exception:
+            pass
 
     user.last_login_at = datetime.now(UTC)
 

@@ -1,0 +1,20 @@
+"""Feature addon model for optional billing extras."""
+
+from sqlalchemy import Boolean, Integer, SmallInteger, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import BaseModel
+
+
+class FeatureAddon(BaseModel):
+    __tablename__ = "feature_addons"
+
+    name: Mapped[str] = mapped_column(String(100))
+    module: Mapped[str] = mapped_column(String(50))  # e.g. "ocr", "ai", "voice"
+    description: Mapped[str | None] = mapped_column(Text)
+    price_monthly: Mapped[int] = mapped_column(Integer)  # centavos
+    price_annual: Mapped[int] = mapped_column(Integer)  # centavos
+    features_override: Mapped[dict] = mapped_column(JSONB, default=dict)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)
