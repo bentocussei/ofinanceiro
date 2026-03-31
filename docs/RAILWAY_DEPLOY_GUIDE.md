@@ -219,7 +219,13 @@ curl -s -X POST https://backboard.railway.app/graphql/v2 \
 ### Problema principal
 O `package-lock.json` está na raiz do monorepo, não em `apps/web/`. O Railway define o build context como `apps/web/`, então `npm ci` falha.
 
-### Solução: `npm install` em vez de `npm ci`
+### Solução: `npm install` em vez de `npm ci` + `ARG` para variáveis NEXT_PUBLIC
+
+**Dois problemas resolvidos:**
+1. `npm ci` falha sem `package-lock.json` → usar `npm install`
+2. `NEXT_PUBLIC_*` não chega ao `npm run build` → usar `ARG` + `ENV` no Dockerfile
+
+**Porquê o `ARG`?** O Next.js injecta `NEXT_PUBLIC_*` no JavaScript durante o build. Dentro do Docker, as variáveis de ambiente do Railway não são visíveis automaticamente — é preciso declará-las como `ARG` (o Railway passa env vars como build args) e depois `ENV` para que o `npm run build` as veja. Sem isto, o fallback `localhost:8000` fica hardcoded no bundle JS.
 
 **`apps/web/Dockerfile`:**
 ```dockerfile
@@ -236,6 +242,11 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# CRITICAL: Railway injects env vars as Docker build args
+# Without this, NEXT_PUBLIC_* defaults to localhost during build
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -364,7 +375,17 @@ railway logs --filter "@level:error"  # Filtrar por erros
 railway redeploy -y               # Forçar redeploy sem confirmação
 
 # Deploy directo (upload do directório local)
-cd apps/web && railway up          # Faz upload e build
+# IMPORTANTE: executar SEMPRE a partir da RAIZ do monorepo!
+# O Railway aplica o rootDirectory configurado (apps/web ou apps/api)
+# Se executar de apps/web/, tenta encontrar apps/web/ dentro de apps/web/ e falha
+railway service ofinanceiro-web && railway up   # Deploy web
+railway service ofinanceiro-api && railway up   # Deploy API
+
+# Para staging:
+railway environment staging
+railway service ofinanceiro-web && railway up
+railway service ofinanceiro-api && railway up
+railway environment production  # voltar a production
 
 # Variáveis de ambiente
 railway variables                  # Ver variáveis do serviço linkado
@@ -503,9 +524,12 @@ done
 | Erro | Causa | Solução |
 |------|-------|---------|
 | `npm ci` falha com "no package-lock.json" | Monorepo — lockfile na raiz, não em apps/web | Usar `npm install` no Dockerfile |
+| `NEXT_PUBLIC_*` mostra `localhost` em produção | Variável não chega ao Docker build | Adicionar `ARG NEXT_PUBLIC_API_URL` + `ENV` no Dockerfile antes do `npm run build` |
+| `Could not find root directory: apps/web` | `railway up` executado de `apps/web/` | Executar SEMPRE da raiz do monorepo |
 | `UniqueViolationError` no startup | Múltiplos workers tentam criar enums | `checkfirst=True` + try/except |
 | `UnboundLocalError: phone` | Variável usada antes de definir | Mover normalização antes do check |
 | API retorna "Erro interno" | BD sem tabelas | `create_all` no lifespan |
+| 401 no staging após deploy | BD staging vazia | Criar conta via `/register` (cada ambiente tem BD separada) |
 | `postgres://` vs `postgresql+asyncpg://` | Railway dá URL sem driver async | Property `async_database_url` converte |
 | Web mostra só 2 routes no build | RAILPACK sem dependências completas | Usar Dockerfile com `npm install` |
 | DB inacessível via `railway run` | DB na rede privada do Railway | Criar tabelas no startup da app |
