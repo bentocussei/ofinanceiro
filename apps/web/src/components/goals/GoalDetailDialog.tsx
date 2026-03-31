@@ -146,7 +146,7 @@ export function GoalDetailDialog({
     setIsContributing(true)
     setError("")
     try {
-      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100), opts)
+      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100), undefined, opts)
       setContributeAmount("")
       fetchProgress()
       onUpdated?.()

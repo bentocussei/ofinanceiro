@@ -122,7 +122,7 @@ export default function FamilyGoalsPage() {
     setIsContributing(true)
     try {
       const ctx = { headers: getContextHeader() }
-      await goalsApi.contribute(contributeGoalId, Math.round(parseFloat(contributeAmount) * 100), ctx)
+      await goalsApi.contribute(contributeGoalId, Math.round(parseFloat(contributeAmount) * 100), undefined, ctx)
       setContributeGoalId(null)
       setContributeAmount("")
       setCursor(null)

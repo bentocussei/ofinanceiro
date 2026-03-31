@@ -11,6 +11,7 @@ from app.models.enums import GoalStatus, RecurrenceFrequency
 class GoalContributionCreate(BaseModel):
     amount: int = Field(gt=0, description="Contribution in centavos")
     note: str | None = None
+    from_account_id: uuid.UUID | None = None
 
 
 class GoalContributionResponse(BaseModel):
