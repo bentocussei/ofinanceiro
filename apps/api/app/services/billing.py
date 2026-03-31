@@ -673,7 +673,7 @@ async def recalculate_family_cost(
 
     # Only relevant for family plans
     plan_type = sub.plan_snapshot.get("type", "")
-    if plan_type != PlanType.FAMILIAR.value:
+    if plan_type != PlanType.FAMILY.value:
         return
 
     # Count current family members (excluding the admin)
