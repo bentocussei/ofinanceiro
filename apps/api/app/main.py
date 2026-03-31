@@ -52,9 +52,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     from app.database import engine
     from app.models import Base
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables verified/created")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+        logger.info("Database tables verified/created")
+    except Exception as e:
+        logger.warning("Table creation warning: %s", e)
 
     yield
     # Shutdown
