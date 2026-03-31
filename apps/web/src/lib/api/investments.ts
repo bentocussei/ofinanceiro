@@ -26,6 +26,7 @@ export interface CreateInvestmentData {
   start_date?: string
   maturity_date?: string
   notes?: string
+  from_account_id?: string
 }
 
 export interface UpdateInvestmentData {

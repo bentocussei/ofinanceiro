@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.account import Account
 from app.models.asset import Asset
-from app.models.enums import AssetType, CurrencyCode
+from app.models.enums import AssetType, CurrencyCode, TransactionType
+from app.models.transaction import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
@@ -49,6 +51,7 @@ class AssetCreate(BaseModel):
     insurance_expiry: date | None = None
     notes: str | None = None
     family_id: uuid.UUID | None = None
+    from_account_id: uuid.UUID | None = None
 
 
 class AssetUpdate(BaseModel):
@@ -246,6 +249,23 @@ async def create_asset(
         notes=data.notes,
     )
     db.add(asset)
+
+    # Optionally debit account and create expense transaction
+    if data.from_account_id:
+        account = await db.get(Account, data.from_account_id)
+        if not account:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+        account.balance -= data.purchase_price
+        txn = Transaction(
+            user_id=user.id,
+            account_id=data.from_account_id,
+            amount=data.purchase_price,
+            type=TransactionType.EXPENSE,
+            description=f"Compra: {data.name}",
+            transaction_date=data.purchase_date or date.today(),
+        )
+        db.add(txn)
+
     await db.flush()
     await db.refresh(asset)
     return _serialize_asset(asset)
