@@ -34,9 +34,9 @@ from app.services.otp import can_send_otp, generate_otp, send_otp_sms, store_otp
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
-async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
-    """Registar novo utilizador com telefone e password."""
+@router.post("/register", response_model=MessageResponse, status_code=201)
+async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+    """Registar novo utilizador com telefone e password. Não retorna tokens — requer verificação OTP."""
     # Normalizar telefone: garantir que tem código do país
     phone = data.phone.strip().replace(" ", "")
     if not phone.startswith("+"):
@@ -88,6 +88,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
             pass
 
     # Enviar OTP para verificação do telefone
+    # NÃO retornar tokens — utilizador só recebe tokens após verificar OTP
     try:
         otp = generate_otp()
         await store_otp(phone, otp)
@@ -96,10 +97,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
     except Exception as e:
         logger.warning("Falha ao enviar OTP no registo para %s: %s", phone, e)
 
-    access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
-
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return MessageResponse(message="Conta criada. Verifique o código enviado por SMS.")
 
 
 @router.post("/login", response_model=TokenResponse)
