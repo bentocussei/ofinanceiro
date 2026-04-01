@@ -201,6 +201,14 @@ async def register_payment(
 
     payment_date = data.payment_date or date.today()
 
+    # Verify from_account_id ownership if provided
+    if data.from_account_id:
+        acct_result = await db.execute(
+            select(Account).where(Account.id == data.from_account_id, Account.user_id == user.id)
+        )
+        if not acct_result.scalar_one_or_none():
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+
     # Determine source account: explicit param > debt's linked_account_id
     account_id = data.from_account_id or debt.linked_account_id
     transaction_id: uuid.UUID | None = None

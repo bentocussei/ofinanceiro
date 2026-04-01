@@ -110,6 +110,16 @@ async def contribute(
     note: str | None = None,
     from_account_id: uuid.UUID | None = None,
 ) -> GoalContribution:
+    # Verify from_account_id ownership if provided
+    if from_account_id:
+        from sqlalchemy import select as sa_select
+        acct_result = await db.execute(
+            sa_select(Account).where(Account.id == from_account_id, Account.user_id == user_id)
+        )
+        if not acct_result.scalar_one_or_none():
+            from fastapi import HTTPException, status as http_status
+            raise HTTPException(http_status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+
     # Determine the source account: explicit param > goal's savings_account_id
     account_id = from_account_id or goal.savings_account_id
 

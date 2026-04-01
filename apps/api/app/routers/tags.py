@@ -3,6 +3,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,13 @@ from app.models.tag import Tag
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/tags", tags=["tags"])
+
+
+class TagCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(max_length=50)
+    color: str | None = Field(None, max_length=7)
 
 
 @router.get("/")
@@ -27,20 +35,20 @@ async def list_tags(
 
 @router.post("/", status_code=201)
 async def create_tag(
-    data: dict,
+    data: TagCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
     # Verificar duplicado
     existing = await db.execute(
-        select(Tag).where(Tag.user_id == user.id, Tag.name == data.get("name"))
+        select(Tag).where(Tag.user_id == user.id, Tag.name == data.name)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             detail={"code": "DUPLICATE", "message": "Etiqueta com este nome já existe"},
         )
-    tag = Tag(user_id=user.id, **data)
+    tag = Tag(user_id=user.id, **data.model_dump())
     db.add(tag)
     await db.flush()
     await db.refresh(tag)

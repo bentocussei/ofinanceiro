@@ -79,6 +79,13 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     """Login com telefone e password."""
+    # Per-phone rate limiting: 5 attempts per 5 minutes
+    try:
+        from app.middleware.rate_limit import check_rate_limit
+        await check_rate_limit(f"login:{data.phone}", max_requests=5, window_seconds=300)
+    except Exception:
+        pass  # Graceful if Redis unavailable
+
     phone = data.phone.strip().replace(" ", "")
     user = await get_user_by_phone(db, phone)
     if not user or not user.password_hash:

@@ -82,3 +82,63 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
         run: npm run build
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Python dependency audit
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pip-audit bandit
+      - name: Python dependency audit
+        run: cd apps/api && pip-audit -r requirements.txt
+        continue-on-error: true
+
+      # Python SAST
+      - name: Bandit security scan
+        run: cd apps/api && bandit -r app/ -ll -ii
+        continue-on-error: true
+
+      # Node dependency audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: NPM audit
+        run: cd apps/web && npm audit --production
+        continue-on-error: true
+
+      # Secret scanning
+      - name: Check for secrets
+        run: |
+          if grep -rn "sk-ant-\|sk-proj-\|sk_live_\|sk_test_\|password.*=.*['\"]" apps/ --include="*.py" --include="*.ts" --include="*.tsx" | grep -v "config.py\|\.env\|test\|example\|placeholder\|CHANGE"; then
+            echo "::warning::Possible secrets found in code"
+            exit 1
+          else
+            echo "No secrets found in code"
+          fi
+
+      # Frontend security patterns
+      - name: Check for dangerous frontend patterns
+        run: |
+          ISSUES=0
+          if grep -rn "dangerouslySetInnerHTML" apps/web/src/ --include="*.tsx" --include="*.ts"; then
+            echo "::warning::dangerouslySetInnerHTML usage found — review for XSS"
+            ISSUES=$((ISSUES+1))
+          fi
+          if grep -rn "eval(" apps/web/src/ --include="*.tsx" --include="*.ts" | grep -v "node_modules"; then
+            echo "::warning::eval() usage found — potential code injection"
+            ISSUES=$((ISSUES+1))
+          fi
+          if grep -rn "new Function(" apps/web/src/ --include="*.tsx" --include="*.ts"; then
+            echo "::warning::new Function() usage found — potential code injection"
+            ISSUES=$((ISSUES+1))
+          fi
+          if [ $ISSUES -gt 0 ]; then
+            echo "::warning::$ISSUES dangerous pattern(s) found — review required"
+          else
+            echo "No dangerous frontend patterns found"
+          fi

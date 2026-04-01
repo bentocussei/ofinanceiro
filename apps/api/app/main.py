@@ -55,6 +55,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     from app.database import engine
     from app.models import Base
 
+    # Validate JWT secrets in non-development environments
+    if settings.environment != "development" and "dev-secret" in settings.jwt_secret:
+        logger.error("CRITICAL: Default JWT secrets in production! Set JWT_SECRET and JWT_REFRESH_SECRET")
+        raise SystemExit(1)
+
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all, checkfirst=True)
@@ -141,9 +146,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-if not settings.debug:
-    # Only enable rate limiting in production (requires Redis)
-    app.add_middleware(RateLimitMiddleware)
+# Always enable rate limiting (gracefully skips if Redis unavailable)
+app.add_middleware(RateLimitMiddleware)
 
 
 # ---------------------------------------------------------------------------
@@ -154,8 +158,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "X-Finance-Context"],
 )
 
 

@@ -15,6 +15,7 @@ It checks for existing data before inserting.
 """
 
 import asyncio
+import secrets
 import uuid
 
 from sqlalchemy import select
@@ -49,7 +50,7 @@ from scripts.seed import seed_categories
 ADMIN_NAME = "Admin O Financeiro"
 ADMIN_PHONE = "+244900000000"
 ADMIN_EMAIL = "admin@ofinanceiro.ao"
-ADMIN_PASSWORD = "admin2026!"  # CHANGE THIS after first login
+ADMIN_PASSWORD = secrets.token_urlsafe(16)  # Random, printed to console once
 
 PERSONAL_PLAN_MONTHLY = 199000   # 1.990 Kz in centavos
 PERSONAL_PLAN_ANNUAL = 1990000   # 19.900 Kz (2 meses grátis)

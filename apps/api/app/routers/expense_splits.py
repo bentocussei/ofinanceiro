@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -11,11 +12,31 @@ from sqlalchemy.orm import selectinload
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.enums import SplitType
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import FamilyMember
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/expense-splits", tags=["expense-splits"])
+
+
+class ExpenseSplitPartCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    member_id: uuid.UUID
+    amount: int = Field(gt=0)
+    percentage: int | None = Field(None, ge=0, le=10000)
+
+
+class ExpenseSplitCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    transaction_id: uuid.UUID | None = None
+    description: str | None = Field(None, max_length=200)
+    total_amount: int = Field(gt=0)
+    split_type: SplitType = SplitType.EQUAL
+    notes: str | None = None
+    parts: list[ExpenseSplitPartCreate] = Field(default_factory=list)
 
 
 async def _get_user_family_id(db: AsyncSession, user_id: uuid.UUID) -> uuid.UUID | None:
@@ -48,7 +69,7 @@ async def list_expense_splits(
 
 @router.post("/", status_code=201)
 async def create_expense_split(
-    data: dict,
+    data: ExpenseSplitCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
@@ -61,13 +82,13 @@ async def create_expense_split(
             status.HTTP_400_BAD_REQUEST,
             detail={"code": "NO_FAMILY", "message": "Utilizador não pertence a nenhuma família"},
         )
-    parts_data = data.pop("parts", [])
-    split = ExpenseSplit(family_id=family_id, **data)
+    split_data = data.model_dump(exclude={"parts"})
+    split = ExpenseSplit(family_id=family_id, **split_data)
     db.add(split)
     await db.flush()
 
-    for part in parts_data:
-        split_part = ExpenseSplitPart(split_id=split.id, **part)
+    for part in data.parts:
+        split_part = ExpenseSplitPart(split_id=split.id, **part.model_dump())
         db.add(split_part)
 
     await db.flush()
