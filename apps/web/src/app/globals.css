@@ -133,8 +133,8 @@
 
   --destructive: oklch(0.65 0.2 22);
 
-  --border: oklch(0.32 0.012 65);            /* visible but subtle border */
-  --input: oklch(0.25 0.012 65);             /* inputs slightly darker than card */
+  --border: oklch(0.38 0.015 65);            /* clearly visible border on dark bg */
+  --input: oklch(0.28 0.015 65);             /* inputs distinct from background */
   --ring: oklch(0.62 0.14 155);
 
   --income: oklch(0.72 0.16 150);
