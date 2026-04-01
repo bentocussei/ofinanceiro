@@ -1,6 +1,9 @@
 """Auth router: register, login, OTP send/verify, token refresh."""
 
+import logging
 from datetime import UTC, datetime
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,9 +92,9 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
         otp = generate_otp()
         await store_otp(phone, otp)
         await send_otp_sms(phone, otp)
-    except Exception:
-        # Não bloquear o registo se o envio de OTP falhar
-        pass
+        logger.info("OTP enviado para %s no registo", phone)
+    except Exception as e:
+        logger.warning("Falha ao enviar OTP no registo para %s: %s", phone, e)
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
