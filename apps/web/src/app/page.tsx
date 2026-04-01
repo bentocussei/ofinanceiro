@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ScreenshotGrid } from "@/components/landing/ScreenshotGrid"
+import { ThemeToggle } from "@/components/landing/ThemeToggle"
 import {
   ArrowRight,
   BarChart3,
@@ -141,6 +142,7 @@ export default function LandingPage() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/login"
               className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
