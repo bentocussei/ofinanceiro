@@ -53,7 +53,9 @@ class TestAccounts:
 
         response = await client.get("/api/v1/accounts", headers=auth_header(token))
         assert response.status_code == 200
-        accounts = response.json()
+        data = response.json()
+        # Response may be paginated (dict with "items") or a plain list
+        accounts = data["items"] if isinstance(data, dict) and "items" in data else data
         assert len(accounts) == 2
 
     @pytest.mark.asyncio
