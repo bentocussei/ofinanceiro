@@ -4,16 +4,50 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.enums import RecurrenceFrequency, TransactionType
 from app.models.recurring_rule import RecurringRule
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/recurring-rules", tags=["recurring-rules"])
+
+
+class RecurringRuleCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_id: uuid.UUID
+    category_id: uuid.UUID | None = None
+    type: TransactionType
+    amount: int = Field(gt=0)
+    description: str | None = Field(None, max_length=200)
+    frequency: RecurrenceFrequency
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    day_of_week: int | None = Field(None, ge=0, le=6)
+    start_date: date
+    end_date: date | None = None
+    is_active: bool = True
+
+
+class RecurringRuleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_id: uuid.UUID | None = None
+    category_id: uuid.UUID | None = None
+    type: TransactionType | None = None
+    amount: int | None = Field(None, gt=0)
+    description: str | None = Field(None, max_length=200)
+    frequency: RecurrenceFrequency | None = None
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    day_of_week: int | None = Field(None, ge=0, le=6)
+    start_date: date | None = None
+    end_date: date | None = None
+    is_active: bool | None = None
 
 
 @router.get("/")
@@ -53,18 +87,14 @@ async def list_recurring_rules(
 
 @router.post("/", status_code=201)
 async def create_recurring_rule(
-    data: dict,
+    data: RecurringRuleCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
     _perm: None = PlanPermission("recurring_rules:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    # Parse date fields from strings
-    for date_field in ("start_date", "end_date"):
-        if date_field in data and isinstance(data[date_field], str):
-            data[date_field] = date.fromisoformat(data[date_field])
-    rule = RecurringRule(user_id=user.id, family_id=ctx.family_id, **data)
+    rule = RecurringRule(user_id=user.id, family_id=ctx.family_id, **data.model_dump(exclude_unset=True))
     db.add(rule)
     await db.flush()
     await db.refresh(rule)
@@ -74,16 +104,15 @@ async def create_recurring_rule(
 @router.put("/{rule_id}")
 async def update_recurring_rule(
     rule_id: uuid.UUID,
-    data: dict,
+    data: RecurringRuleUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
     rule = await _get_or_404(db, rule_id, user.id, ctx)
-    for key, value in data.items():
-        if hasattr(rule, key):
-            setattr(rule, key, value)
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(rule, key, value)
     await db.flush()
     await db.refresh(rule)
     return _to_dict(rule)

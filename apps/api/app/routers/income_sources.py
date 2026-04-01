@@ -3,16 +3,50 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.enums import CurrencyCode, IncomeSourceType, RecurrenceFrequency
 from app.models.income_source import IncomeSource
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/income-sources", tags=["income-sources"])
+
+
+class IncomeSourceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(max_length=100)
+    type: IncomeSourceType
+    description: str | None = None
+    expected_amount: int = Field(gt=0)
+    currency: CurrencyCode = CurrencyCode.AOA
+    frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    account_id: uuid.UUID | None = None
+    icon: str | None = Field(None, max_length=10)
+    color: str | None = Field(None, max_length=7)
+    is_active: bool = True
+
+
+class IncomeSourceUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(None, max_length=100)
+    type: IncomeSourceType | None = None
+    description: str | None = None
+    expected_amount: int | None = Field(None, gt=0)
+    currency: CurrencyCode | None = None
+    frequency: RecurrenceFrequency | None = None
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    account_id: uuid.UUID | None = None
+    icon: str | None = Field(None, max_length=10)
+    color: str | None = Field(None, max_length=7)
+    is_active: bool | None = None
 
 
 @router.get("/")
@@ -53,14 +87,14 @@ async def list_income_sources(
 
 @router.post("/", status_code=201)
 async def create_income_source(
-    data: dict,
+    data: IncomeSourceCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
     _perm: None = PlanPermission("income_sources:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    source = IncomeSource(user_id=user.id, family_id=ctx.family_id, **data)
+    source = IncomeSource(user_id=user.id, family_id=ctx.family_id, **data.model_dump(exclude_unset=True))
     db.add(source)
     await db.flush()
     await db.refresh(source)
@@ -70,16 +104,15 @@ async def create_income_source(
 @router.put("/{source_id}")
 async def update_income_source(
     source_id: uuid.UUID,
-    data: dict,
+    data: IncomeSourceUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
     source = await _get_or_404(db, source_id, user.id, family_id=ctx.family_id)
-    for key, value in data.items():
-        if hasattr(source, key):
-            setattr(source, key, value)
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(source, key, value)
     await db.flush()
     await db.refresh(source)
     return _to_dict(source)

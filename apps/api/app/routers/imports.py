@@ -2,12 +2,14 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.models.account import Account
 from app.models.user import User
 from app.services.statement_import import (
     categorize_imported_transactions,
@@ -19,7 +21,7 @@ router = APIRouter(prefix="/api/v1/import", tags=["import"])
 
 
 class StatementUploadRequest(BaseModel):
-    content: str = Field(description="CSV content as string")
+    content: str = Field(max_length=5_000_000, description="CSV content as string (max 5MB)")
     account_id: uuid.UUID
     file_type: str = Field("csv", description="csv or pdf")
 
@@ -67,6 +69,13 @@ async def confirm_import(
     user: User = Depends(get_current_user),
 ) -> dict:
     """Import confirmed transactions into the database."""
+    # Verify account ownership
+    acct_result = await db.execute(
+        select(Account).where(Account.id == data.account_id, Account.user_id == user.id)
+    )
+    if not acct_result.scalar_one_or_none():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+
     from app.models.transaction import Transaction
 
     imported = 0

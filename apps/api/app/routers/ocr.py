@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/ocr", tags=["ocr"])
 
 
 class ReceiptUploadRequest(BaseModel):
-    image_base64: str = Field(description="Base64 encoded receipt image")
+    image_base64: str = Field(max_length=10_000_000, description="Base64 encoded receipt image (max ~7.5MB)")
 
 
 @router.post("/receipt")

@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,11 +13,53 @@ from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
 from app.models.account import Account
 from app.models.bill import Bill
-from app.models.enums import BillStatus, TransactionType
+from app.models.enums import BillStatus, CurrencyCode, RecurrenceFrequency, TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/bills", tags=["bills"])
+
+
+class BillCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(max_length=100)
+    description: str | None = None
+    category_id: uuid.UUID | None = None
+    amount: int = Field(gt=0)
+    currency: CurrencyCode = CurrencyCode.AOA
+    due_day: int = Field(ge=1, le=31)
+    frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY
+    pay_from_account_id: uuid.UUID | None = None
+    auto_pay: bool = False
+    auto_pay_days_before: int = Field(0, ge=0, le=30)
+    reminder_days: list[int] = Field(default_factory=lambda: [3, 1])
+    is_active: bool = True
+    next_due_date: date | None = None
+    vendor_ref: str | None = Field(None, max_length=100)
+    icon: str | None = Field(None, max_length=10)
+    color: str | None = Field(None, max_length=7)
+
+
+class BillUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    category_id: uuid.UUID | None = None
+    amount: int | None = Field(None, gt=0)
+    currency: CurrencyCode | None = None
+    due_day: int | None = Field(None, ge=1, le=31)
+    frequency: RecurrenceFrequency | None = None
+    pay_from_account_id: uuid.UUID | None = None
+    auto_pay: bool | None = None
+    auto_pay_days_before: int | None = Field(None, ge=0, le=30)
+    reminder_days: list[int] | None = None
+    is_active: bool | None = None
+    next_due_date: date | None = None
+    vendor_ref: str | None = Field(None, max_length=100)
+    icon: str | None = Field(None, max_length=10)
+    color: str | None = Field(None, max_length=7)
 
 
 @router.get("/")
@@ -60,14 +103,14 @@ async def list_bills(
 
 @router.post("/", status_code=201)
 async def create_bill(
-    data: dict,
+    data: BillCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
     _perm: None = PlanPermission("bills:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
-    bill = Bill(user_id=user.id, family_id=ctx.family_id, **data)
+    bill = Bill(user_id=user.id, family_id=ctx.family_id, **data.model_dump(exclude_unset=True))
     db.add(bill)
     await db.flush()
     await db.refresh(bill)
@@ -77,16 +120,15 @@ async def create_bill(
 @router.put("/{bill_id}")
 async def update_bill(
     bill_id: uuid.UUID,
-    data: dict,
+    data: BillUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_edit_budgets")
     bill = await _get_or_404(db, bill_id, user.id, family_id=ctx.family_id)
-    for key, value in data.items():
-        if hasattr(bill, key):
-            setattr(bill, key, value)
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(bill, key, value)
     await db.flush()
     await db.refresh(bill)
     return _to_dict(bill)
