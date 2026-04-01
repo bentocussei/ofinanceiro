@@ -67,11 +67,12 @@ export async function register(
     const body: Record<string, string> = { phone, name, password, country: country || "AO" }
     if (email) body.email = email
     if (promoCode) body.promo_code = promoCode
-    const data = await apiFetch<AuthResponse>("/api/v1/auth/register", {
+    // Register NÃO retorna tokens — apenas cria user e envia OTP
+    // Tokens são emitidos apenas após verificação OTP
+    await apiFetch<{ message: string }>("/api/v1/auth/register", {
       method: "POST",
       body: JSON.stringify(body),
     })
-    storeTokens(data.access_token, data.refresh_token)
     return true
   } catch {
     return false
