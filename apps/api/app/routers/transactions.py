@@ -143,17 +143,19 @@ async def monthly_summary(
     if ctx.is_family:
         from app.models.user import User as UserModel
 
+        from sqlalchemy import case
+
         member_stmt = (
             select(
                 UserModel.name.label("member_name"),
                 func.sum(
-                    func.case(
+                    case(
                         (Transaction.type == TransactionType.INCOME, Transaction.amount),
                         else_=0,
                     )
                 ).label("income"),
                 func.sum(
-                    func.case(
+                    case(
                         (Transaction.type == TransactionType.EXPENSE, Transaction.amount),
                         else_=0,
                     )
