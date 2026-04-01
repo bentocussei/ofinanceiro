@@ -52,6 +52,8 @@ class TransactionResponse(BaseModel):
     notes: str | None
     transaction_date: date
     created_at: datetime
+    source_type: str | None = None
+    source_id: uuid.UUID | None = None
 
 
 class TransactionFilter(BaseModel):

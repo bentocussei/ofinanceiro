@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    String,
     Text,
     UniqueConstraint,
 )
@@ -63,6 +64,14 @@ class Transaction(BaseModel):
     reviewed_at: Mapped[datetime | None] = mapped_column()
 
     notes: Mapped[str | None] = mapped_column(Text)
+
+    # Audit trail — origin tracking
+    source_type: Mapped[str | None] = mapped_column(
+        String(30), nullable=True, index=True
+    )  # manual, goal_contribution, debt_payment, bill_payment, recurring_rule, transfer, investment
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, index=True
+    )  # FK to the originating record (goal.id, debt.id, bill.id, etc.)
 
     # Dates
     transaction_date: Mapped[date] = mapped_column(Date, default=date.today)

@@ -116,6 +116,8 @@ async def transfer(
         amount=data.amount,
         type=TransactionType.TRANSFER,
         description=description,
+        source_type="transfer",
+        source_id=None,
     )
     db.add(txn_out)
     from_account.balance -= data.amount
@@ -127,6 +129,8 @@ async def transfer(
         amount=data.amount,
         type=TransactionType.TRANSFER,
         description=description,
+        source_type="transfer",
+        source_id=None,
     )
     db.add(txn_in)
     to_account.balance += data.amount

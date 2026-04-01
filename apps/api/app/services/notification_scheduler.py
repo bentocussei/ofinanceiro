@@ -332,6 +332,8 @@ async def process_recurring_rules(db: AsyncSession) -> int:
             description=rule.description,
             transaction_date=today,
             is_recurring=True,
+            source_type="recurring_rule",
+            source_id=rule.id,
         )
         db.add(txn)
 

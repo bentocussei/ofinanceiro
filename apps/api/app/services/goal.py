@@ -126,6 +126,8 @@ async def contribute(
                 type=TransactionType.EXPENSE,
                 description=f"Contribuição: {goal.name}",
                 transaction_date=date.today(),
+                source_type="goal_contribution",
+                source_id=goal.id,
             )
             db.add(txn)
 
