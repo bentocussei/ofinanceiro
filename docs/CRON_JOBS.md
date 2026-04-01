@@ -26,7 +26,7 @@ Verifica condicoes como facturas a vencer, saldo baixo, alertas de orcamento e m
 - Schedule: `0 * * * *` (a cada hora)
 - Command:
 ```bash
-curl -X POST https://ofinanceiro-api-production.up.railway.app/api/v1/notifications/check \
+curl -X POST https://api.ofinanceiro.app/api/v1/notifications/check \
   -H "X-Service-Token: $SERVICE_TOKEN"
 ```
 
@@ -38,7 +38,7 @@ Gera resumos financeiros mensais para todos os utilizadores activos.
 - Schedule: `0 0 * * *` (diariamente a meia-noite UTC)
 - Command:
 ```bash
-curl -X POST https://ofinanceiro-api-production.up.railway.app/api/v1/snapshots/generate \
+curl -X POST https://api.ofinanceiro.app/api/v1/snapshots/generate \
   -H "X-Service-Token: $SERVICE_TOKEN"
 ```
 

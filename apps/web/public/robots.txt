@@ -13,4 +13,4 @@ Disallow: /family
 Disallow: /settings
 Disallow: /onboarding
 
-Sitemap: https://ofinanceiro-web-production.up.railway.app/sitemap.xml
+Sitemap: https://ofinanceiro.app/sitemap.xml
