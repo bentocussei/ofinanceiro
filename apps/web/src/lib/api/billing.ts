@@ -48,6 +48,16 @@ interface UpgradeData {
   billing_cycle?: string
 }
 
+export interface ModuleAddonInfo {
+  id: string
+  name: string
+  module: string
+  description: string | null
+  price_monthly: number
+  price_annual: number
+  features_override: Record<string, unknown>
+}
+
 export const billingApi = {
   plans: () =>
     apiFetch<PlanInfo[]>("/api/v1/billing/plans"),
@@ -87,5 +97,18 @@ export const billingApi = {
     apiFetch<{ message: string; discount: number }>("/api/v1/billing/apply-promo", {
       method: "POST",
       body: JSON.stringify({ code }),
+    }),
+
+  addons: () =>
+    apiFetch<ModuleAddonInfo[]>("/api/v1/billing/addons"),
+
+  addAddon: (addonId: string) =>
+    apiFetch<{ success: boolean }>("/api/v1/billing/addons/" + addonId + "/add", {
+      method: "POST",
+    }),
+
+  removeAddon: (addonId: string) =>
+    apiFetch<{ success: boolean }>("/api/v1/billing/addons/" + addonId + "/remove", {
+      method: "DELETE",
     }),
 }

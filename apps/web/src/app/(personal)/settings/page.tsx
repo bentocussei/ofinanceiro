@@ -9,6 +9,7 @@ import {
   Mail,
   Phone,
   Plus,
+  Puzzle,
   ShieldCheck,
   Star,
   Tag as TagIcon,
@@ -22,7 +23,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { billingApi, type PlanInfo, type SubscriptionInfo } from "@/lib/api/billing"
+import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo } from "@/lib/api/billing"
 import { tagsApi, type Tag } from "@/lib/api/tags"
 import { usersApi } from "@/lib/api/users"
 import { getCurrentUser, type UserProfile } from "@/lib/auth"
@@ -473,6 +474,12 @@ function SubscriptionTab({ user }: { user: UserProfile | null }) {
         </section>
       )}
 
+      {/* Module Addons */}
+      <ModuleAddonsSection subscription={subscription} onUpdate={async () => {
+        const s = await billingApi.subscription().catch(() => null)
+        setSubscription(s)
+      }} />
+
       {/* Promo code */}
       <section className="rounded-xl bg-card shadow-sm p-5">
         <div className="flex items-center gap-3 mb-5">
@@ -501,6 +508,124 @@ function SubscriptionTab({ user }: { user: UserProfile | null }) {
         </div>
       </section>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Module Addons section (inside subscription tab)
+// ---------------------------------------------------------------------------
+
+function ModuleAddonsSection({ subscription, onUpdate }: { subscription: SubscriptionInfo | null; onUpdate: () => Promise<void> }) {
+  const [addons, setAddons] = useState<ModuleAddonInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState<string | null>(null)
+
+  useEffect(() => {
+    billingApi.addons()
+      .then(setAddons)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading || addons.length === 0) return null
+
+  // Determine which modules the user's plan already includes
+  const planFeatures = subscription?.features || {}
+  const activeAddonModules = new Set<string>() // TODO: get from subscription addons list
+
+  const handleAdd = async (addonId: string) => {
+    setProcessing(addonId)
+    try {
+      await billingApi.addAddon(addonId)
+      toast.success("Modulo adicionado com sucesso")
+      await onUpdate()
+    } catch {
+      toast.error("Erro ao adicionar modulo")
+    }
+    setProcessing(null)
+  }
+
+  const handleRemove = async (addonId: string) => {
+    setProcessing(addonId)
+    try {
+      await billingApi.removeAddon(addonId)
+      toast.success("Modulo removido")
+      await onUpdate()
+    } catch {
+      toast.error("Erro ao remover modulo")
+    }
+    setProcessing(null)
+  }
+
+  return (
+    <section className="rounded-xl bg-card shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <Puzzle className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-[15px] font-semibold">Modulos adicionais</h2>
+          <p className="text-xs text-muted-foreground">Adicione modulos ao seu plano actual</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {addons.map((addon) => {
+          const included = !!(planFeatures as Record<string, Record<string, unknown>>)[addon.module]?.enabled
+          const isActive = activeAddonModules.has(addon.module)
+
+          return (
+            <div
+              key={addon.id}
+              className={`rounded-lg border p-4 ${
+                included ? "border-primary/30 bg-primary/5" : isActive ? "border-green-500/30 bg-green-50 dark:bg-green-900/10" : "border-border"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="text-sm font-semibold">{addon.name}</p>
+                  {addon.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{addon.description}</p>
+                  )}
+                </div>
+                {included && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    <Check className="h-3 w-3" />
+                    No plano
+                  </span>
+                )}
+              </div>
+
+              {!included && (
+                <div className="flex items-center justify-between mt-3">
+                  <p className="text-xs font-mono font-semibold">
+                    +{formatKz(addon.price_monthly)}/mes
+                  </p>
+                  {isActive ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={processing === addon.id}
+                      onClick={() => handleRemove(addon.id)}
+                    >
+                      {processing === addon.id ? "A remover..." : "Remover"}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={processing === addon.id}
+                      onClick={() => handleAdd(addon.id)}
+                    >
+                      {processing === addon.id ? "A adicionar..." : "Adicionar"}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
