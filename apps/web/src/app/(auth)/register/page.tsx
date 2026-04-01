@@ -35,7 +35,7 @@ export default function RegisterPage() {
   const [countryCode, setCountryCode] = useState("AO")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [email, setEmail] = useState("")
+  // email removido do formulário — recolhido depois no perfil se necessário
   const [hasPromoCode, setHasPromoCode] = useState(false)
   const [promoCode, setPromoCode] = useState("")
   const [promoValidation, setPromoValidation] = useState<PromoValidation | null>(null)
@@ -115,9 +115,8 @@ export default function RegisterPage() {
     }
 
     const validPromo = hasPromoCode && promoValidation ? promoCode.trim() : undefined
-    const validEmail = email.trim() || undefined
 
-    const success = await register(phone, name, password, countryCode, validEmail, validPromo)
+    const success = await register(phone, name, password, countryCode, undefined, validPromo)
     if (success) {
       setCountdown(60)
       setStep("otp")
@@ -267,20 +266,6 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                Email <span className="text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="exemplo@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
               />
             </div>
 
