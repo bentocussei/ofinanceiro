@@ -71,8 +71,9 @@ export default function DebtsPage() {
   const [linkedAccountId, setLinkedAccountId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  interface AccountOption { id: string; name: string }
+  interface AccountOption { id: string; name: string; balance: number }
   const [debtAccounts, setDebtAccounts] = useState<AccountOption[]>([])
+  const [payAccount, setPayAccount] = useState("")
 
   useEffect(() => {
     accountsApi.summary()
@@ -159,9 +160,10 @@ export default function DebtsPage() {
   const handlePay = async (debtId: string) => {
     if (!payAmount) return
     try {
-      await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100))
+      await debtsApi.payment(debtId, Math.round(parseFloat(payAmount) * 100), payAccount || undefined)
       setPayOpen(null)
       setPayAmount("")
+      setPayAccount("")
       setCursor(null)
       setHasMore(false)
       fetchDebts()
@@ -382,10 +384,22 @@ export default function DebtsPage() {
       )}
 
       {/* Payment dialog */}
-      <Dialog open={!!payOpen} onOpenChange={(v) => { if (!v) setPayOpen(null) }}>
+      <Dialog open={!!payOpen} onOpenChange={(v) => { if (!v) { setPayOpen(null); setPayAccount("") } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Registar pagamento</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            <div>
+              <Label>Conta de origem</Label>
+              <Select value={payAccount} onValueChange={(v) => setPayAccount(v ?? "")}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar conta (opcional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sem débito (manual)</SelectItem>
+                  {debtAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>{acc.name} — {formatKz(acc.balance)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label>Valor (Kz)</Label><Input type="number" placeholder="0" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="font-mono" autoFocus /></div>
             <Button className="w-full" onClick={() => payOpen && handlePay(payOpen)}>Pagar</Button>
           </div>

@@ -109,10 +109,10 @@ export const debtsApi = {
       ...opts,
     }),
 
-  payment: (id: string, amount: number, opts?: H) =>
+  payment: (id: string, amount: number, fromAccountId?: string, opts?: H) =>
     apiFetch<{ success: boolean; remaining_balance: number }>(
       "/api/v1/debts/" + id + "/payment",
-      { method: "POST", body: JSON.stringify({ amount }), ...opts },
+      { method: "POST", body: JSON.stringify({ amount, ...(fromAccountId ? { from_account_id: fromAccountId } : {}) }), ...opts },
     ),
 
   update: (id: string, data: UpdateDebtData, opts?: H) =>

@@ -249,23 +249,8 @@ async def create_asset(
         notes=data.notes,
     )
     db.add(asset)
-
-    # Optionally debit account and create expense transaction
-    if data.from_account_id:
-        account = await db.get(Account, data.from_account_id)
-        if not account:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
-        account.balance -= data.purchase_price
-        txn = Transaction(
-            user_id=user.id,
-            account_id=data.from_account_id,
-            amount=data.purchase_price,
-            type=TransactionType.EXPENSE,
-            description=f"Compra: {data.name}",
-            transaction_date=data.purchase_date or date.today(),
-        )
-        db.add(txn)
-
+    # Activos são registos retroactivos — o utilizador já comprou o bem.
+    # O débito da compra deve ser feito via transacção manual se necessário.
     await db.flush()
     await db.refresh(asset)
     return _serialize_asset(asset)

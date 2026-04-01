@@ -176,22 +176,8 @@ async def create_investment(
         maturity_date=data.maturity_date, notes=data.notes,
     )
     db.add(inv)
-
-    # Optionally debit account and create expense transaction
-    if data.from_account_id:
-        account = await db.get(Account, data.from_account_id)
-        if not account:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
-        account.balance -= data.invested_amount
-        txn = Transaction(
-            user_id=user.id,
-            account_id=data.from_account_id,
-            amount=data.invested_amount,
-            type=TransactionType.EXPENSE,
-            description=f"Investimento: {data.name}",
-            transaction_date=date.today(),
-        )
-        db.add(txn)
+    # Investimentos são registos retroactivos — o utilizador já investiu o dinheiro.
+    # O débito deve ser feito via transacção manual se necessário.
 
     await db.flush()
     return {"id": str(inv.id), "name": inv.name}
