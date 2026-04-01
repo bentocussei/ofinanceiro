@@ -11,15 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.enums import SubscriptionStatus
-from app.models.feature_addon import FeatureAddon
+from app.models.module_addon import ModuleAddon
 from app.models.plan import Plan
 from app.models.promotion import Promotion, PromotionUsage
 from app.models.subscription import UserSubscription
 from app.models.user import User
 from app.schemas.billing import (
-    FeatureAddonCreate,
-    FeatureAddonResponse,
-    FeatureAddonUpdate,
+    ModuleAddonCreate,
+    ModuleAddonResponse,
+    ModuleAddonUpdate,
     PlanCreate,
     PlanResponse,
     PlanUpdate,
@@ -94,8 +94,8 @@ def _promotion_to_response(promo: Promotion) -> PromotionResponse:
     )
 
 
-def _addon_to_response(addon: FeatureAddon) -> FeatureAddonResponse:
-    return FeatureAddonResponse(
+def _addon_to_response(addon: ModuleAddon) -> ModuleAddonResponse:
+    return ModuleAddonResponse(
         id=str(addon.id),
         name=addon.name,
         module=addon.module,
@@ -119,7 +119,7 @@ def _sub_to_response(sub: UserSubscription) -> SubscriptionResponse:
         discount_amount=sub.discount_amount,
         extra_members_count=sub.extra_members_count,
         extra_members_cost=sub.extra_members_cost,
-        feature_addons_cost=sub.feature_addons_cost,
+        module_addons_cost=sub.module_addons_cost,
         final_price=sub.final_price,
         start_date=sub.start_date.isoformat(),
         end_date=sub.end_date.isoformat(),
@@ -339,15 +339,15 @@ async def get_promotion_usage(
 # Add-ons
 # ---------------------------------------------------------------------------
 
-@router.post("/addons", response_model=FeatureAddonResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/addons", response_model=ModuleAddonResponse, status_code=status.HTTP_201_CREATED)
 async def create_addon(
-    data: FeatureAddonCreate,
+    data: ModuleAddonCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> FeatureAddonResponse:
+) -> ModuleAddonResponse:
     """Criar um novo extra (add-on)."""
     await require_admin_perm("admin_billing:addons:create", db, user)
-    addon = FeatureAddon(
+    addon = ModuleAddon(
         name=data.name,
         module=data.module,
         description=data.description,
@@ -364,16 +364,16 @@ async def create_addon(
     return _addon_to_response(addon)
 
 
-@router.put("/addons/{addon_id}", response_model=FeatureAddonResponse)
+@router.put("/addons/{addon_id}", response_model=ModuleAddonResponse)
 async def update_addon(
     addon_id: uuid.UUID,
-    data: FeatureAddonUpdate,
+    data: ModuleAddonUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> FeatureAddonResponse:
+) -> ModuleAddonResponse:
     """Actualizar um extra (add-on) existente."""
     await require_admin_perm("admin_billing:addons:update", db, user)
-    result = await db.execute(select(FeatureAddon).where(FeatureAddon.id == addon_id))
+    result = await db.execute(select(ModuleAddon).where(ModuleAddon.id == addon_id))
     addon = result.scalar_one_or_none()
     if not addon:
         raise HTTPException(

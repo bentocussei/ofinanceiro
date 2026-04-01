@@ -70,7 +70,7 @@ class UserSubscription(BaseModel):
     discount_amount: Mapped[int] = mapped_column(Integer, default=0)
     extra_members_count: Mapped[int] = mapped_column(SmallInteger, default=0)
     extra_members_cost: Mapped[int] = mapped_column(Integer, default=0)
-    feature_addons_cost: Mapped[int] = mapped_column(Integer, default=0)
+    module_addons_cost: Mapped[int] = mapped_column(Integer, default=0)
     final_price: Mapped[int] = mapped_column(Integer)  # what user actually pays
 
     # Promotion
@@ -105,9 +105,9 @@ class SubscriptionAddon(BaseModel):
         ForeignKey("user_subscriptions.id", ondelete="CASCADE"),
         index=True,
     )
-    feature_addon_id: Mapped[uuid.UUID] = mapped_column(
+    module_addon_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        ForeignKey("feature_addons.id", ondelete="CASCADE"),
+        ForeignKey("module_addons.id", ondelete="CASCADE"),
         index=True,
     )
     addon_snapshot: Mapped[dict] = mapped_column(

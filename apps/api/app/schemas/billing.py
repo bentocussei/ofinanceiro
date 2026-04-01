@@ -74,7 +74,7 @@ class PriceBreakdown(BaseModel):
     free_days: int = 0
     extra_members_count: int = 0
     extra_members_cost: int = 0
-    feature_addons_cost: int = 0
+    module_addons_cost: int = 0
     final_price: int
     currency: str = "AOA"
 
@@ -91,7 +91,7 @@ class SubscriptionResponse(BaseModel):
     discount_amount: int
     extra_members_count: int
     extra_members_cost: int
-    feature_addons_cost: int
+    module_addons_cost: int
     final_price: int
     start_date: str
     end_date: str
@@ -145,10 +145,10 @@ class PromotionUpdate(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Feature Add-on
+# Module Add-on
 # ---------------------------------------------------------------------------
 
-class FeatureAddonResponse(BaseModel):
+class ModuleAddonResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -161,7 +161,7 @@ class FeatureAddonResponse(BaseModel):
     is_active: bool
 
 
-class FeatureAddonCreate(BaseModel):
+class ModuleAddonCreate(BaseModel):
     name: str = Field(max_length=100)
     module: str = Field(max_length=50)
     description: str | None = None
@@ -171,7 +171,7 @@ class FeatureAddonCreate(BaseModel):
     sort_order: int = 0
 
 
-class FeatureAddonUpdate(BaseModel):
+class ModuleAddonUpdate(BaseModel):
     name: str | None = Field(None, max_length=100)
     module: str | None = Field(None, max_length=50)
     description: str | None = None
@@ -183,4 +183,4 @@ class FeatureAddonUpdate(BaseModel):
 
 
 class AddAddonRequest(BaseModel):
-    feature_addon_id: str
+    module_addon_id: str

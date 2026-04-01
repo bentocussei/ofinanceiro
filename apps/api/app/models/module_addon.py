@@ -1,4 +1,4 @@
-"""Feature addon model for optional billing extras."""
+"""Module add-on — grants access to all features of a specific module."""
 
 from sqlalchemy import Boolean, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import BaseModel
 
 
-class FeatureAddon(BaseModel):
-    __tablename__ = "feature_addons"
+class ModuleAddon(BaseModel):
+    __tablename__ = "module_addons"
 
     name: Mapped[str] = mapped_column(String(100))
     module: Mapped[str] = mapped_column(String(50))  # e.g. "ocr", "ai", "voice"
