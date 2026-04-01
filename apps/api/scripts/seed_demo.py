@@ -634,15 +634,15 @@ async def main() -> None:
         plan_personal = Plan(
             id=plan_personal_id, type=PlanType.PERSONAL,
             name="Pessoal", description="Controlo total das suas finanças pessoais",
-            base_price_monthly=149000, base_price_annual=1490000,
+            base_price_monthly=199000, base_price_annual=1990000,
             max_family_members=0, extra_member_cost=0,
             features=personal_features,
         )
         plan_family = Plan(
             id=plan_family_id, type=PlanType.FAMILY,
             name="Familiar", description="Gestão financeira para toda a família",
-            base_price_monthly=349000, base_price_annual=3490000,
-            max_family_members=5, extra_member_cost=49000,
+            base_price_monthly=499000, base_price_annual=4990000,
+            max_family_members=5, extra_member_cost=99000,
             features=family_features,
         )
         db.add_all([plan_personal, plan_family])
@@ -687,13 +687,13 @@ async def main() -> None:
             user_id=cussei_id, plan_id=plan_family_id,
             plan_snapshot={
                 "type": "family", "name": "Familiar",
-                "base_price_monthly": 349000, "base_price_annual": 3490000,
-                "max_family_members": 5, "extra_member_cost": 49000,
+                "base_price_monthly": 499000, "base_price_annual": 4990000,
+                "max_family_members": 5, "extra_member_cost": 99000,
                 "features": family_features,
             },
             billing_cycle=BillingCycle.MONTHLY,
             status=SubscriptionStatus.ACTIVE,
-            base_price=349000, discount_amount=349000,
+            base_price=499000, discount_amount=499000,
             extra_members_count=0, extra_members_cost=0,
             feature_addons_cost=0, final_price=0,
             promotion_id=promo_launch.id,
@@ -706,13 +706,13 @@ async def main() -> None:
             user_id=ana_id, plan_id=plan_personal_id,
             plan_snapshot={
                 "type": "personal", "name": "Pessoal",
-                "base_price_monthly": 149000, "base_price_annual": 1490000,
+                "base_price_monthly": 199000, "base_price_annual": 1990000,
                 "max_family_members": 0, "extra_member_cost": 0,
                 "features": personal_features,
             },
             billing_cycle=BillingCycle.MONTHLY,
             status=SubscriptionStatus.ACTIVE,
-            base_price=149000, discount_amount=149000,
+            base_price=199000, discount_amount=199000,
             extra_members_count=0, extra_members_cost=0,
             feature_addons_cost=0, final_price=0,
             promotion_id=promo_launch.id,
