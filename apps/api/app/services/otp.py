@@ -89,11 +89,20 @@ async def send_otp_sms(phone: str, otp: str) -> bool:
         from twilio.rest import Client
 
         client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
-        client.messages.create(
-            body=f"O Financeiro: O seu código é {otp}. Válido por 5 minutos.",
-            from_=settings.twilio_phone_number,
-            to=phone,
-        )
+        params: dict = {
+            "body": f"O Financeiro: O seu código é {otp}. Válido por 5 minutos.",
+            "to": phone,
+        }
+        # Use Messaging Service SID (Alpha Sender) if configured, otherwise phone number
+        if settings.twilio_messaging_service_sid:
+            params["messaging_service_sid"] = settings.twilio_messaging_service_sid
+        elif settings.twilio_phone_number:
+            params["from_"] = settings.twilio_phone_number
+        else:
+            logger.error("Twilio: sem messaging_service_sid nem phone_number configurado")
+            return False
+
+        client.messages.create(**params)
         return True
     except Exception:
         logger.exception("Falha ao enviar SMS para %s", phone)

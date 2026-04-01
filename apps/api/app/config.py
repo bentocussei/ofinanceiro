@@ -37,10 +37,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 100
     chat_rate_limit_per_minute: int = 20
 
-    # Twilio (SMS OTP)
+    # Twilio (SMS OTP + notifications)
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
-    twilio_phone_number: str = ""
+    twilio_phone_number: str = ""  # fallback if no messaging service
+    twilio_messaging_service_sid: str = ""  # preferred: Alpha Sender
 
     # Stripe (Billing)
     stripe_secret_key: str = ""
