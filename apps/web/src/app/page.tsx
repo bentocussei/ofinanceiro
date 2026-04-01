@@ -1,19 +1,15 @@
-import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
   BarChart3,
   Bell,
   Banknote,
-  Building2,
   Check,
   ChevronRight,
   CreditCard,
   Eye,
   PiggyBank,
-  Play,
   Receipt,
-  Repeat,
   Shield,
   Smartphone,
   Target,
@@ -70,13 +66,13 @@ const features = [
     icon: Receipt,
     title: "Contas e recibos",
     description:
-      "Fotografe recibos, a IA extrai os dados. Registe contas a pagar com lembretes automáticos.",
+      "Fotografe recibos e os dados são extraídos automaticamente. Registe contas a pagar com lembretes.",
   },
   {
     icon: Zap,
-    title: "Assistente com IA",
+    title: "Assistente pessoal",
     description:
-      "Pergunte sobre as suas finanças em linguagem natural. Receba insights personalizados todos os dias.",
+      "Pergunte sobre as suas finanças em linguagem natural. Receba sugestões personalizadas todos os dias.",
   },
 ]
 
@@ -88,8 +84,8 @@ const plans = [
     description: "Controlo total das suas finanças",
     features: [
       "Contas e transacções ilimitadas",
-      "Assistente IA completo",
-      "Fotografar recibos (OCR inteligente)",
+      "Assistente pessoal completo",
+      "Fotografar recibos automaticamente",
       "Orçamentos avançados com alertas",
       "Metas de poupança e investimentos",
       "Património e relatórios completos",
@@ -120,8 +116,8 @@ const plans = [
 
 const stats = [
   { value: "15+", label: "Módulos financeiros" },
-  { value: "9", label: "Agentes IA especializados" },
-  { value: "115", label: "Funcionalidades" },
+  { value: "100%", label: "Em Kwanzas" },
+  { value: "Pessoal", label: "e Familiar" },
   { value: "0 Kz", label: "Primeiros 90 dias" },
 ]
 
@@ -130,7 +126,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex items-center justify-between px-8 py-3 max-w-[1600px]">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Banknote className="h-4 w-4 text-primary-foreground" />
@@ -170,84 +166,80 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="pointer-events-none absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
 
-        <div className="relative mx-auto max-w-6xl px-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6">
-            <Zap className="h-3.5 w-3.5" />
-            Promoção de lançamento — 90 dias grátis
-          </div>
+        <div className="relative mx-auto px-8 max-w-[1600px]">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+            {/* Left — text */}
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Saiba exactamente para onde vai cada{" "}
+                <span className="text-primary">Kwanza</span>
+              </h1>
 
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Saiba exactamente para onde vai cada{" "}
-            <span className="text-primary">Kwanza</span>
-          </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                A plataforma de gestão financeira pessoal e familiar mais completa de Angola.
+                Contas, orçamentos, metas, investimentos, património — tudo num só lugar.
+              </p>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            A plataforma de gestão financeira pessoal e familiar mais completa para Angola.
-            Contas, orçamentos, metas, investimentos, património — tudo num só lugar, com inteligência artificial.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
-            >
-              Começar 90 dias grátis
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-8 py-3.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Já tenho conta
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4 max-w-2xl mx-auto">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="text-2xl font-bold font-mono text-primary">{s.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+                >
+                  Começar 90 dias grátis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-8 py-3.5 text-sm font-medium transition-colors hover:bg-accent"
+                >
+                  Já tenho conta
+                </Link>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Dashboard Screenshot — hero image */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="rounded-2xl border border-border/50 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-              <span className="ml-2 text-xs text-muted-foreground">ofinanceiro.ao/dashboard</span>
+              {/* Stats */}
+              <div className="mt-12 grid grid-cols-4 gap-6">
+                {stats.map((s) => (
+                  <div key={s.label}>
+                    <p className="text-xl font-bold font-mono text-primary">{s.value}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <Image
-              src="/screenshots/dashboard.png"
-              alt="O Financeiro — Dashboard pessoal"
-              width={1440}
-              height={900}
-              className="w-full"
-              priority
-            />
+
+            {/* Right — real screenshot */}
+            <div className="hidden lg:block">
+              <div className="rounded-2xl border border-border/50 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-muted/30">
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                  <span className="ml-2 text-[10px] text-muted-foreground">ofinanceiro.ao</span>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/screenshots/dashboard.png"
+                  alt="O Financeiro — Dashboard"
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features */}
       <section id="funcionalidades" className="py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center mb-14">
+        <div className="mx-auto px-8 max-w-[1600px]">
+          <div className="max-w-xl mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Funcionalidades
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
               Tudo o que precisa para controlar as suas finanças
             </h2>
-            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
-              9 módulos financeiros + assistente IA. Pensado para a forma como os angolanos gerem o dinheiro.
+            <p className="mt-3 text-muted-foreground">
+              Pensado para a forma como os angolanos gerem o dinheiro no dia-a-dia.
             </p>
           </div>
 
@@ -275,84 +267,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Platform showcase with real screenshots */}
+      {/* Platform showcase */}
       <section id="plataforma" className="border-t border-border bg-muted/30 py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center mb-14">
+        <div className="mx-auto px-8 max-w-[1600px]">
+          <div className="max-w-xl mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Plataforma
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
               Uma plataforma, duas perspectivas
             </h2>
-            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
+            <p className="mt-3 text-muted-foreground">
               Finanças pessoais e familiares em contextos separados. Mude entre eles com um clique.
             </p>
           </div>
 
           {/* Screenshot grid */}
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* Transactions */}
             <div>
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <Image
-                  src="/screenshots/transactions.png"
-                  alt="Transacções"
-                  width={1440}
-                  height={900}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/transactions.png" alt="Transacções" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">Transacções em tempo real</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Visualize despesas e receitas agrupadas por data ou em modo planilha. Filtre por tipo e período.
+                Despesas e receitas agrupadas por data ou em modo planilha. Filtre por tipo e período.
               </p>
             </div>
 
-            {/* Reports */}
             <div>
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <Image
-                  src="/screenshots/reports.png"
-                  alt="Relatórios"
-                  width={1440}
-                  height={900}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/reports.png" alt="Relatórios" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">Relatórios visuais</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Gráficos de receitas vs despesas, gastos por categoria com donut chart. Dados que contam histórias.
+                Receitas vs despesas, gastos por categoria. Dados que contam histórias.
               </p>
             </div>
 
-            {/* Investments */}
             <div>
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <Image
-                  src="/screenshots/investments.png"
-                  alt="Investimentos"
-                  width={1440}
-                  height={900}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/investments.png" alt="Investimentos" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">Portfolio de investimentos</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Allocation por tipo, insights de diversificação, simulador de juros compostos. Tudo em Kwanzas.
+                Alocação por tipo, análise de diversificação, simulador de juros compostos.
               </p>
             </div>
 
-            {/* Family Dashboard */}
             <div>
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <Image
-                  src="/screenshots/family-dashboard.png"
-                  alt="Dashboard familiar"
-                  width={1440}
-                  height={900}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/family-dashboard.png" alt="Dashboard familiar" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">Dashboard familiar</h3>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -361,17 +329,12 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Dark mode + Mobile */}
+          {/* Dark + Mobile */}
           <div className="mt-12 grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <Image
-                  src="/screenshots/dashboard-dark.png"
-                  alt="Dark mode"
-                  width={1440}
-                  height={900}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/dashboard-dark.png" alt="Modo escuro" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">Modo escuro elegante</h3>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -380,13 +343,8 @@ export default function LandingPage() {
             </div>
             <div>
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[280px] mx-auto">
-                <Image
-                  src="/screenshots/mobile-dashboard.png"
-                  alt="Mobile"
-                  width={390}
-                  height={844}
-                  className="w-full"
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/mobile-dashboard.png" alt="Mobile" className="w-full" />
               </div>
               <h3 className="mt-4 text-sm font-semibold text-center">Responsivo</h3>
               <p className="mt-1 text-sm text-muted-foreground text-center">
@@ -399,17 +357,19 @@ export default function LandingPage() {
 
       {/* Video Demo */}
       <section className="py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Demonstração
-          </p>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            Veja a plataforma em acção
-          </h2>
-          <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
-            Do login à navegação completa em menos de 1 minuto.
-          </p>
-          <div className="mt-10 rounded-2xl border border-border/50 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
+        <div className="mx-auto px-8 max-w-[1200px]">
+          <div className="text-center mb-10">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Demonstração
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Veja a plataforma em acção
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Do login à navegação completa em menos de 1 minuto.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/50 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
             <video
               controls
               className="w-full"
@@ -425,7 +385,7 @@ export default function LandingPage() {
 
       {/* Trust indicators */}
       <section className="border-t border-border py-12">
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto px-8 max-w-[1600px]">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <div className="flex flex-col items-center gap-2 text-center">
               <Shield className="h-6 w-6 text-primary" />
@@ -433,7 +393,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col items-center gap-2 text-center">
               <Smartphone className="h-6 w-6 text-primary" />
-              <p className="text-xs text-muted-foreground">Acesso em qualquer dispositivo</p>
+              <p className="text-xs text-muted-foreground">Qualquer dispositivo</p>
             </div>
             <div className="flex flex-col items-center gap-2 text-center">
               <Wallet className="h-6 w-6 text-primary" />
@@ -449,33 +409,20 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="precos" className="border-t border-border bg-muted/30 py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center mb-8">
+        <div className="mx-auto px-8 max-w-[1600px]">
+          <div className="max-w-xl mb-10">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Preços
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
               Planos simples, em Kwanzas
             </h2>
-            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
-              Sem plano gratuito limitado. Acesso completo desde o primeiro dia.
+            <p className="mt-3 text-muted-foreground">
+              Acesso completo desde o primeiro dia. 90 dias grátis para novos utilizadores.
             </p>
           </div>
 
-          {/* Launch promotion banner */}
-          <div className="max-w-3xl mx-auto mb-10 rounded-xl bg-primary/10 border border-primary/20 p-5 flex items-center gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary">
-              <Zap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-primary">Promoção de lançamento</p>
-              <p className="text-sm text-muted-foreground">
-                Registe-se agora e receba <span className="font-bold text-foreground">90 dias grátis</span> em qualquer plano. Sem compromisso, cancele quando quiser.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
+          <div className="grid gap-6 sm:grid-cols-2 max-w-3xl">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -522,35 +469,72 @@ export default function LandingPage() {
 
       {/* Final CTA */}
       <section className="py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Comece a controlar as suas finanças hoje
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            90 dias grátis. Sem cartão de crédito. Sem compromisso.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
-            >
-              Criar conta grátis
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Já tenho conta
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+        <div className="mx-auto px-8 max-w-[1600px]">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Comece a controlar as suas finanças hoje
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-lg">
+                90 dias grátis. Sem cartão de crédito. Sem compromisso.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+                >
+                  Criar conta grátis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Já tenho conta
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="rounded-xl bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Check className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Registe-se em menos de 1 minuto</p>
+                      <p className="text-xs text-muted-foreground">Só precisa do número de telefone</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Check className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Adicione as suas contas</p>
+                      <p className="text-xs text-muted-foreground">Bancárias, carteira, poupança — tudo junto</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <Check className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Tenha clareza total</p>
+                      <p className="text-xs text-muted-foreground">Saiba para onde vai cada Kwanza, todos os dias</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-muted-foreground sm:flex-row">
+        <div className="mx-auto flex flex-col items-center justify-between gap-4 px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
               <Banknote className="h-3 w-3 text-primary-foreground" />
