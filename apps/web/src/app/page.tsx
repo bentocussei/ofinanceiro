@@ -2,7 +2,6 @@ import Link from "next/link"
 import {
   ArrowRight,
   BarChart3,
-  Bell,
   Banknote,
   Check,
   ChevronRight,
@@ -10,12 +9,9 @@ import {
   Eye,
   PiggyBank,
   Receipt,
-  Shield,
-  Smartphone,
   Target,
   TrendingUp,
   Users,
-  Wallet,
   Zap,
 } from "lucide-react"
 
@@ -116,7 +112,6 @@ const plans = [
 
 const stats = [
   { value: "15+", label: "Módulos financeiros" },
-  { value: "100%", label: "Em Kwanzas" },
   { value: "Pessoal", label: "e Familiar" },
   { value: "0 Kz", label: "Primeiros 90 dias" },
 ]
@@ -197,7 +192,7 @@ export default function LandingPage() {
               </div>
 
               {/* Stats */}
-              <div className="mt-12 grid grid-cols-4 gap-6">
+              <div className="mt-12 grid grid-cols-3 gap-6">
                 {stats.map((s) => (
                   <div key={s.label}>
                     <p className="text-xl font-bold font-mono text-primary">{s.value}</p>
@@ -301,26 +296,16 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Dark + Mobile */}
-          <div className="mt-12 grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+          {/* Mobile */}
+          <div className="mt-12 flex justify-center">
+            <div className="max-w-[240px]">
               <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/dashboard-dark.png" alt="Modo escuro" className="w-full" />
-              </div>
-              <h3 className="mt-4 text-sm font-semibold">Modo escuro elegante</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tema escuro com tons quentes — pensado para uso nocturno sem cansar a vista.
-              </p>
-            </div>
-            <div>
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[280px] mx-auto">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/screenshots/mobile-dashboard.png" alt="Mobile" className="w-full" />
               </div>
-              <h3 className="mt-4 text-sm font-semibold text-center">Responsivo</h3>
-              <p className="mt-1 text-sm text-muted-foreground text-center">
-                Funciona no telemóvel, tablet e computador.
+              <h3 className="mt-3 text-sm font-semibold text-center">Funciona em qualquer dispositivo</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground text-center">
+                Telemóvel, tablet e computador.
               </p>
             </div>
           </div>
@@ -359,30 +344,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trust indicators */}
-      <section className="border-t border-border py-12">
-        <div className="mx-auto px-8 max-w-[1600px]">
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Shield className="h-6 w-6 text-primary" />
-              <p className="text-xs text-muted-foreground">Dados encriptados</p>
-            </div>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Smartphone className="h-6 w-6 text-primary" />
-              <p className="text-xs text-muted-foreground">Qualquer dispositivo</p>
-            </div>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Wallet className="h-6 w-6 text-primary" />
-              <p className="text-xs text-muted-foreground">100% em Kwanzas</p>
-            </div>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Bell className="h-6 w-6 text-primary" />
-              <p className="text-xs text-muted-foreground">Alertas automáticos</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section id="precos" className="border-t border-border bg-muted/30 py-20">
         <div className="mx-auto px-8 max-w-[1600px]">
@@ -391,7 +352,7 @@ export default function LandingPage() {
               Preços
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Planos simples, em Kwanzas
+              Planos simples e acessíveis
             </h2>
             <p className="mt-3 text-muted-foreground">
               Acesso completo desde o primeiro dia. 90 dias grátis para novos utilizadores.
