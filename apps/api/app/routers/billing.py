@@ -208,6 +208,52 @@ async def reactivate(
 # Promotions
 # ---------------------------------------------------------------------------
 
+class ValidatePromoBody(BaseModel):
+    code: str
+
+
+class ValidatePromoResponse(BaseModel):
+    name: str
+    type: str
+    value: int
+    free_days: int
+    description: str
+
+
+def _describe_promo(promo: object) -> str:
+    """Human-readable description of a promotion."""
+    promo_type = promo.type.value if hasattr(promo.type, "value") else str(promo.type)
+    if promo_type == "free_days":
+        return f"{promo.free_days} dias grátis"
+    elif promo_type == "percentage":
+        return f"{promo.value}% de desconto"
+    elif promo_type == "fixed_amount":
+        return f"Desconto de {promo.value // 100} Kz"
+    return ""
+
+
+@router.post("/validate-promo", response_model=ValidatePromoResponse)
+async def validate_promo(
+    data: ValidatePromoBody,
+    db: AsyncSession = Depends(get_db),
+) -> ValidatePromoResponse:
+    """Validar código promocional sem autenticação. Para o fluxo de registo."""
+    promo = await billing_service.validate_promotion(db, data.code, None)
+    if not promo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Código promocional inválido ou expirado",
+        )
+    promo_type = promo.type.value if hasattr(promo.type, "value") else str(promo.type)
+    return ValidatePromoResponse(
+        name=promo.name,
+        type=promo_type,
+        value=promo.value,
+        free_days=promo.free_days,
+        description=_describe_promo(promo),
+    )
+
+
 class ApplyPromoBody(BaseModel):
     code: str
 

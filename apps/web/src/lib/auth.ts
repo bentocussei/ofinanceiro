@@ -60,11 +60,41 @@ export async function register(
   name: string,
   password: string,
   country?: string,
+  email?: string,
+  promoCode?: string,
 ): Promise<boolean> {
   try {
+    const body: Record<string, string> = { phone, name, password, country: country || "AO" }
+    if (email) body.email = email
+    if (promoCode) body.promo_code = promoCode
     const data = await apiFetch<AuthResponse>("/api/v1/auth/register", {
       method: "POST",
-      body: JSON.stringify({ phone, name, password, country: country || "AO" }),
+      body: JSON.stringify(body),
+    })
+    storeTokens(data.access_token, data.refresh_token)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function sendOtp(phone: string): Promise<boolean> {
+  try {
+    await apiFetch("/api/v1/auth/otp/send", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function verifyOtp(phone: string, otp: string): Promise<boolean> {
+  try {
+    const data = await apiFetch<AuthResponse>("/api/v1/auth/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, otp }),
     })
     storeTokens(data.access_token, data.refresh_token)
     return true

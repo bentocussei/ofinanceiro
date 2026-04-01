@@ -399,7 +399,7 @@ async def reactivate_subscription(
 async def validate_promotion(
     db: AsyncSession,
     code: str,
-    plan_type: str,
+    plan_type: str | None,
 ) -> Promotion | None:
     """Validate a promo code for a given plan type.
 
@@ -421,8 +421,8 @@ async def validate_promotion(
     if promo.end_date and promo.end_date < now:
         return None
 
-    # Check plan type applicability
-    if not promo.apply_to_all and promo.applicable_plan_types:
+    # Check plan type applicability (skip if no plan_type provided, e.g. register flow)
+    if plan_type and not promo.apply_to_all and promo.applicable_plan_types:
         if plan_type not in promo.applicable_plan_types:
             return None
 
@@ -493,6 +493,76 @@ async def apply_registration_promotion(
     await db.flush()
 
     # Sync plan permissions for the trial subscription
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, user_id, sub.plan_snapshot)
+
+    await record_promotion_usage(
+        db, promo, user_id, sub.id, breakdown.discount_amount
+    )
+
+    await db.refresh(sub)
+    return sub
+
+
+async def apply_promo_code_on_register(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    promo_code: str,
+) -> UserSubscription | None:
+    """Apply a user-provided promo code during registration.
+
+    Similar to apply_registration_promotion but uses a specific code
+    instead of the auto-register promotion.
+    """
+    promo = await validate_promotion(db, promo_code, None)
+    if not promo:
+        return None
+
+    # Find the cheapest active plan to apply the promotion to
+    stmt = (
+        select(Plan)
+        .where(Plan.is_active.is_(True))
+        .order_by(Plan.base_price_monthly.asc())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    plan = result.scalar_one_or_none()
+    if not plan:
+        return None
+
+    breakdown = await calculate_price(
+        db, plan, BillingCycle.MONTHLY, promotion=promo
+    )
+
+    now = datetime.now(timezone.utc)
+
+    trial_end: datetime | None = None
+    if breakdown.free_days > 0:
+        trial_end = now + timedelta(days=breakdown.free_days)
+
+    end = trial_end if trial_end else _period_end(now, BillingCycle.MONTHLY)
+
+    sub = UserSubscription(
+        user_id=user_id,
+        plan_id=plan.id,
+        plan_snapshot=create_plan_snapshot(plan),
+        billing_cycle=BillingCycle.MONTHLY,
+        status=SubscriptionStatus.TRIALING if trial_end else SubscriptionStatus.ACTIVE,
+        base_price=breakdown.base_price,
+        discount_amount=breakdown.discount_amount,
+        extra_members_count=0,
+        extra_members_cost=0,
+        module_addons_cost=0,
+        final_price=breakdown.final_price,
+        promotion_id=promo.id,
+        start_date=now,
+        end_date=end,
+        trial_end_date=trial_end,
+        auto_renew=True,
+    )
+    db.add(sub)
+    await db.flush()
+
     from app.services.permission import sync_user_permissions_from_plan
     await sync_user_permissions_from_plan(db, user_id, sub.plan_snapshot)
 
