@@ -76,7 +76,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
             # Não bloquear o registo se a promoção falhar
             pass
 
-    # Enviar email de boas-vindas (não bloqueia o registo)
+    # Enviar email de boas-vindas se o utilizador forneceu email
     if data.email:
         try:
             from app.services.email import send_welcome_email
