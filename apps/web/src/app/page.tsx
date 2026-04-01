@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ScreenshotGrid } from "@/components/landing/ScreenshotGrid"
 import {
   ArrowRight,
   BarChart3,
@@ -277,38 +278,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Screenshot grid — contained cards */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { src: "/screenshots/transactions.png", title: "Registo de transacções", desc: "Despesas e receitas organizadas por data ou em planilha" },
-              { src: "/screenshots/reports.png", title: "Relatórios visuais", desc: "Gráficos de receitas, despesas e gastos por categoria" },
-              { src: "/screenshots/investments.png", title: "Investimentos", desc: "Alocação por tipo, diversificação e simulador" },
-              { src: "/screenshots/family-dashboard.png", title: "Dashboard familiar", desc: "Património familiar e gastos por membro" },
-            ].map((item) => (
-              <div key={item.title} className="group">
-                <div className="rounded-lg border border-border/50 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.src} alt={item.title} className="w-full" />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold">{item.title}</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile */}
-          <div className="mt-12 flex justify-center">
-            <div className="max-w-[240px]">
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/mobile-dashboard.png" alt="Mobile" className="w-full" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-center">Funciona em qualquer dispositivo</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground text-center">
-                Telemóvel, tablet e computador.
-              </p>
-            </div>
-          </div>
+          {/* Screenshot grid with lightbox */}
+          <ScreenshotGrid />
         </div>
       </section>
 
