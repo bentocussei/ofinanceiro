@@ -42,8 +42,9 @@ export default function GoalsPage() {
   const [createAutoContribute, setCreateAutoContribute] = useState(false)
   const [createAutoContributeDay, setCreateAutoContributeDay] = useState("1")
 
-  interface AccountOption { id: string; name: string }
+  interface AccountOption { id: string; name: string; balance: number }
   const [goalAccounts, setGoalAccounts] = useState<AccountOption[]>([])
+  const [contributeAccount, setContributeAccount] = useState("")
 
   useEffect(() => {
     accountsApi.summary()
@@ -111,9 +112,10 @@ export default function GoalsPage() {
     if (!contributeGoalId || !contributeAmount) return
     setIsContributing(true)
     try {
-      await goalsApi.contribute(contributeGoalId, Math.round(parseFloat(contributeAmount) * 100))
+      await goalsApi.contribute(contributeGoalId, Math.round(parseFloat(contributeAmount) * 100), contributeAccount || undefined)
       setContributeGoalId(null)
       setContributeAmount("")
+      setContributeAccount("")
       setCursor(null)
       setHasMore(false)
       fetchGoals()
@@ -301,10 +303,22 @@ export default function GoalsPage() {
       )}
 
       {/* Contribute dialog */}
-      <Dialog open={!!contributeGoalId} onOpenChange={(v) => { if (!v) { setContributeGoalId(null); setContributeAmount("") } }}>
+      <Dialog open={!!contributeGoalId} onOpenChange={(v) => { if (!v) { setContributeGoalId(null); setContributeAmount(""); setContributeAccount("") } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Contribuir para meta</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            <div>
+              <Label>Conta de origem</Label>
+              <Select value={contributeAccount} onValueChange={(v) => setContributeAccount(v ?? "")}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar conta (opcional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sem débito (manual)</SelectItem>
+                  {goalAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>{acc.name} — {formatKz(acc.balance)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Valor (Kz)</Label>
               <Input type="number" placeholder="0" value={contributeAmount} onChange={(e) => setContributeAmount(e.target.value)} className="font-mono" autoFocus />

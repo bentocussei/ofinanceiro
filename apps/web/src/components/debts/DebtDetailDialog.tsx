@@ -71,7 +71,8 @@ export function DebtDetailDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState("")
-  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([])
+  const [accounts, setAccounts] = useState<{ id: string; name: string; balance: number }[]>([])
+  const [payAccount, setPayAccount] = useState("")
 
   // Edit fields
   const [editName, setEditName] = useState("")
@@ -102,6 +103,7 @@ export function DebtDetailDialog({
     if (!open) {
       setIsEditing(false)
       setPayAmount("")
+      setPayAccount("")
       setError("")
     }
   }, [open])
@@ -171,8 +173,9 @@ export function DebtDetailDialog({
     setIsPaying(true)
     setError("")
     try {
-      await debtsApi.payment(item.id, Math.round(parseFloat(payAmount) * 100), opts)
+      await debtsApi.payment(item.id, Math.round(parseFloat(payAmount) * 100), payAccount || undefined, opts)
       setPayAmount("")
+      setPayAccount("")
       onUpdated?.()
       toast.success("Pagamento registado com sucesso")
     } catch (err: unknown) {
@@ -219,7 +222,7 @@ export function DebtDetailDialog({
   const isPaidOff = item.status === "paid_off"
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setPayAmount(""); setError(""); setIsEditing(false) } }}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setPayAmount(""); setPayAccount(""); setError(""); setIsEditing(false) } }}>
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -413,9 +416,21 @@ export function DebtDetailDialog({
 
               {/* Register payment */}
               {!isPaidOff && (
-                <div className="border-t pt-3">
+                <div className="border-t pt-3 space-y-2">
+                  <div>
+                    <Label>Conta de origem</Label>
+                    <Select value={payAccount} onValueChange={(v) => setPayAccount(v ?? "")}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar conta (opcional)" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sem débito (manual)</SelectItem>
+                        {accounts.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id}>{acc.name} — {formatKz(acc.balance)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Label>Registar pagamento (Kz)</Label>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-2">
                     <Input
                       type="number"
                       placeholder="0"

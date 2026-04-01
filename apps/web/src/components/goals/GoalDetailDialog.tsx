@@ -56,8 +56,9 @@ export function GoalDetailDialog({
   const [editAutoContribute, setEditAutoContribute] = useState(false)
   const [editAutoContributeDay, setEditAutoContributeDay] = useState("1")
   const [editContributionAmount, setEditContributionAmount] = useState("")
-  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([])
+  const [accounts, setAccounts] = useState<{ id: string; name: string; balance: number }[]>([])
   const [contributeAmount, setContributeAmount] = useState("")
+  const [contributeAccount, setContributeAccount] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isContributing, setIsContributing] = useState(false)
@@ -88,6 +89,7 @@ export function GoalDetailDialog({
       setProgress(null)
       setIsEditing(false)
       setContributeAmount("")
+      setContributeAccount("")
       setError("")
     }
   }, [item, open])
@@ -146,8 +148,9 @@ export function GoalDetailDialog({
     setIsContributing(true)
     setError("")
     try {
-      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100), undefined, opts)
+      await goalsApi.contribute(item.id, Math.round(parseFloat(contributeAmount) * 100), contributeAccount || undefined, opts)
       setContributeAmount("")
+      setContributeAccount("")
       fetchProgress()
       onUpdated?.()
       toast.success("Contribuição registada com sucesso")
@@ -344,9 +347,21 @@ export function GoalDetailDialog({
 
               {/* Contribute */}
               {!isComplete && (
-                <div className="border-t pt-3">
+                <div className="border-t pt-3 space-y-2">
+                  <div>
+                    <Label>Conta de origem</Label>
+                    <Select value={contributeAccount} onValueChange={(v) => setContributeAccount(v ?? "")}>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar conta (opcional)" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sem débito (manual)</SelectItem>
+                        {accounts.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id}>{acc.name} — {formatKz(acc.balance)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Label>Contribuir (Kz)</Label>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-2">
                     <Input
                       type="number"
                       placeholder="Valor Kz"
