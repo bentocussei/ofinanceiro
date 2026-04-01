@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # Service Token (cron jobs)
     service_token: str = ""
 
+    # Email (Resend)
+    resend_api_key: str = ""
+    email_from: str = "O Financeiro <noreply@ofinanceiro.app>"
+
     # AI
     anthropic_api_key: str = ""
     openai_api_key: str = ""
