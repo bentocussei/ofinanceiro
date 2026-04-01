@@ -217,6 +217,8 @@ async def register_payment(
                 type=TransactionType.EXPENSE,
                 description=f"Pagamento: {debt.name}",
                 transaction_date=payment_date,
+                source_type="debt_payment",
+                source_id=debt.id,
             )
             db.add(txn)
             await db.flush()

@@ -133,6 +133,8 @@ async def create_transaction(
         is_private=data.is_private,
         needs_review=data.needs_review,
         client_id=data.client_id,
+        source_type="manual",
+        source_id=None,
     )
     db.add(txn)
 

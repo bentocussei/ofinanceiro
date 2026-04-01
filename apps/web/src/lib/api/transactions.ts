@@ -18,6 +18,8 @@ export interface Transaction {
   is_private?: boolean
   needs_review?: boolean
   is_recurring?: boolean
+  source_type?: string | null
+  source_id?: string | null
 }
 
 export interface TransactionPage {

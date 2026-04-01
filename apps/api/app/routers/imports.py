@@ -79,6 +79,8 @@ async def confirm_import(
             description=txn_data.get("description"),
             transaction_date=txn_data.get("date"),
             category_id=txn_data.get("suggested_category_id") or None,
+            source_type="import",
+            source_id=None,
         )
         db.add(txn)
         imported += 1

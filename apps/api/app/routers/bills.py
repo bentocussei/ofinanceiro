@@ -130,6 +130,8 @@ async def pay_bill(
                 type=TransactionType.EXPENSE,
                 description=f"Pago: {bill.name}",
                 transaction_date=date.today(),
+                source_type="bill_payment",
+                source_id=bill.id,
             )
             db.add(txn)
 
