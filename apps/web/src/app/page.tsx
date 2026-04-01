@@ -77,7 +77,7 @@ const features = [
 const plans = [
   {
     name: "Pessoal",
-    price: "1.490",
+    price: "1.990",
     suffix: "Kz/mês",
     description: "Controlo total das suas finanças",
     features: [
@@ -94,7 +94,7 @@ const plans = [
   },
   {
     name: "Familiar",
-    price: "3.490",
+    price: "4.990",
     suffix: "Kz/mês",
     description: "Gestão financeira para toda a família",
     features: [
@@ -104,7 +104,7 @@ const plans = [
       "Metas familiares em conjunto",
       "Divisão de despesas inteligente",
       "Relatórios por membro",
-      "Membros extra: +490 Kz/mês cada",
+      "Membros extra: +990 Kz/mês cada",
     ],
     cta: "Começar 90 dias grátis",
     href: "/register",
