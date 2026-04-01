@@ -282,51 +282,23 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Screenshot grid */}
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div>
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/transactions.png" alt="Transacções" className="w-full" />
+          {/* Screenshot grid — contained cards */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { src: "/screenshots/transactions.png", title: "Registo de transacções", desc: "Despesas e receitas organizadas por data ou em planilha" },
+              { src: "/screenshots/reports.png", title: "Relatórios visuais", desc: "Gráficos de receitas, despesas e gastos por categoria" },
+              { src: "/screenshots/investments.png", title: "Investimentos", desc: "Alocação por tipo, diversificação e simulador" },
+              { src: "/screenshots/family-dashboard.png", title: "Dashboard familiar", desc: "Património familiar e gastos por membro" },
+            ].map((item) => (
+              <div key={item.title} className="group">
+                <div className="rounded-lg border border-border/50 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.src} alt={item.title} className="w-full" />
+                </div>
+                <h3 className="mt-3 text-sm font-semibold">{item.title}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
               </div>
-              <h3 className="mt-4 text-sm font-semibold">Transacções em tempo real</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Despesas e receitas agrupadas por data ou em modo planilha. Filtre por tipo e período.
-              </p>
-            </div>
-
-            <div>
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/reports.png" alt="Relatórios" className="w-full" />
-              </div>
-              <h3 className="mt-4 text-sm font-semibold">Relatórios visuais</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Receitas vs despesas, gastos por categoria. Dados que contam histórias.
-              </p>
-            </div>
-
-            <div>
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/investments.png" alt="Investimentos" className="w-full" />
-              </div>
-              <h3 className="mt-4 text-sm font-semibold">Portfolio de investimentos</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Alocação por tipo, análise de diversificação, simulador de juros compostos.
-              </p>
-            </div>
-
-            <div>
-              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/family-dashboard.png" alt="Dashboard familiar" className="w-full" />
-              </div>
-              <h3 className="mt-4 text-sm font-semibold">Dashboard familiar</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Património familiar, gastos por membro, metas em conjunto. Cada membro vê o que lhe compete.
-              </p>
-            </div>
+            ))}
           </div>
 
           {/* Dark + Mobile */}
@@ -357,28 +329,32 @@ export default function LandingPage() {
 
       {/* Video Demo */}
       <section className="py-20">
-        <div className="mx-auto px-8 max-w-[1200px]">
-          <div className="text-center mb-10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              Demonstração
-            </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Veja a plataforma em acção
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Do login à navegação completa em menos de 1 minuto.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border/50 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
-            <video
-              controls
-              className="w-full"
-              poster="/screenshots/dashboard.png"
-              preload="metadata"
-            >
-              <source src="/videos/demo-navigation.webm" type="video/webm" />
-              O seu browser não suporta vídeo.
-            </video>
+        <div className="mx-auto px-8 max-w-[1600px]">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                Demonstração
+              </p>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+                Simples de usar, poderoso nos resultados
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Navegue pelo dashboard, registe transacções, acompanhe metas e veja relatórios — tudo em poucos cliques.
+              </p>
+            </div>
+            <div className="lg:col-span-3">
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
+                <video
+                  controls
+                  className="w-full"
+                  poster="/screenshots/dashboard.png"
+                  preload="metadata"
+                >
+                  <source src="/videos/demo-navigation.webm" type="video/webm" />
+                  O seu browser não suporta vídeo.
+                </video>
+              </div>
+            </div>
           </div>
         </div>
       </section>
