@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
+import { budgetsApi } from "@/lib/api/budgets"
 import { reportsApi, type PatrimonyData } from "@/lib/api/reports"
 import { transactionsApi, type Transaction } from "@/lib/api/transactions"
 import { goalsApi, type Goal } from "@/lib/api/goals"
@@ -14,6 +15,7 @@ import {
   ArrowUpRight,
   Building2,
   CreditCard,
+  PieChart,
   Target,
   TrendingUp,
   Users,
@@ -30,6 +32,7 @@ export default function FamilyDashboardPage() {
   const [patrimony, setPatrimony] = useState<PatrimonyData | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [goals, setGoals] = useState<Goal[]>([])
+  const [budgets, setBudgets] = useState<{ id: string; category_name: string; limit_amount: number; spent_amount: number }[]>([])
   const [monthIncome, setMonthIncome] = useState(0)
   const [monthExpense, setMonthExpense] = useState(0)
   const [memberSpending, setMemberSpending] = useState<MemberSpending[]>([])
@@ -51,6 +54,21 @@ export default function FamilyDashboardPage() {
 
     goalsApi.list("limit=3&status=active", ctx)
       .then((items) => setGoals(items ?? []))
+      .catch(() => {})
+
+    budgetsApi.list(undefined, ctx)
+      .then(async (budgetList) => {
+        const items: { id: string; category_name: string; limit_amount: number; spent_amount: number }[] = []
+        for (const b of (budgetList ?? []).slice(0, 2)) {
+          try {
+            const st = await budgetsApi.status(b.id, ctx)
+            for (const item of (st.items ?? []).slice(0, 4)) {
+              items.push({ id: item.category_id, category_name: item.category_name, limit_amount: item.limit_amount, spent_amount: item.spent })
+            }
+          } catch { /* skip */ }
+        }
+        setBudgets(items)
+      })
       .catch(() => {})
 
     transactionsApi.monthlySummary(undefined, ctx)
@@ -274,6 +292,46 @@ export default function FamilyDashboardPage() {
               <div className="rounded-xl bg-card p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] flex flex-col items-center text-center">
                 <Wallet className="h-10 w-10 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Nenhuma conta partilhada</p>
+              </div>
+            )}
+          </section>
+
+          {/* Budget Progress */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Orçamento
+              </h2>
+              <Link href="/family/budget" className="text-sm text-primary hover:underline font-medium">
+                Ver todos
+              </Link>
+            </div>
+            {budgets.length > 0 ? (
+              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-4">
+                {budgets.map((b) => {
+                  const pct = b.limit_amount > 0 ? (b.spent_amount / b.limit_amount) * 100 : 0
+                  const barColor = pct > 90 ? "bg-expense" : pct > 70 ? "bg-warning" : "bg-income"
+                  return (
+                    <div key={b.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium capitalize">{b.category_name}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{Math.round(pct)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div className={`h-1.5 rounded-full ${barColor} transition-all duration-500`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                      </div>
+                      <div className="flex items-baseline justify-between mt-1">
+                        <span className="text-xs font-mono text-muted-foreground">{formatKz(b.spent_amount)}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{formatKz(b.limit_amount)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-card p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] flex flex-col items-center text-center">
+                <PieChart className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Nenhum orçamento definido</p>
               </div>
             )}
           </section>
