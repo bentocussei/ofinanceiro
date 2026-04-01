@@ -20,10 +20,31 @@ test_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_database():
-    """Create all tables in TEST database before tests, drop after."""
+    """Create all tables in TEST database before tests, drop after.
+
+    Also seeds essential data (permissions, plans, plan_permissions, promotion)
+    so that auth and plan-based permission checks work in tests.
+    """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+    # Seed essential data for tests
+    async with test_session_factory() as session:
+        from app.services.permission import seed_permissions, seed_plan_permissions
+        from app.permissions import get_plan_permissions
+        from scripts.seed_production import seed_plans, seed_launch_promotion
+        from scripts.seed import seed_categories
+
+        await seed_categories(session)
+        await seed_permissions(session)
+        personal_id, family_id = await seed_plans(session)
+        if personal_id and family_id:
+            await seed_plan_permissions(session, personal_id, get_plan_permissions("personal"))
+            await seed_plan_permissions(session, family_id, get_plan_permissions("family"))
+        await seed_launch_promotion(session)
+        await session.commit()
+
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

@@ -66,9 +66,11 @@ class TestFamilyInvites:
             "/api/v1/families/", json={"name": "Join Test"},
             headers=auth_header(token_a),
         )
-        invite_code = create.json()["invite_code"]
+        family_data = create.json()
+        invite_code = family_data["invite_code"]
+        family_id = family_data["id"]
 
-        # User B joins with code
+        # User B sends join request
         token_b = await register_and_get_token(client, "+244923700011")
         response = await client.post(
             "/api/v1/families/join",
@@ -76,7 +78,23 @@ class TestFamilyInvites:
             headers=auth_header(token_b),
         )
         assert response.status_code == 201
-        assert response.json()["role"] == "adult"
+        assert "message" in response.json()
+
+        # Admin approves the join request
+        requests_resp = await client.get(
+            f"/api/v1/families/{family_id}/join-requests",
+            headers=auth_header(token_a),
+        )
+        assert requests_resp.status_code == 200
+        join_requests = requests_resp.json()
+        assert len(join_requests) >= 1
+        invite_id = join_requests[0]["id"]
+
+        approve = await client.put(
+            f"/api/v1/families/{family_id}/join-requests/{invite_id}/approve",
+            headers=auth_header(token_a),
+        )
+        assert approve.status_code == 200
 
     @pytest.mark.asyncio
     async def test_invalid_invite_code(self, client: AsyncClient) -> None:
@@ -115,16 +133,30 @@ class TestFamilyMembers:
             "/api/v1/families/", json={"name": "Role Test"},
             headers=auth_header(token_a),
         )
-        invite_code = create.json()["invite_code"]
+        family_data = create.json()
+        invite_code = family_data["invite_code"]
+        family_id = family_data["id"]
 
-        # User B joins
+        # User B sends join request
         token_b = await register_and_get_token(client, "+244923700021")
-        join = await client.post(
+        await client.post(
             "/api/v1/families/join",
             json={"invite_code": invite_code},
             headers=auth_header(token_b),
         )
-        member_id = join.json()["id"]
+
+        # Admin approves the request
+        requests_resp = await client.get(
+            f"/api/v1/families/{family_id}/join-requests",
+            headers=auth_header(token_a),
+        )
+        invite_id = requests_resp.json()[0]["id"]
+        approve = await client.put(
+            f"/api/v1/families/{family_id}/join-requests/{invite_id}/approve",
+            headers=auth_header(token_a),
+        )
+        assert approve.status_code == 200
+        member_id = approve.json()["id"]
 
         # Admin changes B's role to dependent
         response = await client.put(
@@ -142,14 +174,27 @@ class TestFamilyMembers:
             "/api/v1/families/", json={"name": "Perm Test"},
             headers=auth_header(token_a),
         )
-        invite_code = create.json()["invite_code"]
-        admin_member_id = create.json()["members"][0]["id"]
+        family_data = create.json()
+        invite_code = family_data["invite_code"]
+        family_id = family_data["id"]
+        admin_member_id = family_data["members"][0]["id"]
 
         token_b = await register_and_get_token(client, "+244923700023")
         await client.post(
             "/api/v1/families/join",
             json={"invite_code": invite_code},
             headers=auth_header(token_b),
+        )
+
+        # Admin approves
+        requests_resp = await client.get(
+            f"/api/v1/families/{family_id}/join-requests",
+            headers=auth_header(token_a),
+        )
+        invite_id = requests_resp.json()[0]["id"]
+        await client.put(
+            f"/api/v1/families/{family_id}/join-requests/{invite_id}/approve",
+            headers=auth_header(token_a),
         )
 
         # Non-admin tries to change admin's role
@@ -167,15 +212,28 @@ class TestFamilyMembers:
             "/api/v1/families/", json={"name": "Remove Test"},
             headers=auth_header(token_a),
         )
-        invite_code = create.json()["invite_code"]
+        family_data = create.json()
+        invite_code = family_data["invite_code"]
+        family_id = family_data["id"]
 
         token_b = await register_and_get_token(client, "+244923700025")
-        join = await client.post(
+        await client.post(
             "/api/v1/families/join",
             json={"invite_code": invite_code},
             headers=auth_header(token_b),
         )
-        member_id = join.json()["id"]
+
+        # Admin approves
+        requests_resp = await client.get(
+            f"/api/v1/families/{family_id}/join-requests",
+            headers=auth_header(token_a),
+        )
+        invite_id = requests_resp.json()[0]["id"]
+        approve = await client.put(
+            f"/api/v1/families/{family_id}/join-requests/{invite_id}/approve",
+            headers=auth_header(token_a),
+        )
+        member_id = approve.json()["id"]
 
         response = await client.delete(
             f"/api/v1/families/members/{member_id}",
