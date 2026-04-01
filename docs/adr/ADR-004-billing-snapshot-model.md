@@ -19,13 +19,13 @@ O sistema de billing precisa de:
 
 ### Pricing Engine
 ```
-final_price = base_price - discount + extra_members_cost + addons_cost
+final_price = base_price - discount + extra_members_cost + module_addons_cost
 ```
 
 - `base_price` — do plano (mensal ou anual)
 - `discount` — promoção (%, valor fixo, ou 100% para free_days)
 - `extra_members_cost` — (membros_activos - max_incluido) × custo_por_membro
-- `addons_cost` — soma de feature add-ons
+- `module_addons_cost` — soma de module add-ons
 
 ### Promoções
 - `priority` — lower = higher priority, para resolver conflitos

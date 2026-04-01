@@ -13,7 +13,7 @@ from app.models.enums import (
     PromotionType,
     SubscriptionStatus,
 )
-from app.models.feature_addon import FeatureAddon
+from app.models.module_addon import ModuleAddon
 from app.models.plan import Plan
 from app.models.promotion import Promotion, PromotionUsage
 from app.models.subscription import SubscriptionAddon, UserSubscription
@@ -31,7 +31,7 @@ async def calculate_price(
     billing_cycle: BillingCycle,
     promotion: Promotion | None = None,
     extra_members: int = 0,
-    addons: list[FeatureAddon] | None = None,
+    addons: list[ModuleAddon] | None = None,
 ) -> PriceBreakdown:
     """Calculate the final price for a subscription.
 
@@ -85,7 +85,7 @@ async def calculate_price(
         free_days=free_days,
         extra_members_count=extra_members,
         extra_members_cost=extra_cost,
-        feature_addons_cost=addon_cost,
+        module_addons_cost=addon_cost,
         final_price=final,
         currency=plan.currency.value if hasattr(plan.currency, "value") else str(plan.currency),
     )
@@ -191,7 +191,7 @@ async def subscribe(
         discount_amount=breakdown.discount_amount,
         extra_members_count=breakdown.extra_members_count,
         extra_members_cost=breakdown.extra_members_cost,
-        feature_addons_cost=breakdown.feature_addons_cost,
+        module_addons_cost=breakdown.module_addons_cost,
         final_price=breakdown.final_price,
         promotion_id=promotion.id if promotion else None,
         start_date=now,
@@ -292,7 +292,7 @@ async def upgrade_subscription(
         discount_amount=breakdown.discount_amount,
         extra_members_count=breakdown.extra_members_count,
         extra_members_cost=breakdown.extra_members_cost,
-        feature_addons_cost=breakdown.feature_addons_cost,
+        module_addons_cost=breakdown.module_addons_cost,
         final_price=breakdown.final_price,
         start_date=now,
         end_date=end,
@@ -481,7 +481,7 @@ async def apply_registration_promotion(
         discount_amount=breakdown.discount_amount,
         extra_members_count=0,
         extra_members_cost=0,
-        feature_addons_cost=0,
+        module_addons_cost=0,
         final_price=breakdown.final_price,
         promotion_id=promo.id,
         start_date=now,
@@ -718,7 +718,7 @@ async def recalculate_family_cost(
 
     sub.extra_members_count = member_count
     sub.extra_members_cost = extra_cost
-    sub.final_price = max(0, sub.base_price - sub.discount_amount) + extra_cost + sub.feature_addons_cost
+    sub.final_price = max(0, sub.base_price - sub.discount_amount) + extra_cost + sub.module_addons_cost
 
     await db.flush()
 
@@ -730,7 +730,7 @@ async def recalculate_family_cost(
 async def add_addon_to_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
-    feature_addon_id: str,
+    module_addon_id: str,
 ) -> SubscriptionAddon:
     """Add a feature add-on to the user's active subscription."""
     sub = await get_active_subscription(db, user_id)
@@ -740,9 +740,9 @@ async def add_addon_to_subscription(
             detail="Precisas de uma subscrição activa para adicionar extras.",
         )
 
-    addon_uuid = uuid.UUID(feature_addon_id)
-    stmt = select(FeatureAddon).where(
-        FeatureAddon.id == addon_uuid, FeatureAddon.is_active.is_(True)
+    addon_uuid = uuid.UUID(module_addon_id)
+    stmt = select(ModuleAddon).where(
+        ModuleAddon.id == addon_uuid, ModuleAddon.is_active.is_(True)
     )
     result = await db.execute(stmt)
     addon = result.scalar_one_or_none()
@@ -756,7 +756,7 @@ async def add_addon_to_subscription(
     # Check if already added
     existing_stmt = select(SubscriptionAddon).where(
         SubscriptionAddon.subscription_id == sub.id,
-        SubscriptionAddon.feature_addon_id == addon_uuid,
+        SubscriptionAddon.module_addon_id == addon_uuid,
         SubscriptionAddon.is_active.is_(True),
     )
     existing_result = await db.execute(existing_stmt)
@@ -783,7 +783,7 @@ async def add_addon_to_subscription(
 
     sub_addon = SubscriptionAddon(
         subscription_id=sub.id,
-        feature_addon_id=addon.id,
+        module_addon_id=addon.id,
         addon_snapshot=addon_snapshot,
         price=price,
         is_active=True,
@@ -791,11 +791,11 @@ async def add_addon_to_subscription(
     db.add(sub_addon)
 
     # Recalculate subscription totals
-    sub.feature_addons_cost += price
+    sub.module_addons_cost += price
     sub.final_price = (
         max(0, sub.base_price - sub.discount_amount)
         + sub.extra_members_cost
-        + sub.feature_addons_cost
+        + sub.module_addons_cost
     )
 
     await db.flush()
@@ -824,7 +824,7 @@ async def add_addon_to_subscription(
 async def remove_addon_from_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
-    feature_addon_id: str,
+    module_addon_id: str,
 ) -> None:
     """Remove a feature add-on from the user's active subscription."""
     sub = await get_active_subscription(db, user_id)
@@ -834,10 +834,10 @@ async def remove_addon_from_subscription(
             detail="Não tens uma subscrição activa.",
         )
 
-    addon_uuid = uuid.UUID(feature_addon_id)
+    addon_uuid = uuid.UUID(module_addon_id)
     stmt = select(SubscriptionAddon).where(
         SubscriptionAddon.subscription_id == sub.id,
-        SubscriptionAddon.feature_addon_id == addon_uuid,
+        SubscriptionAddon.module_addon_id == addon_uuid,
         SubscriptionAddon.is_active.is_(True),
     )
     result = await db.execute(stmt)
@@ -868,11 +868,11 @@ async def remove_addon_from_subscription(
                             await revoke_user_permission(db, user_id, code)
 
     # Recalculate subscription totals
-    sub.feature_addons_cost = max(0, sub.feature_addons_cost - sub_addon.price)
+    sub.module_addons_cost = max(0, sub.module_addons_cost - sub_addon.price)
     sub.final_price = (
         max(0, sub.base_price - sub.discount_amount)
         + sub.extra_members_cost
-        + sub.feature_addons_cost
+        + sub.module_addons_cost
     )
 
     await db.flush()
@@ -897,12 +897,12 @@ async def list_active_plans(
 
 async def list_active_addons(
     db: AsyncSession,
-) -> list[FeatureAddon]:
+) -> list[ModuleAddon]:
     """List all active feature add-ons."""
     stmt = (
-        select(FeatureAddon)
-        .where(FeatureAddon.is_active.is_(True))
-        .order_by(FeatureAddon.sort_order.asc())
+        select(ModuleAddon)
+        .where(ModuleAddon.is_active.is_(True))
+        .order_by(ModuleAddon.sort_order.asc())
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())

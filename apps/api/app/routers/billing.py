@@ -17,7 +17,7 @@ from app.models.plan import Plan
 from app.models.subscription import Subscription, UserSubscription
 from app.models.user import User
 from app.schemas.billing import (
-    FeatureAddonResponse,
+    ModuleAddonResponse,
     PlanResponse,
     PriceBreakdown,
     SubscribeRequest,
@@ -48,7 +48,7 @@ def _sub_to_response(sub: UserSubscription, features: dict) -> SubscriptionRespo
         discount_amount=sub.discount_amount,
         extra_members_count=sub.extra_members_count,
         extra_members_cost=sub.extra_members_cost,
-        feature_addons_cost=sub.feature_addons_cost,
+        module_addons_cost=sub.module_addons_cost,
         final_price=sub.final_price,
         start_date=sub.start_date.isoformat(),
         end_date=sub.end_date.isoformat(),
@@ -263,15 +263,15 @@ async def apply_promo(
 # Add-ons
 # ---------------------------------------------------------------------------
 
-@router.get("/addons", response_model=list[FeatureAddonResponse])
+@router.get("/addons", response_model=list[ModuleAddonResponse])
 async def list_addons(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[FeatureAddonResponse]:
+) -> list[ModuleAddonResponse]:
     """Listar extras disponíveis."""
     addons = await billing_service.list_active_addons(db)
     return [
-        FeatureAddonResponse(
+        ModuleAddonResponse(
             id=str(a.id),
             name=a.name,
             module=a.module,
@@ -297,7 +297,7 @@ async def add_addon(
     )
     return {
         "message": "Extra adicionado com sucesso.",
-        "addon_id": str(sub_addon.feature_addon_id),
+        "addon_id": str(sub_addon.module_addon_id),
         "price": sub_addon.price,
     }
 

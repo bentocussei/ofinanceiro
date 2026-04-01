@@ -37,7 +37,7 @@ from app.models.enums import (
 )
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import Family, FamilyInvite, FamilyMember
-from app.models.feature_addon import FeatureAddon
+from app.models.module_addon import ModuleAddon
 from app.models.finance_settings import FinanceSettings
 from app.models.finance_snapshot import FinanceSnapshot
 from app.models.goal import Goal, GoalContribution
@@ -111,7 +111,7 @@ __all__ = [
     "Family",
     "FamilyInvite",
     "FamilyMember",
-    "FeatureAddon",
+    "ModuleAddon",
     "FinanceSettings",
     "FinanceSnapshot",
     "Goal",
