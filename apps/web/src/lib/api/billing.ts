@@ -58,7 +58,21 @@ export interface ModuleAddonInfo {
   features_override: Record<string, unknown>
 }
 
+export interface PromoValidation {
+  name: string
+  type: string
+  value: number
+  free_days: number
+  description: string
+}
+
 export const billingApi = {
+  validatePromo: (code: string) =>
+    apiFetch<PromoValidation>("/api/v1/billing/validate-promo", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
   plans: () =>
     apiFetch<PlanInfo[]>("/api/v1/billing/plans"),
 

@@ -7,6 +7,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=6, max_length=128)
     email: str | None = Field(None, max_length=255)
     country: str = Field("AO", max_length=2, description="Código ISO do país (AO, MZ, CV, etc.)")
+    promo_code: str | None = Field(None, max_length=50, description="Código promocional opcional")
 
 
 class LoginRequest(BaseModel):

@@ -63,12 +63,18 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
     db.add(user)
     await db.flush()
 
-    # Aplicar promoção de registo automática, se existir
-    try:
-        await billing_service.apply_registration_promotion(db, user.id)
-    except Exception:
-        # Não bloquear o registo se a promoção falhar
-        pass
+    # Aplicar promoção: código manual tem prioridade sobre auto-registo
+    if data.promo_code:
+        try:
+            await billing_service.apply_promo_code_on_register(db, user.id, data.promo_code)
+        except Exception:
+            pass
+    else:
+        try:
+            await billing_service.apply_registration_promotion(db, user.id)
+        except Exception:
+            # Não bloquear o registo se a promoção falhar
+            pass
 
     # Enviar email de boas-vindas (não bloqueia o registo)
     if data.email:
@@ -77,6 +83,15 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
             await send_welcome_email(data.email, data.name)
         except Exception:
             pass
+
+    # Enviar OTP para verificação do telefone
+    try:
+        otp = generate_otp()
+        await store_otp(phone, otp)
+        await send_otp_sms(phone, otp)
+    except Exception:
+        # Não bloquear o registo se o envio de OTP falhar
+        pass
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
