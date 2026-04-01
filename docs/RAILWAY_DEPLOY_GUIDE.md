@@ -194,8 +194,8 @@ Anotar os domínios retornados, depois definir:
 
 ```bash
 # Agora que temos o domínio da API, definir no Web
-API_DOMAIN="ofinanceiro-api-production.up.railway.app"
-WEB_DOMAIN="ofinanceiro-web-production.up.railway.app"
+API_DOMAIN="api.ofinanceiro.app"
+WEB_DOMAIN="ofinanceiro.app"
 
 set_var $WEB_SERVICE "NEXT_PUBLIC_API_URL" "https://$API_DOMAIN"
 set_var $API_SERVICE "ALLOWED_ORIGINS" "https://$WEB_DOMAIN,http://localhost:3000"
@@ -431,7 +431,7 @@ curl -s -X POST https://backboard.railway.app/graphql/v2 \
 ```bash
 CRON_NOTIF_ID="<id-retornado>"
 CRON_SNAP_ID="<id-retornado>"
-API_DOMAIN="ofinanceiro-api-production.up.railway.app"
+API_DOMAIN="api.ofinanceiro.app"
 
 # Notifications: cada hora (0 * * * *)
 curl -s -X POST https://backboard.railway.app/graphql/v2 \
@@ -448,7 +448,7 @@ curl -s -X POST https://backboard.railway.app/graphql/v2 \
 
 ### 12.4 Repetir para staging
 
-Usar domínio staging (`ofinanceiro-api-staging.up.railway.app`) e SERVICE_TOKEN diferente. Criar serviços com nomes `cron-notifications-stg` e `cron-snapshots-stg`.
+Usar domínio staging (`api-staging.ofinanceiro.app`) e SERVICE_TOKEN diferente. Criar serviços com nomes `cron-notifications-stg` e `cron-snapshots-stg`.
 
 ### 12.5 Serviços cron por ambiente
 
@@ -473,13 +473,13 @@ Código em `apps/api/app/dependencies.py` (`verify_service_token`, `get_optional
 
 ```bash
 # API health
-curl https://ofinanceiro-api-production.up.railway.app/health
+curl https://api.ofinanceiro.app/health
 
 # Web landing
-curl -s https://ofinanceiro-web-production.up.railway.app/ | head -20
+curl -s https://ofinanceiro.app/ | head -20
 
 # Teste de registo
-curl -X POST https://ofinanceiro-api-production.up.railway.app/api/v1/auth/register \
+curl -X POST https://api.ofinanceiro.app/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"phone": "+244999888777", "name": "Teste", "password": "test1234", "country": "AO"}'
 ```
@@ -546,10 +546,10 @@ set_var $API_SERVICE "ENVIRONMENT" "staging"
 set_var $API_SERVICE "DEBUG" "true"
 set_var $API_SERVICE "JWT_SECRET" "$JWT_SECRET_STG"
 set_var $API_SERVICE "JWT_REFRESH_SECRET" "$JWT_REFRESH_STG"
-set_var $API_SERVICE "ALLOWED_ORIGINS" "https://ofinanceiro-web-staging.up.railway.app,http://localhost:3000"
+set_var $API_SERVICE "ALLOWED_ORIGINS" "https://staging.ofinanceiro.app,http://localhost:3000"
 
 # Web
-set_var $WEB_SERVICE "NEXT_PUBLIC_API_URL" "https://ofinanceiro-api-staging.up.railway.app"
+set_var $WEB_SERVICE "NEXT_PUBLIC_API_URL" "https://api-staging.ofinanceiro.app"
 ```
 
 ### Corrigir deploy triggers (branch)
@@ -584,8 +584,8 @@ done
 | `DEBUG` | `false` | `true` |
 | `JWT_SECRET` | Único produção | **Diferente** |
 | `JWT_REFRESH_SECRET` | Único produção | **Diferente** |
-| `ALLOWED_ORIGINS` | `*-production.up.railway.app` | `*-staging.up.railway.app` |
-| `NEXT_PUBLIC_API_URL` | `*-api-production.up.railway.app` | `*-api-staging.up.railway.app` |
+| `ALLOWED_ORIGINS` | `ofinanceiro.app / api.ofinanceiro.app` | `staging.ofinanceiro.app / api-staging.ofinanceiro.app` |
+| `NEXT_PUBLIC_API_URL` | `api.ofinanceiro.app` | `api-staging.ofinanceiro.app` |
 | `DATABASE_URL` | Auto (instância produção) | Auto (instância staging) |
 | `REDIS_URL` | Auto (instância produção) | Auto (instância staging) |
 | Deploy branch | `main` | `staging` |
