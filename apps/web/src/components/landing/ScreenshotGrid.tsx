@@ -48,12 +48,12 @@ export function ScreenshotGrid() {
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm cursor-zoom-out"
           onClick={close}
         >
-          <div className="max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="px-4 py-4 max-w-[85vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={selected}
               alt=""
-              className="w-full h-full object-contain rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] cursor-zoom-out"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] cursor-zoom-out mx-auto"
               onClick={close}
             />
           </div>

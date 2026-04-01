@@ -55,7 +55,7 @@ const features = [
   },
   {
     icon: BarChart3,
-    title: "Relatórios que fazem sentido",
+    title: "Relatórios detalhados",
     description:
       "Gráficos de receitas vs despesas, gastos por categoria, evolução mensal. Dados reais, não suposições.",
   },
