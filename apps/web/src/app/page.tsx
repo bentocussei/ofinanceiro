@@ -1,73 +1,82 @@
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
+  BarChart3,
   Bell,
-  Check,
-  Eye,
   Banknote,
+  Building2,
+  Check,
+  ChevronRight,
+  CreditCard,
+  Eye,
   PiggyBank,
+  Play,
   Receipt,
   Repeat,
+  Shield,
+  Smartphone,
   Target,
+  TrendingUp,
   Users,
-  BarChart3,
-  ChevronRight,
+  Wallet,
+  Zap,
 } from "lucide-react"
 
 const features = [
   {
     icon: Eye,
-    title: "Veja todos os seus gastos num só lugar",
+    title: "Tudo num só lugar",
     description:
-      "Junte todas as suas contas e saiba exactamente quanto gastou, em que categoria, e quanto resta. Sem surpresas no fim do mês.",
+      "Junte todas as contas bancárias, carteira, poupanças e investimentos. Veja exactamente quanto tem e para onde vai.",
   },
   {
     icon: PiggyBank,
-    title: "Orçamentos que protegem o seu dinheiro",
+    title: "Orçamentos inteligentes",
     description:
-      "Defina limites por categoria com 5 métodos diferentes. Receba alertas antes de ultrapassar. Rollover para o mês seguinte.",
+      "5 métodos de orçamento. Alertas antes de ultrapassar. Rollover automático para o mês seguinte.",
   },
   {
     icon: Target,
-    title: "Metas de poupança que funcionam",
+    title: "Metas de poupança",
     description:
-      "Defina objectivos com prazos reais. Contribua com qualquer frequência — semanal, mensal, trimestral. Acompanhe o progresso visual.",
+      "Defina objectivos, contribua regularmente, acompanhe o progresso. O dinheiro é rastreado até ao Kwanza.",
   },
   {
     icon: Users,
-    title: "Finanças da família, organizadas em conjunto",
+    title: "Finanças familiares",
     description:
-      "Partilhe contas com o seu cônjuge. Divida despesas entre membros. Controle gastos dos dependentes com permissões granulares.",
+      "Contas partilhadas, orçamento familiar, metas em conjunto. Cada membro vê o que lhe compete.",
   },
   {
-    icon: Receipt,
-    title: "Contas a pagar nunca mais esquecidas",
+    icon: TrendingUp,
+    title: "Investimentos e património",
     description:
-      "Registe as suas facturas recorrentes — água, luz, internet. Receba lembretes antes do vencimento. Marque como pago com um toque.",
+      "Acompanhe depósitos, obrigações, imóveis e veículos. Veja o seu património líquido real.",
   },
   {
-    icon: Banknote,
-    title: "Controle todas as suas fontes de rendimento",
+    icon: CreditCard,
+    title: "Dívidas sob controlo",
     description:
-      "Registe salários, rendas, freelance e outros rendimentos. Saiba exactamente quando e quanto entra na sua conta.",
-  },
-  {
-    icon: Repeat,
-    title: "Transacções recorrentes automáticas",
-    description:
-      "Crie regras para gastos e receitas que se repetem. O sistema regista automaticamente com a frequência que definir.",
-  },
-  {
-    icon: Bell,
-    title: "Alertas que evitam surpresas",
-    description:
-      "Notificações de saldo baixo, orçamento em risco, facturas a vencer, e metas atingidas. Sempre informado, sempre no controlo.",
+      "Registe empréstimos, simule amortização, pague de forma estratégica. Veja o caminho até ficar livre.",
   },
   {
     icon: BarChart3,
-    title: "Relatórios que mostram a verdade",
+    title: "Relatórios que fazem sentido",
     description:
-      "Gráficos claros sobre receitas, despesas e tendências. Resumos mensais automáticos com score financeiro de 0 a 100.",
+      "Gráficos de receitas vs despesas, gastos por categoria, evolução mensal. Dados reais, não suposições.",
+  },
+  {
+    icon: Receipt,
+    title: "Contas e recibos",
+    description:
+      "Fotografe recibos, a IA extrai os dados. Registe contas a pagar com lembretes automáticos.",
+  },
+  {
+    icon: Zap,
+    title: "Assistente com IA",
+    description:
+      "Pergunte sobre as suas finanças em linguagem natural. Receba insights personalizados todos os dias.",
   },
 ]
 
@@ -109,6 +118,13 @@ const plans = [
   },
 ]
 
+const stats = [
+  { value: "15+", label: "Módulos financeiros" },
+  { value: "9", label: "Agentes IA especializados" },
+  { value: "115", label: "Funcionalidades" },
+  { value: "0 Kz", label: "Primeiros 90 dias" },
+]
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -125,6 +141,9 @@ export default function LandingPage() {
             <a href="#funcionalidades" className="text-muted-foreground transition-colors hover:text-foreground">
               Funcionalidades
             </a>
+            <a href="#plataforma" className="text-muted-foreground transition-colors hover:text-foreground">
+              Plataforma
+            </a>
             <a href="#precos" className="text-muted-foreground transition-colors hover:text-foreground">
               Preços
             </a>
@@ -132,9 +151,9 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
-              Já tenho conta
+              Entrar
             </Link>
             <Link
               href="/register"
@@ -146,122 +165,106 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero — asymmetric layout */}
-      <section className="relative overflow-hidden pt-28 pb-20">
+      {/* Hero */}
+      <section className="relative overflow-hidden pt-28 pb-16">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="pointer-events-none absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-5">
-          {/* Left — text, takes 3 cols */}
-          <div className="lg:col-span-3">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              Saiba exactamente para onde vai o seu dinheiro
-            </h1>
-
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Junte todas as suas contas e finalmente tenha clareza sobre as suas finanças pessoais e familiares.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_2px_8px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(21,128,61,0.3)]"
-              >
-                Começar grátis
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Já tenho conta
-              </Link>
-            </div>
-
+        <div className="relative mx-auto max-w-6xl px-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6">
+            <Zap className="h-3.5 w-3.5" />
+            Promoção de lançamento — 90 dias grátis
           </div>
 
-          {/* Right — dashboard mockup, takes 2 cols */}
-          <div className="hidden lg:col-span-2 lg:block">
-            <div className="rounded-2xl bg-card p-5 shadow-[0_4px_16px_rgba(0,0,0,0.10)]">
-              {/* Mini dashboard mockup */}
-              <div className="mb-4 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                <span className="ml-2 text-xs text-muted-foreground">O Financeiro</span>
+          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            Saiba exactamente para onde vai cada{" "}
+            <span className="text-primary">Kwanza</span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            A plataforma de gestão financeira pessoal e familiar mais completa para Angola.
+            Contas, orçamentos, metas, investimentos, património — tudo num só lugar, com inteligência artificial.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+            >
+              Começar 90 dias grátis
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-8 py-3.5 text-sm font-medium transition-colors hover:bg-accent"
+            >
+              Já tenho conta
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4 max-w-2xl mx-auto">
+            {stats.map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-2xl font-bold font-mono text-primary">{s.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </div>
-              <div className="space-y-3">
-                <div className="rounded-lg bg-muted/60 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Património líquido</p>
-                  <p className="mt-1 font-mono text-2xl font-bold text-foreground">1.245.800 Kz</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-[11px] text-muted-foreground">Receitas</p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold text-green-600">+480.000 Kz</p>
-                  </div>
-                  <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-[11px] text-muted-foreground">Despesas</p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold text-red-500">-312.500 Kz</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Alimentação</span>
-                    <span className="font-mono text-muted-foreground">68%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted">
-                    <div className="h-1.5 rounded-full bg-amber-500" style={{ width: "68%" }} />
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Transportes</span>
-                    <span className="font-mono text-muted-foreground">42%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted">
-                    <div className="h-1.5 rounded-full bg-green-500" style={{ width: "42%" }} />
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Educação</span>
-                    <span className="font-mono text-muted-foreground">91%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted">
-                    <div className="h-1.5 rounded-full bg-red-500" style={{ width: "91%" }} />
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* Dashboard Screenshot — hero image */}
+      <section className="pb-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="rounded-2xl border border-border/50 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
+              <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+              <span className="ml-2 text-xs text-muted-foreground">ofinanceiro.ao/dashboard</span>
+            </div>
+            <Image
+              src="/screenshots/dashboard.png"
+              alt="O Financeiro — Dashboard pessoal"
+              width={1440}
+              height={900}
+              className="w-full"
+              priority
+            />
+          </div>
+        </div>
+      </section>
 
       {/* Features */}
       <section id="funcionalidades" className="py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Porque usar O Financeiro
-          </p>
-          <h2 className="mt-3 max-w-lg text-2xl font-bold tracking-tight sm:text-3xl">
-            Controlo financeiro sem complicações
-          </h2>
-          <p className="mt-3 max-w-xl text-muted-foreground">
-            Funcionalidades pensadas para a forma como realmente gere o seu dinheiro no dia-a-dia.
-          </p>
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Funcionalidades
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Tudo o que precisa para controlar as suas finanças
+            </h2>
+            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
+              9 módulos financeiros + assistente IA. Pensado para a forma como os angolanos gerem o dinheiro.
+            </p>
+          </div>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => {
               const Icon = f.icon
               return (
                 <div
                   key={f.title}
-                  className="group flex gap-5 rounded-xl bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                  className="group flex gap-4 rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-[15px] font-semibold">{f.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    <h3 className="text-sm font-semibold">{f.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                       {f.description}
                     </p>
                   </div>
@@ -272,23 +275,197 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Platform showcase with real screenshots */}
+      <section id="plataforma" className="border-t border-border bg-muted/30 py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Plataforma
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Uma plataforma, duas perspectivas
+            </h2>
+            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
+              Finanças pessoais e familiares em contextos separados. Mude entre eles com um clique.
+            </p>
+          </div>
+
+          {/* Screenshot grid */}
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Transactions */}
+            <div>
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <Image
+                  src="/screenshots/transactions.png"
+                  alt="Transacções"
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold">Transacções em tempo real</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Visualize despesas e receitas agrupadas por data ou em modo planilha. Filtre por tipo e período.
+              </p>
+            </div>
+
+            {/* Reports */}
+            <div>
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <Image
+                  src="/screenshots/reports.png"
+                  alt="Relatórios"
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold">Relatórios visuais</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Gráficos de receitas vs despesas, gastos por categoria com donut chart. Dados que contam histórias.
+              </p>
+            </div>
+
+            {/* Investments */}
+            <div>
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <Image
+                  src="/screenshots/investments.png"
+                  alt="Investimentos"
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold">Portfolio de investimentos</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Allocation por tipo, insights de diversificação, simulador de juros compostos. Tudo em Kwanzas.
+              </p>
+            </div>
+
+            {/* Family Dashboard */}
+            <div>
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <Image
+                  src="/screenshots/family-dashboard.png"
+                  alt="Dashboard familiar"
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold">Dashboard familiar</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Património familiar, gastos por membro, metas em conjunto. Cada membro vê o que lhe compete.
+              </p>
+            </div>
+          </div>
+
+          {/* Dark mode + Mobile */}
+          <div className="mt-12 grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <Image
+                  src="/screenshots/dashboard-dark.png"
+                  alt="Dark mode"
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold">Modo escuro elegante</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tema escuro com tons quentes — pensado para uso nocturno sem cansar a vista.
+              </p>
+            </div>
+            <div>
+              <div className="rounded-xl border border-border/50 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[280px] mx-auto">
+                <Image
+                  src="/screenshots/mobile-dashboard.png"
+                  alt="Mobile"
+                  width={390}
+                  height={844}
+                  className="w-full"
+                />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold text-center">Responsivo</h3>
+              <p className="mt-1 text-sm text-muted-foreground text-center">
+                Funciona no telemóvel, tablet e computador.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Video Demo */}
+      <section className="py-20">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+            Demonstração
+          </p>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+            Veja a plataforma em acção
+          </h2>
+          <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
+            Do login à navegação completa em menos de 1 minuto.
+          </p>
+          <div className="mt-10 rounded-2xl border border-border/50 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
+            <video
+              controls
+              className="w-full"
+              poster="/screenshots/dashboard.png"
+              preload="metadata"
+            >
+              <source src="/videos/demo-navigation.webm" type="video/webm" />
+              O seu browser não suporta vídeo.
+            </video>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust indicators */}
+      <section className="border-t border-border py-12">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Shield className="h-6 w-6 text-primary" />
+              <p className="text-xs text-muted-foreground">Dados encriptados</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Smartphone className="h-6 w-6 text-primary" />
+              <p className="text-xs text-muted-foreground">Acesso em qualquer dispositivo</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Wallet className="h-6 w-6 text-primary" />
+              <p className="text-xs text-muted-foreground">100% em Kwanzas</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Bell className="h-6 w-6 text-primary" />
+              <p className="text-xs text-muted-foreground">Alertas automáticos</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="precos" className="border-t border-border bg-muted/30 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Preços
-          </p>
-          <h2 className="mt-3 max-w-lg text-2xl font-bold tracking-tight sm:text-3xl">
-            Planos simples, em Kwanzas
-          </h2>
-          <p className="mt-3 max-w-xl text-muted-foreground">
-            Sem plano gratuito limitado. Acesso completo desde o primeiro dia.
-          </p>
+          <div className="text-center mb-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Preços
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Planos simples, em Kwanzas
+            </h2>
+            <p className="mt-3 mx-auto max-w-xl text-muted-foreground">
+              Sem plano gratuito limitado. Acesso completo desde o primeiro dia.
+            </p>
+          </div>
 
           {/* Launch promotion banner */}
-          <div className="mt-8 rounded-xl bg-primary/10 border border-primary/20 p-5 flex items-center gap-4">
+          <div className="max-w-3xl mx-auto mb-10 rounded-xl bg-primary/10 border border-primary/20 p-5 flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary">
-              <span className="text-lg text-primary-foreground">%</span>
+              <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <p className="text-sm font-bold text-primary">Promoção de lançamento</p>
@@ -298,7 +475,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-2 max-w-3xl mx-auto">
+          <div className="grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -313,18 +490,15 @@ export default function LandingPage() {
                     Mais popular
                   </span>
                 )}
-                <h3 className="text-[15px] font-semibold">{plan.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{plan.description}</p>
+                <h3 className="text-lg font-semibold">{plan.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
                 <div className="mt-4">
                   <span className="font-mono text-3xl font-bold tracking-tight">{plan.price}</span>
                   <span className="ml-1 text-sm text-muted-foreground">{plan.suffix}</span>
                 </div>
                 <ul className="mt-6 flex-1 space-y-3">
                   {plan.features.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
+                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                       {f}
                     </li>
@@ -332,9 +506,9 @@ export default function LandingPage() {
                 </ul>
                 <Link
                   href={plan.href}
-                  className={`mt-6 block rounded-md px-4 py-2.5 text-center text-sm font-medium transition-colors ${
+                  className={`mt-6 block rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors ${
                     plan.highlighted
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_2px_8px_rgba(21,128,61,0.2)]"
                       : "border border-border hover:bg-accent"
                   }`}
                 >
@@ -348,56 +522,28 @@ export default function LandingPage() {
 
       {/* Final CTA */}
       <section className="py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Comece hoje. É grátis.
-              </h2>
-            <p className="mt-4 max-w-md text-muted-foreground">
-                Junte-se a quem já sabe exactamente para onde vai cada Kwanza. Sem compromisso.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_2px_8px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90"
-                >
-                  Criar conta grátis
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Já tenho conta
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <div className="rounded-xl bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-sm">Registe-se em menos de 1 minuto</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-sm">Adicione as suas contas e comece a registar</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-sm">Veja as suas finanças com total clareza</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Comece a controlar as suas finanças hoje
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            90 dias grátis. Sem cartão de crédito. Sem compromisso.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+            >
+              Criar conta grátis
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Já tenho conta
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -411,7 +557,7 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold text-foreground">O Financeiro</span>
           </div>
-          <p>Gestão financeira pessoal e familiar</p>
+          <p>Gestão financeira pessoal e familiar para Angola</p>
         </div>
       </footer>
     </div>
