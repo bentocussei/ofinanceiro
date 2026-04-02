@@ -33,9 +33,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [countryCode, setCountryCode] = useState("AO")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  // email removido do formulário — recolhido depois no perfil se necessário
+  // password removido — utilizador define depois nas configurações se quiser
   const [hasPromoCode, setHasPromoCode] = useState(false)
   const [promoCode, setPromoCode] = useState("")
   const [promoValidation, setPromoValidation] = useState<PromoValidation | null>(null)
@@ -90,20 +88,8 @@ export default function RegisterPage() {
     setFormError("")
     setFormLoading(true)
 
-    if (!phone.trim() || !name.trim() || !password.trim()) {
-      setFormError("Preencha todos os campos obrigatórios.")
-      setFormLoading(false)
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setFormError("As senhas não coincidem.")
-      setFormLoading(false)
-      return
-    }
-
-    if (password.length < 6) {
-      setFormError("A senha deve ter pelo menos 6 caracteres.")
+    if (!phone.trim() || !name.trim()) {
+      setFormError("Preencha o nome e número de telefone.")
       setFormLoading(false)
       return
     }
@@ -116,7 +102,7 @@ export default function RegisterPage() {
 
     const validPromo = hasPromoCode && promoValidation ? promoCode.trim() : undefined
 
-    const success = await register(phone, name, password, countryCode, undefined, validPromo)
+    const success = await register(phone, name, undefined, countryCode, undefined, validPromo)
     if (success) {
       setCountdown(60)
       setStep("otp")
@@ -242,30 +228,6 @@ export default function RegisterPage() {
                   setCountryCode(code)
                 }}
                 defaultCountry="AO"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirmar senha</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Repita a senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
               />
             </div>
 
