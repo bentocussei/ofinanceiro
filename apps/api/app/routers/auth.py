@@ -91,10 +91,14 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
     # NÃO retornar tokens — utilizador só recebe tokens após verificar OTP
     try:
         otp = generate_otp()
+        print(f"[REGISTER OTP] Gerado OTP {otp} para {phone}")
         await store_otp(phone, otp)
+        print(f"[REGISTER OTP] Guardado no Redis para {phone}")
         await send_otp_sms(phone, otp)
+        print(f"[REGISTER OTP] SMS enviado para {phone}")
         logger.info("OTP enviado para %s no registo", phone)
     except Exception as e:
+        print(f"[REGISTER OTP] ERRO para {phone}: {e}")
         logger.warning("Falha ao enviar OTP no registo para %s: %s", phone, e)
 
     return MessageResponse(message="Conta criada. Verifique o código enviado por SMS.")
