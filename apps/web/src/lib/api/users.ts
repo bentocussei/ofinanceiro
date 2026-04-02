@@ -17,11 +17,11 @@ export const usersApi = {
       ...opts,
     }),
 
-  changePassword: (currentPassword: string, newPassword: string, opts?: H) =>
+  changePassword: (currentPassword: string | undefined | null, newPassword: string, opts?: H) =>
     apiFetch<void>("/api/v1/users/me/password", {
       method: "PUT",
       body: JSON.stringify({
-        current_password: currentPassword,
+        ...(currentPassword ? { current_password: currentPassword } : {}),
         new_password: newPassword,
       }),
       ...opts,

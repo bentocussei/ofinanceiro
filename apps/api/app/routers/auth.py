@@ -60,7 +60,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
         phone=phone,
         name=data.name,
         email=data.email,
-        password_hash=hash_password(data.password),
+        password_hash=hash_password(data.password) if data.password else None,
         country=data.country.upper(),
     )
     db.add(user)

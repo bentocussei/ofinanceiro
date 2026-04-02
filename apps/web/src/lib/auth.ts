@@ -58,13 +58,14 @@ export async function login(phone: string, password: string): Promise<boolean> {
 export async function register(
   phone: string,
   name: string,
-  password: string,
+  password?: string,
   country?: string,
   email?: string,
   promoCode?: string,
 ): Promise<boolean> {
   try {
-    const body: Record<string, string> = { phone, name, password, country: country || "AO" }
+    const body: Record<string, string> = { phone, name, country: country || "AO" }
+    if (password) body.password = password
     if (email) body.email = email
     if (promoCode) body.promo_code = promoCode
     // Register NÃO retorna tokens — apenas cria user e envia OTP

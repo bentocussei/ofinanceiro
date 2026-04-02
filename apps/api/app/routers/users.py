@@ -24,6 +24,7 @@ class UserProfileResponse(BaseModel):
     salary_day: int | None
     month_start_day: int
     onboarding_completed: bool
+    has_password: bool
     preferences: dict
 
 
@@ -38,8 +39,8 @@ class UserUpdateRequest(BaseModel):
 
 
 class PasswordChangeRequest(BaseModel):
-    current_password: str
-    new_password: str = Field(min_length=8, max_length=128)
+    current_password: str | None = None  # Null quando utilizador define senha pela primeira vez
+    new_password: str = Field(min_length=6, max_length=128)
 
 
 class PreferencesUpdateRequest(BaseModel):
@@ -60,6 +61,7 @@ async def get_profile(user: User = Depends(get_current_user)) -> UserProfileResp
         salary_day=user.salary_day,
         month_start_day=user.month_start_day,
         onboarding_completed=user.onboarding_completed,
+        has_password=user.password_hash is not None,
         preferences=user.preferences or {},
     )
 
@@ -87,6 +89,7 @@ async def update_profile(
         salary_day=user.salary_day,
         month_start_day=user.month_start_day,
         onboarding_completed=user.onboarding_completed,
+        has_password=user.password_hash is not None,
         preferences=user.preferences or {},
     )
 
@@ -97,14 +100,17 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    if not user.password_hash or not verify_password(data.current_password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "WRONG_PASSWORD", "message": "Senha actual incorrecta"},
-        )
+    # Se utilizador já tem password: verificar a actual
+    if user.password_hash:
+        if not data.current_password or not verify_password(data.current_password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "WRONG_PASSWORD", "message": "Senha actual incorrecta"},
+            )
+    # Se não tem password: permite definir sem verificação (primeiro setup)
     user.password_hash = hash_password(data.new_password)
     await db.flush()
-    return {"message": "Senha alterada com sucesso"}
+    return {"message": "Senha definida com sucesso" if not user.password_hash else "Senha alterada com sucesso"}
 
 
 @router.put("/me/preferences")
