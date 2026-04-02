@@ -44,6 +44,7 @@ from app.routers import (
     transactions,
     users,
     voice,
+    webhooks,
 )
 
 logger = logging.getLogger(__name__)
@@ -201,3 +202,4 @@ app.include_router(snapshots.router)
 app.include_router(expense_splits.router)
 app.include_router(tags.router)
 app.include_router(permissions_router.router)
+app.include_router(webhooks.router)
