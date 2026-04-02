@@ -75,6 +75,7 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | 1 | **Notification Scheduler** | A cada hora | `POST /api/v1/notifications/check` | Verifica contas a pagar (7/3/1 dias), saldo baixo, orçamento em risco, metas atingidas. Cria notificações automáticas. |
 | 2 | **Finance Snapshot** | Diário (00:00) | `POST /api/v1/snapshots/generate` | Gera resumo financeiro mensal (receitas, despesas, net worth, score). |
 | 3 | **Bill Overdue Check** | Diário (08:00) | Incluído no Notification Scheduler | Marca facturas como OVERDUE quando passam a data de vencimento. |
+| 4 | **Auto-Billing** | Diário (06:00) | `POST /api/v1/billing/auto-billing` | Cobra subscricoes com `auto_renew=True` e `end_date` proximo. Renova ou marca PAST_DUE/EXPIRED. |
 
 **Como configurar no Railway:**
 ```bash
@@ -94,7 +95,15 @@ curl -X POST https://api.ofinanceiro.ao/api/v1/snapshots/generate \
 
 ---
 
-## 5. Regras
+## 5. Items Temporários (Remover Antes de Produção)
+
+| # | Item | Ficheiros | Razão | Quando Remover |
+|---|------|-----------|-------|----------------|
+| 1 | **Webhook Biometrid (teste)** | `apps/api/app/routers/webhooks.py`, `apps/api/app/main.py` (import + include_router) | Endpoint temporário para testar se a Biometrid envia callbacks correctamente | Após concluir testes de integração com Biometrid. Remover o ficheiro `webhooks.py` e as referências no `main.py` |
+
+---
+
+## 6. Regras
 
 1. **Só se adiciona mock/TODO quando há dependência externa não disponível** (API key, serviço terceiro, hardware)
 2. **Tudo o que pode ser implementado já, deve ser implementado** — sem desculpas

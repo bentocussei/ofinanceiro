@@ -224,3 +224,35 @@ class PromotionType(enum.StrEnum):
 class BillingCycle(enum.StrEnum):
     MONTHLY = "monthly"
     ANNUAL = "annual"
+
+
+class PaymentGatewayType(enum.StrEnum):
+    STRIPE = "stripe"
+    REFERENCIA_BANCARIA = "referencia_bancaria"
+    MULTICAIXA_EXPRESS = "multicaixa_express"
+    UNITEL_MONEY = "unitel_money"
+    E_KWANZA = "e_kwanza"
+    PAYPAY = "paypay"
+
+
+class PaymentMethodType(enum.StrEnum):
+    CREDIT_CARD = "credit_card"
+    DEBIT_CARD = "debit_card"
+    BANK_REFERENCE = "bank_reference"
+    MOBILE_MONEY = "mobile_money"
+    DIGITAL_WALLET = "digital_wallet"
+
+
+class PaymentStatus(enum.StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+    CANCELLED = "cancelled"
+
+
+class PaymentType(enum.StrEnum):
+    SUBSCRIPTION = "subscription"
+    ADDON = "addon"
+    ONE_TIME = "one_time"

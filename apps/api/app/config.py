@@ -45,6 +45,7 @@ class Settings(BaseSettings):
 
     # Stripe (Billing)
     stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
 
     # Service Token (cron jobs)

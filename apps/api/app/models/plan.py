@@ -29,5 +29,8 @@ class Plan(BaseModel):
         Integer, default=0
     )  # centavos per extra member/month
     features: Mapped[dict] = mapped_column(JSONB, default=dict)
+    gateway_metadata: Mapped[dict] = mapped_column(
+        JSONB, default=dict
+    )  # {"stripe": {"product_id": "...", "price_monthly_id": "...", "price_annual_id": "..."}}
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)

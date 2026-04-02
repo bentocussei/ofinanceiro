@@ -101,6 +101,13 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
         base_price_annual=PERSONAL_PLAN_ANNUAL,
         max_family_members=0, extra_member_cost=0,
         features=personal_features,
+        gateway_metadata={
+            "stripe": {
+                "product_id": "prod_UGOxwUXL4aqyB9",
+                "price_monthly_id": "price_1THs9qKqiSjhepmT6Y7zLcbI",
+                "price_annual_id": "price_1THsADKqiSjhepmTJwwJzlHP",
+            }
+        },
     ))
     db.add(Plan(
         id=family_id, type=PlanType.FAMILY,
@@ -110,6 +117,13 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
         max_family_members=FAMILY_MAX_MEMBERS,
         extra_member_cost=FAMILY_EXTRA_MEMBER_COST,
         features=family_features,
+        gateway_metadata={
+            "stripe": {
+                "product_id": "prod_UGOxXRxjgoEn3M",
+                "price_monthly_id": "price_1THsAdKqiSjhepmTSRONuBnT",
+                "price_annual_id": "price_1THsAuKqiSjhepmTJoVfkDxp",
+            }
+        },
     ))
     await db.flush()
     print(f"Plans created: Pessoal ({PERSONAL_PLAN_MONTHLY // 100} Kz) + Familiar ({FAMILY_PLAN_MONTHLY // 100} Kz)")

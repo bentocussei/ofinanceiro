@@ -5,8 +5,13 @@ import {
   CreditCard,
   Crown,
   Gift,
+  Landmark,
   Puzzle,
+  Receipt,
+  Smartphone,
   Star,
+  Trash2,
+  Wallet,
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -14,7 +19,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo } from "@/lib/api/billing"
+import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo, type PaymentMethodInfo, type PaymentInfo } from "@/lib/api/billing"
 import { type UserProfile } from "@/lib/auth"
 import { formatKz } from "@/lib/format"
 
@@ -295,11 +300,17 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
         </section>
       )}
 
+      {/* Payment methods */}
+      <PaymentMethodsSection />
+
       {/* Module Addons */}
       <ModuleAddonsSection subscription={subscription} onUpdate={async () => {
         const s = await billingApi.subscription().catch(() => null)
         setSubscription(s)
       }} />
+
+      {/* Payment history */}
+      <PaymentHistorySection />
 
       {/* Promo code */}
       <section className="rounded-xl bg-card shadow-sm p-5">
@@ -445,6 +456,254 @@ function ModuleAddonsSection({ subscription, onUpdate }: { subscription: Subscri
             </div>
           )
         })}
+      </div>
+    </section>
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// Payment Methods section
+// ---------------------------------------------------------------------------
+
+const GATEWAY_ICONS: Record<string, typeof CreditCard> = {
+  "credit-card": CreditCard,
+  "landmark": Landmark,
+  "smartphone": Smartphone,
+  "wallet": Wallet,
+}
+
+function PaymentMethodsSection() {
+  const [methods, setMethods] = useState<PaymentMethodInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [removing, setRemoving] = useState<string | null>(null)
+  const [settingDefault, setSettingDefault] = useState<string | null>(null)
+  const [addingCard, setAddingCard] = useState(false)
+
+  const loadMethods = async () => {
+    try {
+      const m = await billingApi.paymentMethods()
+      setMethods(m)
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadMethods()
+  }, [])
+
+  const handleRemove = async (id: string) => {
+    setRemoving(id)
+    try {
+      await billingApi.removePaymentMethod(id)
+      toast.success("Metodo de pagamento removido")
+      await loadMethods()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao remover"
+      toast.error(msg)
+    } finally {
+      setRemoving(null)
+    }
+  }
+
+  const handleSetDefault = async (id: string) => {
+    setSettingDefault(id)
+    try {
+      await billingApi.setDefaultPaymentMethod(id)
+      toast.success("Metodo predefinido actualizado")
+      await loadMethods()
+    } catch {
+      toast.error("Erro ao definir metodo predefinido")
+    } finally {
+      setSettingDefault(null)
+    }
+  }
+
+  const handleAddCard = async () => {
+    setAddingCard(true)
+    try {
+      const setup = await billingApi.createSetupIntent()
+      // Load Stripe.js dynamically and mount Elements
+      const { loadStripe } = await import("@stripe/stripe-js")
+      const stripe = await loadStripe(setup.publishable_key)
+      if (!stripe) {
+        toast.error("Erro ao carregar Stripe")
+        return
+      }
+      const { error, setupIntent } = await stripe.confirmCardSetup(setup.client_secret, {
+        payment_method: {
+          card: { token: "" } as never, // This will be replaced by Elements in a proper modal
+        },
+      })
+      if (error) {
+        toast.error(error.message || "Erro ao adicionar cartao")
+      } else if (setupIntent?.payment_method) {
+        await billingApi.addPaymentMethod({
+          gateway: "stripe",
+          payment_method_token: setupIntent.payment_method as string,
+          set_as_default: true,
+        })
+        toast.success("Cartao adicionado com sucesso")
+        await loadMethods()
+      }
+    } catch {
+      toast.error("Erro ao adicionar cartao")
+    } finally {
+      setAddingCard(false)
+    }
+  }
+
+  const gatewayLabel = (gateway: string) => {
+    const labels: Record<string, string> = {
+      stripe: "Cartao Internacional",
+      multicaixa_express: "Multicaixa Express",
+      referencia_bancaria: "Referencia Bancaria",
+      unitel_money: "Unitel Money",
+      e_kwanza: "e-Kwanza",
+      paypay: "PayPay",
+    }
+    return labels[gateway] || gateway
+  }
+
+  return (
+    <section className="rounded-xl bg-card shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <CreditCard className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-[15px] font-semibold">Metodos de pagamento</h2>
+          <p className="text-xs text-muted-foreground">Gerir os seus metodos de pagamento</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">A carregar...</p>
+      ) : methods.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <Wallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground mb-3">
+            Nenhum metodo de pagamento configurado.
+          </p>
+          <Button size="sm" onClick={handleAddCard} disabled={addingCard}>
+            {addingCard ? "A configurar..." : "Adicionar cartao"}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {methods.map((pm) => (
+            <div
+              key={pm.id}
+              className={`flex items-center justify-between rounded-lg border p-3 ${
+                pm.is_default ? "border-primary bg-primary/5" : "border-border"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">{pm.label}</p>
+                  <p className="text-xs text-muted-foreground">{gatewayLabel(pm.gateway)}</p>
+                </div>
+                {pm.is_default && (
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    Predefinido
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {!pm.is_default && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleSetDefault(pm.id)}
+                    disabled={settingDefault === pm.id}
+                  >
+                    {settingDefault === pm.id ? "..." : "Predefinir"}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleRemove(pm.id)}
+                  disabled={removing === pm.id}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button size="sm" variant="outline" onClick={handleAddCard} disabled={addingCard}>
+            {addingCard ? "A configurar..." : "Adicionar cartao"}
+          </Button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// Payment History section
+// ---------------------------------------------------------------------------
+
+function PaymentHistorySection() {
+  const [payments, setPayments] = useState<PaymentInfo[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    billingApi.payments(10)
+      .then(setPayments)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading || payments.length === 0) return null
+
+  const statusLabel = (status: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      completed: { label: "Pago", className: "text-green-600" },
+      pending: { label: "Pendente", className: "text-yellow-600" },
+      processing: { label: "A processar", className: "text-blue-600" },
+      failed: { label: "Falhado", className: "text-red-600" },
+      refunded: { label: "Reembolsado", className: "text-gray-600" },
+    }
+    const info = map[status] || { label: status, className: "text-gray-600" }
+    return <span className={`text-xs font-medium ${info.className}`}>{info.label}</span>
+  }
+
+  return (
+    <section className="rounded-xl bg-card shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <Receipt className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-[15px] font-semibold">Historico de pagamentos</h2>
+          <p className="text-xs text-muted-foreground">Ultimos pagamentos realizados</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {payments.map((p) => (
+          <div key={p.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">{p.description || "Pagamento"}</p>
+              <p className="text-xs text-muted-foreground">
+                {p.paid_at
+                  ? new Date(p.paid_at).toLocaleDateString("pt-AO", { day: "2-digit", month: "2-digit", year: "numeric" })
+                  : new Date(p.created_at).toLocaleDateString("pt-AO", { day: "2-digit", month: "2-digit", year: "numeric" })}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-mono text-sm font-semibold">{formatKz(p.amount)}</p>
+              {statusLabel(p.status)}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   )

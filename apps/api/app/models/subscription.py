@@ -17,7 +17,12 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.enums import BillingCycle, SubscriptionPlan, SubscriptionStatus
+from app.models.enums import (
+    BillingCycle,
+    PaymentGatewayType,
+    SubscriptionPlan,
+    SubscriptionStatus,
+)
 
 
 # Legacy model — kept for backward compatibility with existing code
@@ -87,7 +92,15 @@ class UserSubscription(BaseModel):
     # Renewal
     auto_renew: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # Stripe
+    # Payment gateway
+    payment_gateway: Mapped[PaymentGatewayType | None] = mapped_column(
+        ENUM(PaymentGatewayType, name="payment_gateway_type", create_type=True)
+    )
+    default_payment_method_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("payment_methods.id", ondelete="SET NULL")
+    )
+
+    # Stripe (legacy — kept for backward compatibility, use payment_methods table)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(100))
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(100))
 

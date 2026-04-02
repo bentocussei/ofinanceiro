@@ -26,6 +26,10 @@ from app.models.enums import (
     GoalStatus,
     IncomeSourceType,
     NotificationType,
+    PaymentGatewayType,
+    PaymentMethodType,
+    PaymentStatus,
+    PaymentType,
     PlanType,
     PromotionType,
     RecurrenceFrequency,
@@ -38,6 +42,8 @@ from app.models.enums import (
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
 from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.module_addon import ModuleAddon
+from app.models.payment import Payment
+from app.models.payment_method import PaymentMethod
 from app.models.finance_settings import FinanceSettings
 from app.models.finance_snapshot import FinanceSnapshot
 from app.models.goal import Goal, GoalContribution
@@ -85,6 +91,10 @@ __all__ = [
     "GoalStatus",
     "IncomeSourceType",
     "NotificationType",
+    "PaymentGatewayType",
+    "PaymentMethodType",
+    "PaymentStatus",
+    "PaymentType",
     "PlanType",
     "PromotionType",
     "RecurrenceFrequency",
@@ -119,6 +129,8 @@ __all__ = [
     "IncomeSource",
     "Investment",
     "Notification",
+    "Payment",
+    "PaymentMethod",
     "Permission",
     "Plan",
     "PlanPermission",

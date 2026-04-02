@@ -66,6 +66,41 @@ export interface PromoValidation {
   description: string
 }
 
+export interface PaymentMethodInfo {
+  id: string
+  gateway: string
+  method_type: string
+  label: string
+  is_default: boolean
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface GatewayInfo {
+  gateway: string
+  name: string
+  description: string
+  icon: string
+}
+
+export interface PaymentInfo {
+  id: string
+  amount: number
+  currency: string
+  status: string
+  gateway: string
+  payment_type: string
+  description: string | null
+  paid_at: string | null
+  created_at: string
+}
+
+export interface SetupIntentResponse {
+  client_secret: string
+  publishable_key: string
+  customer_id: string
+}
+
 export const billingApi = {
   validatePromo: (code: string) =>
     apiFetch<PromoValidation>("/api/v1/billing/validate-promo", {
@@ -125,4 +160,38 @@ export const billingApi = {
     apiFetch<{ success: boolean }>("/api/v1/billing/addons/" + addonId + "/remove", {
       method: "DELETE",
     }),
+
+  // Payment gateways
+  gateways: () =>
+    apiFetch<GatewayInfo[]>("/api/v1/billing/gateways"),
+
+  // Payment methods
+  paymentMethods: () =>
+    apiFetch<PaymentMethodInfo[]>("/api/v1/billing/payment-methods"),
+
+  addPaymentMethod: (data: { gateway: string; payment_method_token: string; set_as_default?: boolean }) =>
+    apiFetch<PaymentMethodInfo>("/api/v1/billing/payment-methods", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  removePaymentMethod: (id: string) =>
+    apiFetch<{ message: string }>("/api/v1/billing/payment-methods/" + id, {
+      method: "DELETE",
+    }),
+
+  setDefaultPaymentMethod: (id: string) =>
+    apiFetch<PaymentMethodInfo>("/api/v1/billing/payment-methods/" + id + "/default", {
+      method: "PUT",
+    }),
+
+  // Stripe setup intent
+  createSetupIntent: () =>
+    apiFetch<SetupIntentResponse>("/api/v1/billing/stripe/setup-intent", {
+      method: "POST",
+    }),
+
+  // Payment history
+  payments: (limit = 20, offset = 0) =>
+    apiFetch<PaymentInfo[]>(`/api/v1/billing/payments?limit=${limit}&offset=${offset}`),
 }

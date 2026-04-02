@@ -1,4 +1,4 @@
-"""Billing router: subscription management, plans, promotions, add-ons, Stripe."""
+"""Billing router: subscription management, plans, promotions, add-ons, payments."""
 
 import logging
 import uuid
@@ -12,9 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.enums import SubscriptionPlan
+from app.models.enums import (
+    PaymentGatewayType,
+    PaymentStatus,
+    SubscriptionStatus,
+)
 from app.models.plan import Plan
-from app.models.subscription import Subscription, UserSubscription
+from app.models.subscription import UserSubscription
 from app.models.user import User
 from app.schemas.billing import (
     ModuleAddonResponse,
@@ -25,6 +29,7 @@ from app.schemas.billing import (
     UpgradeRequest,
 )
 from app.services import billing as billing_service
+from app.services import payment as payment_service
 
 logger = logging.getLogger(__name__)
 
@@ -362,59 +367,214 @@ async def remove_addon(
 
 
 # ---------------------------------------------------------------------------
-# Stripe checkout
+# Payment gateways
 # ---------------------------------------------------------------------------
 
-@router.post("/checkout")
-async def create_checkout(
-    plan: str,
+@router.get("/gateways")
+async def list_gateways() -> list[dict]:
+    """Listar gateways de pagamento disponíveis."""
+    return await payment_service.get_available_gateways()
+
+
+# ---------------------------------------------------------------------------
+# Payment methods
+# ---------------------------------------------------------------------------
+
+class AddPaymentMethodRequest(BaseModel):
+    gateway: PaymentGatewayType
+    payment_method_token: str
+    set_as_default: bool = True
+
+
+class PaymentMethodResponse(BaseModel):
+    id: str
+    gateway: str
+    method_type: str
+    label: str
+    is_default: bool
+    metadata: dict
+    created_at: str
+
+
+@router.get("/payment-methods", response_model=list[PaymentMethodResponse])
+async def list_payment_methods(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[PaymentMethodResponse]:
+    """Listar métodos de pagamento do utilizador."""
+    methods = await payment_service.list_payment_methods(db, user.id)
+    return [
+        PaymentMethodResponse(
+            id=str(pm.id),
+            gateway=pm.gateway.value if hasattr(pm.gateway, "value") else str(pm.gateway),
+            method_type=pm.method_type.value if hasattr(pm.method_type, "value") else str(pm.method_type),
+            label=pm.label,
+            is_default=pm.is_default,
+            metadata=pm.metadata_ or {},
+            created_at=pm.created_at.isoformat(),
+        )
+        for pm in methods
+    ]
+
+
+@router.post("/payment-methods", response_model=PaymentMethodResponse, status_code=201)
+async def add_payment_method(
+    data: AddPaymentMethodRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PaymentMethodResponse:
+    """Adicionar método de pagamento."""
+    pm = await payment_service.add_payment_method(
+        db,
+        user_id=user.id,
+        gateway=data.gateway,
+        payment_method_token=data.payment_method_token,
+        set_as_default=data.set_as_default,
+    )
+    return PaymentMethodResponse(
+        id=str(pm.id),
+        gateway=pm.gateway.value if hasattr(pm.gateway, "value") else str(pm.gateway),
+        method_type=pm.method_type.value if hasattr(pm.method_type, "value") else str(pm.method_type),
+        label=pm.label,
+        is_default=pm.is_default,
+        metadata=pm.metadata_ or {},
+        created_at=pm.created_at.isoformat(),
+    )
+
+
+@router.delete("/payment-methods/{payment_method_id}")
+async def remove_payment_method(
+    payment_method_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    """Criar sessão de checkout Stripe para upgrade.
+    """Remover método de pagamento."""
+    await payment_service.remove_payment_method(db, user.id, payment_method_id)
+    return {"message": "Método de pagamento removido."}
 
-    Em dev sem chaves Stripe, devolve URL mock.
-    """
-    if plan == "free":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Plano inválido para checkout.",
-        )
 
-    # Mock in development
+@router.put("/payment-methods/{payment_method_id}/default", response_model=PaymentMethodResponse)
+async def set_default_method(
+    payment_method_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PaymentMethodResponse:
+    """Definir método de pagamento como predefinido."""
+    pm = await payment_service.set_default_payment_method(db, user.id, payment_method_id)
+    return PaymentMethodResponse(
+        id=str(pm.id),
+        gateway=pm.gateway.value if hasattr(pm.gateway, "value") else str(pm.gateway),
+        method_type=pm.method_type.value if hasattr(pm.method_type, "value") else str(pm.method_type),
+        label=pm.label,
+        is_default=pm.is_default,
+        metadata=pm.metadata_ or {},
+        created_at=pm.created_at.isoformat(),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Stripe setup intent (for adding cards via embedded Elements)
+# ---------------------------------------------------------------------------
+
+@router.post("/stripe/setup-intent")
+async def create_setup_intent(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Criar SetupIntent Stripe para adicionar cartão (embedded Elements)."""
     if not settings.stripe_secret_key:
-        return {
-            "checkout_url": f"https://checkout.stripe.com/mock?plan={plan}",
-            "mock": True,
-            "message": "Stripe não configurado — modo de desenvolvimento",
-        }
-
-    # Real Stripe integration would go here
-    # stripe.checkout.Session.create(...)
-    return {"checkout_url": "https://checkout.stripe.com/...", "session_id": "..."}
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Stripe não configurado",
+        )
+    return await payment_service.create_stripe_setup_intent(db, user.id)
 
 
 # ---------------------------------------------------------------------------
-# Stripe webhook
+# Payment history
 # ---------------------------------------------------------------------------
 
-@router.post("/webhook")
+class PaymentResponse(BaseModel):
+    id: str
+    amount: int
+    currency: str
+    status: str
+    gateway: str
+    payment_type: str
+    description: str | None
+    paid_at: str | None
+    created_at: str
+
+
+@router.get("/payments", response_model=list[PaymentResponse])
+async def list_payments(
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[PaymentResponse]:
+    """Listar histórico de pagamentos."""
+    payments = await payment_service.list_payments(db, user.id, limit=limit, offset=offset)
+    return [
+        PaymentResponse(
+            id=str(p.id),
+            amount=p.amount,
+            currency=p.currency.value if hasattr(p.currency, "value") else str(p.currency),
+            status=p.status.value if hasattr(p.status, "value") else str(p.status),
+            gateway=p.gateway.value if hasattr(p.gateway, "value") else str(p.gateway),
+            payment_type=p.payment_type.value if hasattr(p.payment_type, "value") else str(p.payment_type),
+            description=p.description,
+            paid_at=p.paid_at.isoformat() if p.paid_at else None,
+            created_at=p.created_at.isoformat(),
+        )
+        for p in payments
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Auto-billing (cron job)
+# ---------------------------------------------------------------------------
+
+@router.post("/auto-billing")
+async def run_auto_billing(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Executar cobrancas automaticas de subscricoes (cron job).
+
+    Requer X-Service-Token no header.
+    """
+    service_token = request.headers.get("X-Service-Token") or ""
+    if not settings.service_token or service_token != settings.service_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token de servico invalido")
+
+    from app.services.auto_billing import process_renewals
+
+    stats = await process_renewals(db)
+    return {"message": "Auto-billing concluido", "stats": stats}
+
+
+# ---------------------------------------------------------------------------
+# Stripe webhook (multi-gateway aware)
+# ---------------------------------------------------------------------------
+
+@router.post("/webhook/stripe")
 async def stripe_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Processar eventos do Stripe webhook.
 
-    Valida a assinatura do webhook e processa os eventos:
-    - checkout.session.completed: activar subscrição
-    - invoice.paid: renovar subscrição
-    - customer.subscription.deleted: cancelar subscrição
+    Eventos processados:
+    - payment_intent.succeeded: registar pagamento concluído
+    - payment_intent.payment_failed: registar falha
+    - setup_intent.succeeded: adicionar método de pagamento
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
     if not settings.stripe_webhook_secret:
-        logger.info("Webhook Stripe recebido mas sem webhook secret configurado (modo dev)")
+        logger.info("Webhook Stripe recebido sem secret (modo dev)")
         return {"received": True}
 
     try:
@@ -425,173 +585,98 @@ async def stripe_webhook(
             payload, sig_header, settings.stripe_webhook_secret
         )
     except ValueError:
-        logger.warning("Webhook Stripe: payload inválido")
         raise HTTPException(status_code=400, detail="Payload inválido") from None
     except Exception as e:
-        logger.warning("Webhook Stripe: erro de verificação — %s", e)
-        raise HTTPException(status_code=400, detail=f"Erro no webhook: {e!s}") from e
+        raise HTTPException(status_code=400, detail=f"Erro webhook: {e!s}") from e
 
     event_type = event["type"]
-    logger.info("Webhook Stripe recebido: %s", event_type)
+    data = event["data"]["object"]
+    logger.info("Webhook Stripe: %s", event_type)
 
-    if event_type == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session.get("client_reference_id")
-        plan = session.get("metadata", {}).get("plan", "personal")
-        customer_id = session.get("customer")
-        subscription_id = session.get("subscription")
-
-        if user_id:
-            await _activate_subscription(
-                db, user_id, plan, customer_id, subscription_id
-            )
-
-    elif event_type == "invoice.paid":
-        invoice = event["data"]["object"]
-        customer_id = invoice.get("customer")
-        if customer_id:
-            await _extend_subscription(db, customer_id)
-
-    elif event_type == "customer.subscription.deleted":
-        subscription = event["data"]["object"]
-        customer_id = subscription.get("customer")
-        if customer_id:
-            await _cancel_subscription(db, customer_id)
-
+    if event_type == "payment_intent.succeeded":
+        await _handle_payment_succeeded(db, data)
+    elif event_type == "payment_intent.payment_failed":
+        await _handle_payment_failed(db, data)
+    elif event_type == "setup_intent.succeeded":
+        await _handle_setup_succeeded(db, data)
     else:
         logger.debug("Webhook Stripe ignorado: %s", event_type)
 
     return {"received": True}
 
 
-# ---------------------------------------------------------------------------
-# Helpers internos para gestão de subscrições (Stripe webhook)
-# ---------------------------------------------------------------------------
+async def _handle_payment_succeeded(db: AsyncSession, data: dict) -> None:
+    """Registar pagamento concluído via Stripe."""
+    metadata = data.get("metadata", {})
+    user_id = metadata.get("user_id")
+    subscription_id = metadata.get("subscription_id")
+    payment_id = metadata.get("payment_id")
 
+    if payment_id:
+        # Update existing payment record
+        from app.models.payment import Payment
 
-async def _activate_subscription(
-    db: AsyncSession,
-    user_id_str: str,
-    plan: str,
-    customer_id: str | None = None,
-    subscription_id: str | None = None,
-) -> None:
-    """Activar subscrição após checkout concluído."""
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        logger.warning("ID de utilizador inválido no webhook: %s", user_id_str)
-        return
+        payment = await db.get(Payment, uuid.UUID(payment_id))
+        if payment and payment.status != PaymentStatus.COMPLETED:
+            payment.status = PaymentStatus.COMPLETED
+            payment.gateway_payment_id = data.get("id")
+            payment.paid_at = datetime.now(UTC)
+            payment.gateway_response = {"stripe_event": "payment_intent.succeeded"}
+            await db.commit()
+            logger.info("Pagamento %s actualizado para COMPLETED", payment_id)
+    elif user_id:
+        # Record new payment from webhook
+        from app.models.enums import CurrencyCode, PaymentType
 
-    # Mapear string do plano para enum
-    plan_map = {
-        "personal": SubscriptionPlan.PERSONAL,
-        "family": SubscriptionPlan.FAMILY,
-        "family_plus": SubscriptionPlan.FAMILY_PLUS,
-    }
-    plan_enum = plan_map.get(plan, SubscriptionPlan.PERSONAL)
-
-    # Actualizar utilizador
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        logger.warning("Utilizador não encontrado para activação: %s", user_id)
-        return
-
-    user.plan = plan_enum
-    user.plan_expires_at = datetime.now(UTC) + timedelta(days=30)
-
-    # Criar registo de subscrição
-    now = datetime.now(UTC)
-    subscription = Subscription(
-        user_id=user_id,
-        plan=plan_enum,
-        status="active",
-        stripe_customer_id=customer_id,
-        stripe_subscription_id=subscription_id,
-        current_period_start=now,
-        current_period_end=now + timedelta(days=30),
-    )
-    db.add(subscription)
-    await db.flush()
-
-    logger.info(
-        "Subscrição activada: utilizador=%s, plano=%s", user_id, plan_enum.value
-    )
-
-
-async def _extend_subscription(db: AsyncSession, customer_id: str) -> None:
-    """Estender subscrição após pagamento de factura (renovação)."""
-    result = await db.execute(
-        select(Subscription)
-        .where(
-            Subscription.stripe_customer_id == customer_id,
-            Subscription.status == "active",
+        await payment_service.record_payment(
+            db,
+            user_id=uuid.UUID(user_id),
+            amount=data.get("amount", 0),
+            currency=CurrencyCode.AOA,
+            gateway=PaymentGatewayType.STRIPE,
+            payment_type=PaymentType.SUBSCRIPTION,
+            gateway_payment_id=data.get("id"),
+            gateway_response={"stripe_event": "payment_intent.succeeded"},
+            subscription_id=uuid.UUID(subscription_id) if subscription_id else None,
         )
-        .order_by(Subscription.created_at.desc())
-        .limit(1)
-    )
-    subscription = result.scalar_one_or_none()
-    if not subscription:
-        logger.warning(
-            "Subscrição não encontrada para renovação: customer=%s", customer_id
+
+
+async def _handle_payment_failed(db: AsyncSession, data: dict) -> None:
+    """Registar falha de pagamento e marcar subscrição como PAST_DUE."""
+    metadata = data.get("metadata", {})
+    payment_id = metadata.get("payment_id")
+    subscription_id = metadata.get("subscription_id")
+
+    if payment_id:
+        from app.models.payment import Payment
+
+        payment = await db.get(Payment, uuid.UUID(payment_id))
+        if payment:
+            payment.status = PaymentStatus.FAILED
+            payment.failure_reason = data.get("last_payment_error", {}).get("message", "Pagamento recusado")
+            payment.gateway_response = {"stripe_event": "payment_intent.payment_failed"}
+
+    if subscription_id:
+        sub = await db.get(UserSubscription, uuid.UUID(subscription_id))
+        if sub and sub.status == SubscriptionStatus.ACTIVE:
+            sub.status = SubscriptionStatus.PAST_DUE
+            logger.warning("Subscrição %s marcada como PAST_DUE", subscription_id)
+
+    await db.commit()
+
+
+async def _handle_setup_succeeded(db: AsyncSession, data: dict) -> None:
+    """Adicionar método de pagamento após SetupIntent concluído."""
+    metadata = data.get("metadata", {})
+    user_id = metadata.get("user_id")
+    pm_id = data.get("payment_method")
+
+    if user_id and pm_id:
+        await payment_service.add_payment_method(
+            db,
+            user_id=uuid.UUID(user_id),
+            gateway=PaymentGatewayType.STRIPE,
+            payment_method_token=pm_id,
+            set_as_default=True,
         )
-        return
-
-    # Estender período
-    now = datetime.now(UTC)
-    subscription.current_period_start = now
-    subscription.current_period_end = now + timedelta(days=30)
-
-    # Actualizar expiração no utilizador
-    user_result = await db.execute(
-        select(User).where(User.id == subscription.user_id)
-    )
-    user = user_result.scalar_one_or_none()
-    if user:
-        user.plan_expires_at = now + timedelta(days=30)
-
-    await db.flush()
-    logger.info(
-        "Subscrição renovada: utilizador=%s, customer=%s",
-        subscription.user_id,
-        customer_id,
-    )
-
-
-async def _cancel_subscription(db: AsyncSession, customer_id: str) -> None:
-    """Cancelar subscrição (downgrade para plano gratuito)."""
-    result = await db.execute(
-        select(Subscription)
-        .where(
-            Subscription.stripe_customer_id == customer_id,
-            Subscription.status == "active",
-        )
-        .order_by(Subscription.created_at.desc())
-        .limit(1)
-    )
-    subscription = result.scalar_one_or_none()
-    if not subscription:
-        logger.warning(
-            "Subscrição não encontrada para cancelamento: customer=%s", customer_id
-        )
-        return
-
-    subscription.status = "cancelled"
-    subscription.cancel_at = datetime.now(UTC)
-
-    # Downgrade para plano gratuito
-    user_result = await db.execute(
-        select(User).where(User.id == subscription.user_id)
-    )
-    user = user_result.scalar_one_or_none()
-    if user:
-        user.plan = SubscriptionPlan.FREE
-        user.plan_expires_at = None
-
-    await db.flush()
-    logger.info(
-        "Subscrição cancelada: utilizador=%s, customer=%s",
-        subscription.user_id,
-        customer_id,
-    )
+        logger.info("Método de pagamento Stripe adicionado via webhook: user=%s", user_id)
