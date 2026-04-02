@@ -1,74 +1,145 @@
-# O Financeiro — Próximos Passos
+# O Financeiro — Estado Actual e Próximos Passos
 
-**Estado actual:** Plataforma em produção no Railway com todos os módulos web implementados.
+**Última actualização:** 2026-04-02
+**Estado:** Plataforma pronta para lançamento. Faltam apenas credenciais de serviços externos.
 
 ---
 
-## CONCLUÍDO
+## CONCLUÍDO (100%)
 
-- [x] CI/CD — GitHub Actions (lint + test + type check + build)
-- [x] Dockerfiles — API (Python 3.13 + gunicorn) + Web (Node 22 + Next.js standalone)
-- [x] Deploy Railway — Production + Staging configurados
-- [x] JWT secrets gerados e configurados
-- [x] Rate limiting middleware integrado
-- [x] Security headers (HSTS, X-Frame, nosniff, XSS)
-- [x] Error handler global (JSON consistente)
-- [x] Health check melhorado (API + DB + Redis)
-- [x] SEO (robots.txt, sitemap.xml, OG tags)
-- [x] Onboarding UI (5 passos)
-- [x] Cron jobs (notifications + snapshots com SERVICE_TOKEN)
-- [x] Stripe webhooks (checkout, invoice, subscription)
-- [x] Testes frontend (Vitest + Playwright)
-- [x] Permissões familiares (require_permission em 11 routers)
-- [x] Isolamento personal/family (context filtering em todos os routers)
-- [x] Paginação (cursor-based em 14 páginas)
-- [x] API services centralizados (20 service files)
-- [x] Património físico (activos: imóveis, veículos, etc.)
-- [x] Investimentos redesenhados (allocation, insights, Ask AI skeleton)
+### Plataforma Web
+- [x] 16 módulos pessoais + 16 módulos familiares (paridade total)
+- [x] Dashboard com património real (contas + investimentos + activos - dívidas)
+- [x] Transacções com audit trail (source_type + source_id em todas)
+- [x] Orçamentos com items por categoria, 5 métodos, alertas
+- [x] Metas com contribuição vinculada a conta de origem
+- [x] Dívidas com pagamento vinculado a conta + simulação
+- [x] Investimentos com allocation, insights, simulador, Ask AI skeleton
+- [x] Património físico (10 tipos: imóveis, veículos, terrenos, etc.)
+- [x] Contas a pagar com lembretes e débito automático
+- [x] Fontes de rendimento
+- [x] Regras recorrentes com processamento automático via cron
+- [x] Relatórios com gráficos Recharts (personal + family com paridade)
 - [x] Educação financeira (33 tips, 16 desafios, learning path, achievements)
 - [x] Notícias financeiras (23 artigos, câmbios, market summary, impact analysis)
-- [x] Fluxo de membros (pedidos integração, criar directo, renovar código)
+- [x] Notificações com cron job horário
+- [x] Chat panel (skeleton pronto para IA)
+- [x] Onboarding (5 passos) com redirect automático
+- [x] Context switching pessoal/familiar
+- [x] Paginação cursor-based em 14 páginas
+- [x] API services centralizados (20 service files)
+- [x] Error pages (404, error boundary) sem detalhes técnicos
+
+### Autenticação e Segurança
+- [x] Registo simplificado: nome + telefone → OTP SMS → entra (sem password obrigatório)
+- [x] Login com 2 métodos: senha ou código SMS (OTP)
+- [x] JWT com access (15min) + refresh (7 dias)
+- [x] Register NÃO retorna tokens — requer verificação OTP
+- [x] Rate limiting (API geral + login brute force por telefone)
+- [x] Security headers (HSTS, nosniff, X-Frame-Options, XSS, Referrer-Policy)
+- [x] CORS restrito a domínios específicos
+- [x] Input validation Pydantic com extra="forbid" em todos os endpoints
+- [x] IDOR corrigido em todos os routers (ownership verification)
+- [x] File upload com limites (OCR 10MB, CSV 5MB)
+- [x] JWT secrets validados no startup (exit se default em produção)
+- [x] Auditoria de segurança completa (skill: /security-audit)
+- [x] CI Security job (pip-audit, bandit, npm audit, secret scanning)
+
+### Billing e Permissões
+- [x] 2 planos: Pessoal (1.990 Kz) + Familiar (4.990 Kz)
+- [x] Promoções com prioridade, auto-apply, limites, FREE_DAYS/PERCENTAGE/FIXED
+- [x] Promoção lançamento: 90 dias grátis
+- [x] Código promocional no registo com validação em tempo real
+- [x] Module addons (infraestrutura pronta para restringir módulos)
+- [x] 115 permissões (93 client + 22 admin), formato module:feature:action
+- [x] Permissões por plano, auto-sync no subscribe/upgrade/addon
+- [x] Admin RBAC (3 roles: super_admin, support, billing_admin)
+- [x] PlanPermission nos endpoints de escrita
+- [x] Frontend: PermissionProvider + RequirePermission guards
+- [x] Sidebar filtrado por permissões
+- [x] Settings com tabs partilhados (Subscrição, Etiquetas, Segurança)
+- [x] SecurityTab: definir senha (sem) ou alterar senha (com)
+- [x] Stripe webhooks (checkout, invoice, subscription)
+
+### Integridade Financeira
+- [x] Contribuição metas debita conta + cria transacção
+- [x] Pagamento dívidas debita conta + cria transacção
+- [x] Pagamento bills debita conta + cria transacção
+- [x] Transferências debitam origem + creditam destino
+- [x] Delete transacção reverte balance
+- [x] Regras recorrentes processam automaticamente (cron)
+- [x] Audit trail: source_type + source_id em todas as transacções
+- [x] Activos e investimentos são registos retroactivos (sem débito automático)
+
+### Infraestrutura
+- [x] Deploy Railway (production + staging)
+- [x] Domínio ofinanceiro.app (+ api.ofinanceiro.app, staging, api-staging)
+- [x] CI/CD GitHub Actions (backend lint/test + frontend tsc/build + security)
+- [x] Cron jobs Railway (notificações, snapshots, recurring rules)
+- [x] 150 backend tests passam
+- [x] Seed produção (idempotente) + Seed demo
+- [x] Dockerfiles (API + Web) com ARG para NEXT_PUBLIC
+- [x] Health check melhorado (API + DB + Redis)
+
+### Comunicação
+- [x] Email via Resend (welcome, trial ending, recibo, cancelamento, bill reminder)
+- [x] SMS via Twilio Messaging Service "O Financeiro" (OTP + notificações)
+
+### Marketing e Landing
+- [x] Landing page com screenshots reais + vídeo demo + lightbox
+- [x] 70 screenshots + 3 vídeos capturados (Playwright)
+- [x] SEO (robots.txt, sitemap.xml, OG tags, Twitter cards)
+- [x] Theme toggle na landing page
+
+### Documentação
+- [x] 8 ADRs (context split, API services, permissions, billing, AI, Railway, members, assets)
+- [x] RAILWAY_DEPLOY_GUIDE.md (passo a passo completo)
+- [x] RAILWAY_DB_RESET.md (limpar BD + seed)
+- [x] PRICING_STRATEGY.md
+- [x] AI_STRATEGY.md
+- [x] CRON_JOBS.md
+- [x] PRE_PRODUCTION_CHECKLIST.md
+- [x] Skill: security-audit
 
 ---
 
-## PENDENTE — Precisa de serviços externos
+## PENDENTE — Antes do lançamento
 
-| # | Item | Serviço | O que fazer |
-|---|------|---------|-------------|
-| 1 | **Assistente IA real** | Anthropic + OpenAI | Configurar `ANTHROPIC_API_KEY` e `OPENAI_API_KEY` no Railway. O código detecta automaticamente via factory.py |
-| 2 | **SMS OTP real** | Twilio | Configurar `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`. Número Angola (+244) |
-| 3 | **Pagamentos reais** | Stripe | Configurar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Criar planos no dashboard Stripe |
-| 4 | **Email transaccional** | SendGrid/Resend | Escolher provider, criar templates (welcome, reset, factura), integrar no código |
-| 5 | **Error tracking** | Sentry | Criar conta, configurar `SENTRY_DSN` no Railway (backend + frontend) |
-| 6 | **Analytics** | PostHog | Criar conta, configurar `POSTHOG_KEY` no Railway |
-| 7 | **Câmbios reais** | BNA API | Integrar API/scraping do BNA para taxas diárias (substituir hardcoded) |
-| 8 | **Notícias reais** | RSS/API | Integrar feeds RSS (Jornal de Angola, Expansão, etc.) |
+### Correr seed em produção
+```bash
+# Mesmo processo que staging (ver docs/RAILWAY_DB_RESET.md)
+DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
+```
+
+### Configurar API keys no Railway
+
+| Variável | Serviço | Para quê |
+|----------|---------|---------|
+| `ANTHROPIC_API_KEY` | Anthropic | Assistente IA, chat, análise, OCR |
+| `OPENAI_API_KEY` | OpenAI | Whisper (voz→texto), embeddings |
+| `STRIPE_SECRET_KEY` | Stripe | Pagamentos reais após trial |
+| `STRIPE_WEBHOOK_SECRET` | Stripe | Validação de webhooks |
+
+### Criar contas externas
+
+| Serviço | Para quê | Acção |
+|---------|---------|-------|
+| Sentry | Error tracking | Criar conta → `SENTRY_DSN` no Railway |
+| PostHog | Analytics | Criar conta → `POSTHOG_KEY` no Railway |
 
 ---
 
-## PENDENTE — Mobile App
+## FUTURO — Não bloqueia lançamento
 
 | # | Item | Notas |
 |---|------|-------|
-| 1 | Migrar Expo SDK 55 estável | Actualmente usa versões canary |
-| 2 | Implementar paridade com web | Contexto pessoal/familiar, todas as páginas |
-| 3 | EAS Build | Configurar builds iOS e Android |
-| 4 | Push notifications | Firebase/APNS |
-| 5 | Testes em dispositivos reais | iPhone + Android |
+| 1 | **Mobile app** | Estrutura Expo completa existe em apps/mobile/, precisa de implementação |
+| 2 | **Painel admin** | Backend 100% pronto (roles, permissions, 21 endpoints), frontend por criar |
+| 3 | **PWA** | manifest.json, service worker para offline |
+| 4 | **Domínio .ao** | Registar ofinanceiro.ao quando disponível, configurar DNS |
+| 5 | **Integração bancária** | Quando APIs bancárias angolanas estiverem disponíveis |
+| 6 | **Multicaixa Express** | Pagamento local como alternativa ao Stripe |
 
 ---
 
-## PENDENTE — Melhorias pós-lançamento
-
-| # | Item | Prioridade |
-|---|------|-----------|
-| 1 | PWA (manifest.json, service worker) | Média |
-| 2 | Logging estruturado (structlog, JSON) | Média |
-| 3 | Cache Redis para queries frequentes | Média |
-| 4 | CDN para assets estáticos | Baixa |
-| 5 | Acessibilidade WCAG 2.1 AA | Média |
-| 6 | Domínio customizado (ofinanceiro.ao) | Alta |
-
----
-
-*Última actualização: 2026-03-31*
+*Última actualização: 2026-04-02*
