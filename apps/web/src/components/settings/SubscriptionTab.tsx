@@ -5,18 +5,24 @@ import {
   CreditCard,
   Crown,
   Gift,
-  Landmark,
+  Loader2,
   Puzzle,
   Receipt,
-  Smartphone,
   Star,
   Trash2,
   Wallet,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo, type PaymentMethodInfo, type PaymentInfo } from "@/lib/api/billing"
@@ -466,21 +472,14 @@ function ModuleAddonsSection({ subscription, onUpdate }: { subscription: Subscri
 // Payment Methods section
 // ---------------------------------------------------------------------------
 
-const GATEWAY_ICONS: Record<string, typeof CreditCard> = {
-  "credit-card": CreditCard,
-  "landmark": Landmark,
-  "smartphone": Smartphone,
-  "wallet": Wallet,
-}
-
 function PaymentMethodsSection() {
   const [methods, setMethods] = useState<PaymentMethodInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [removing, setRemoving] = useState<string | null>(null)
   const [settingDefault, setSettingDefault] = useState<string | null>(null)
-  const [addingCard, setAddingCard] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
-  const loadMethods = async () => {
+  const loadMethods = useCallback(async () => {
     try {
       const m = await billingApi.paymentMethods()
       setMethods(m)
@@ -489,11 +488,11 @@ function PaymentMethodsSection() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadMethods()
-  }, [])
+  }, [loadMethods])
 
   const handleRemove = async (id: string) => {
     setRemoving(id)
@@ -522,38 +521,9 @@ function PaymentMethodsSection() {
     }
   }
 
-  const handleAddCard = async () => {
-    setAddingCard(true)
-    try {
-      const setup = await billingApi.createSetupIntent()
-      // Load Stripe.js dynamically and mount Elements
-      const { loadStripe } = await import("@stripe/stripe-js")
-      const stripe = await loadStripe(setup.publishable_key)
-      if (!stripe) {
-        toast.error("Erro ao carregar Stripe")
-        return
-      }
-      const { error, setupIntent } = await stripe.confirmCardSetup(setup.client_secret, {
-        payment_method: {
-          card: { token: "" } as never, // This will be replaced by Elements in a proper modal
-        },
-      })
-      if (error) {
-        toast.error(error.message || "Erro ao adicionar cartao")
-      } else if (setupIntent?.payment_method) {
-        await billingApi.addPaymentMethod({
-          gateway: "stripe",
-          payment_method_token: setupIntent.payment_method as string,
-          set_as_default: true,
-        })
-        toast.success("Cartao adicionado com sucesso")
-        await loadMethods()
-      }
-    } catch {
-      toast.error("Erro ao adicionar cartao")
-    } finally {
-      setAddingCard(false)
-    }
+  const handleCardAdded = async () => {
+    setDialogOpen(false)
+    await loadMethods()
   }
 
   const gatewayLabel = (gateway: string) => {
@@ -569,79 +539,275 @@ function PaymentMethodsSection() {
   }
 
   return (
-    <section className="rounded-xl bg-card shadow-sm p-5">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <CreditCard className="h-5 w-5 text-primary" />
+    <>
+      <section className="rounded-xl bg-card shadow-sm p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <CreditCard className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-[15px] font-semibold">Metodos de pagamento</h2>
+            <p className="text-xs text-muted-foreground">Gerir os seus metodos de pagamento</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-[15px] font-semibold">Metodos de pagamento</h2>
-          <p className="text-xs text-muted-foreground">Gerir os seus metodos de pagamento</p>
-        </div>
-      </div>
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground">A carregar...</p>
-      ) : methods.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <Wallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground mb-3">
-            Nenhum metodo de pagamento configurado.
-          </p>
-          <Button size="sm" onClick={handleAddCard} disabled={addingCard}>
-            {addingCard ? "A configurar..." : "Adicionar cartao"}
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {methods.map((pm) => (
-            <div
-              key={pm.id}
-              className={`flex items-center justify-between rounded-lg border p-3 ${
-                pm.is_default ? "border-primary bg-primary/5" : "border-border"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">{pm.label}</p>
-                  <p className="text-xs text-muted-foreground">{gatewayLabel(pm.gateway)}</p>
+        {loading ? (
+          <p className="text-sm text-muted-foreground">A carregar...</p>
+        ) : methods.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+            <Wallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground mb-3">
+              Nenhum metodo de pagamento configurado.
+            </p>
+            <Button size="sm" onClick={() => setDialogOpen(true)}>
+              Adicionar cartao
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {methods.map((pm) => (
+              <div
+                key={pm.id}
+                className={`flex items-center justify-between rounded-lg border p-3 ${
+                  pm.is_default ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">{pm.label}</p>
+                    <p className="text-xs text-muted-foreground">{gatewayLabel(pm.gateway)}</p>
+                  </div>
+                  {pm.is_default && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Predefinido
+                    </span>
+                  )}
                 </div>
-                {pm.is_default && (
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                    Predefinido
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {!pm.is_default && (
+                <div className="flex items-center gap-1">
+                  {!pm.is_default && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleSetDefault(pm.id)}
+                      disabled={settingDefault === pm.id}
+                    >
+                      {settingDefault === pm.id ? "..." : "Predefinir"}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleSetDefault(pm.id)}
-                    disabled={settingDefault === pm.id}
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleRemove(pm.id)}
+                    disabled={removing === pm.id}
                   >
-                    {settingDefault === pm.id ? "..." : "Predefinir"}
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleRemove(pm.id)}
-                  disabled={removing === pm.id}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                </div>
               </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)}>
+              Adicionar cartao
+            </Button>
+          </div>
+        )}
+      </section>
+
+      <AddCardDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={handleCardAdded}
+      />
+    </>
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// Add Card Dialog — Stripe Elements embedded
+// ---------------------------------------------------------------------------
+
+function AddCardDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSuccess: () => void
+}) {
+  const [step, setStep] = useState<"loading" | "ready" | "confirming" | "error">("loading")
+  const [errorMsg, setErrorMsg] = useState("")
+  const [stripeInstance, setStripeInstance] = useState<import("@stripe/stripe-js").Stripe | null>(null)
+  const [cardElement, setCardElement] = useState<import("@stripe/stripe-js").StripeCardElement | null>(null)
+  const [clientSecret, setClientSecret] = useState("")
+  // Initialize Stripe + SetupIntent when dialog opens
+  useEffect(() => {
+    if (!open) {
+      setStep("loading")
+      setErrorMsg("")
+      setStripeInstance(null)
+      setCardElement(null)
+      setClientSecret("")
+      return
+    }
+
+    let cancelled = false
+
+    const init = async () => {
+      try {
+        // 1. Get SetupIntent from our API
+        const setup = await billingApi.createSetupIntent()
+        if (cancelled) return
+
+        // 2. Load Stripe.js
+        const { loadStripe } = await import("@stripe/stripe-js")
+        const stripe = await loadStripe(setup.publishable_key)
+        if (cancelled || !stripe) {
+          if (!cancelled) setStep("error")
+          return
+        }
+
+        setStripeInstance(stripe)
+        setClientSecret(setup.client_secret)
+        setStep("ready")
+      } catch {
+        if (!cancelled) {
+          setErrorMsg("Erro ao preparar o formulario de pagamento")
+          setStep("error")
+        }
+      }
+    }
+
+    init()
+    return () => { cancelled = true }
+  }, [open])
+
+  // Mount card element when Stripe is ready and container exists
+  const mountCard = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !stripeInstance || cardElement) return
+
+      const elements = stripeInstance.elements()
+      const card = elements.create("card", {
+        style: {
+          base: {
+            fontSize: "16px",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            color: "var(--color-foreground, #1a1a1a)",
+            "::placeholder": { color: "var(--color-muted-foreground, #888)" },
+          },
+          invalid: { color: "#ef4444" },
+        },
+        hidePostalCode: true,
+      })
+      card.mount(node)
+      setCardElement(card)
+    },
+    [stripeInstance, cardElement],
+  )
+
+  const handleConfirm = async () => {
+    if (!stripeInstance || !cardElement || !clientSecret) return
+
+    setStep("confirming")
+    setErrorMsg("")
+
+    const { error, setupIntent } = await stripeInstance.confirmCardSetup(clientSecret, {
+      payment_method: { card: cardElement },
+    })
+
+    if (error) {
+      setErrorMsg(error.message || "Erro ao confirmar cartao")
+      setStep("ready")
+      return
+    }
+
+    if (setupIntent?.payment_method) {
+      try {
+        await billingApi.addPaymentMethod({
+          gateway: "stripe",
+          payment_method_token: setupIntent.payment_method as string,
+          set_as_default: true,
+        })
+        toast.success("Cartao adicionado com sucesso")
+        onSuccess()
+      } catch {
+        setErrorMsg("Cartao confirmado mas erro ao guardar. Tente novamente.")
+        setStep("ready")
+      }
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            <span className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Adicionar cartao
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {step === "loading" && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ))}
-          <Button size="sm" variant="outline" onClick={handleAddCard} disabled={addingCard}>
-            {addingCard ? "A configurar..." : "Adicionar cartao"}
-          </Button>
+          )}
+
+          {step === "error" && !clientSecret && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-center">
+              <p className="text-sm text-destructive">{errorMsg || "Erro inesperado"}</p>
+              <Button size="sm" variant="outline" className="mt-3" onClick={() => onOpenChange(false)}>
+                Fechar
+              </Button>
+            </div>
+          )}
+
+          {(step === "ready" || step === "confirming") && (
+            <>
+              <div>
+                <Label className="text-xs mb-2 block">Dados do cartao</Label>
+                <div
+                  ref={mountCard}
+                  className="rounded-md border border-input bg-background px-3 py-3 shadow-sm"
+                />
+              </div>
+
+              {errorMsg && (
+                <p className="text-sm text-destructive">{errorMsg}</p>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                Os dados do cartao sao processados de forma segura pelo Stripe. Nunca armazenamos os dados completos do cartao.
+              </p>
+            </>
+          )}
         </div>
-      )}
-    </section>
+
+        {(step === "ready" || step === "confirming") && (
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={step === "confirming"}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirm} disabled={step === "confirming"}>
+              {step === "confirming" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  A confirmar...
+                </>
+              ) : (
+                "Confirmar cartao"
+              )}
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 
