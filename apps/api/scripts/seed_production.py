@@ -271,9 +271,9 @@ async def main() -> None:
             await seed_plan_permissions(db, family_id, family_perms)
             print(f"Assigned: Pessoal ({len(personal_perms)} perms), Familiar ({len(family_perms)} perms)")
 
-        # 5. Launch promotion
-        print("\n--- Promotion ---")
-        await seed_launch_promotion(db)
+        # 5. Launch promotion (TEMPORARILY DISABLED for payment testing)
+        # print("\n--- Promotion ---")
+        # await seed_launch_promotion(db)
 
         # 6. Admin roles
         print("\n--- Admin Roles ---")
@@ -294,7 +294,7 @@ async def main() -> None:
         print(f"  Categories: {cat_count or 'already existed'}")
         print(f"  Permissions: {perm_count or 'already existed'}")
         print(f"  Plans: Pessoal + Familiar")
-        print(f"  Promotion: {LAUNCH_PROMO_FREE_DAYS} days free (auto-apply)")
+        print(f"  Promotion: DISABLED (payment testing)")
         print(f"  Admin roles: super_admin, support, billing_admin")
         print(f"  Admin user: {ADMIN_PHONE}")
         print()
