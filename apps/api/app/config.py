@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "O Financeiro <noreply@ofinanceiro.app>"
 
+    # Storage (Cloudflare R2 / S3-compatible)
+    r2_endpoint: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = "ofinanceiro-storage"
+    r2_public_url: str = ""  # CDN URL for public files (optional)
+
     # AI
     anthropic_api_key: str = ""
     openai_api_key: str = ""

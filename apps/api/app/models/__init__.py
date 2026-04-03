@@ -45,6 +45,7 @@ from app.models.enums import (
 )
 from app.models.document_series import DocumentSeries
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
+from app.models.file import File as FileModel
 from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.module_addon import ModuleAddon
 from app.models.payment import Payment
@@ -128,6 +129,7 @@ __all__ = [
     "DebtPayment",
     "DocumentSeries",
     "ExpenseSplit",
+    "FileModel",
     "ExpenseSplitPart",
     "Family",
     "FamilyInvite",

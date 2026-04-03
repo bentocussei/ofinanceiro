@@ -24,6 +24,7 @@ from app.routers import (
     education,
     expense_splits,
     families,
+    files,
     finance_settings,
     goals,
     health,
@@ -181,6 +182,7 @@ app.include_router(categories.router)
 app.include_router(budgets.router)
 app.include_router(goals.router)
 app.include_router(families.router)
+app.include_router(files.router)
 app.include_router(reports.router)
 app.include_router(score.router)
 app.include_router(chat.router)
