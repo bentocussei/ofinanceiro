@@ -113,9 +113,9 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
         features=personal_features,
         gateway_metadata={
             "stripe": {
-                "product_id": "prod_UGOxwUXL4aqyB9",
-                "price_monthly_id": "price_1THs9qKqiSjhepmT6Y7zLcbI",
-                "price_annual_id": "price_1THsADKqiSjhepmTJwwJzlHP",
+                "product_id": "prod_UGk9Uom5QNNrpl",
+                "price_monthly_id": "price_1TICgAKqiSjhepmTuTQzMonL",
+                "price_annual_id": "price_1TICgBKqiSjhepmTTmW87m5d",
             }
         },
     ))
@@ -129,9 +129,9 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
         features=family_features,
         gateway_metadata={
             "stripe": {
-                "product_id": "prod_UGOxXRxjgoEn3M",
-                "price_monthly_id": "price_1THsAdKqiSjhepmTSRONuBnT",
-                "price_annual_id": "price_1THsAuKqiSjhepmTJoVfkDxp",
+                "product_id": "prod_UGkAswvgHiGOdm",
+                "price_monthly_id": "price_1TICgwKqiSjhepmT7AuvfKNm",
+                "price_annual_id": "price_1TICgxKqiSjhepmTz3O2usQP",
             }
         },
     ))
@@ -189,6 +189,35 @@ async def seed_trial_promotion(db: AsyncSession) -> None:
     ))
     await db.flush()
     print(f"Trial promotion created: {TRIAL_FREE_DAYS} days free for all new users")
+
+
+async def seed_launch_promotion(db: AsyncSession) -> None:
+    """Create 90-day launch promotion (higher priority than trial)."""
+    existing = await db.execute(
+        select(Promotion).where(Promotion.name == "Lancamento O Financeiro").limit(1)
+    )
+    if existing.scalar_one_or_none():
+        print("Launch promotion already exists, skipping.")
+        return
+
+    from datetime import UTC, datetime
+
+    db.add(Promotion(
+        name="Lancamento O Financeiro",
+        code=None,
+        type=PromotionType.FREE_DAYS,
+        value=LAUNCH_PROMO_FREE_DAYS,
+        start_date=datetime.now(UTC),
+        end_date=None,
+        apply_to_all=True,
+        applicable_plan_types=["personal", "family"],
+        max_beneficiaries=None,
+        auto_apply_on_register=True,
+        free_days=LAUNCH_PROMO_FREE_DAYS,
+        priority=0,
+    ))
+    await db.flush()
+    print(f"Launch promotion created: {LAUNCH_PROMO_FREE_DAYS} days free (priority 0 — overrides trial)")
 
 
 async def seed_admin_roles(db: AsyncSession) -> dict[str, uuid.UUID]:
@@ -369,15 +398,19 @@ async def main() -> None:
         print("\n--- Trial Promotion ---")
         await seed_trial_promotion(db)
 
-        # 6. Admin roles
+        # 7. Launch promotion (90 days free — overrides trial during launch)
+        print("\n--- Launch Promotion ---")
+        await seed_launch_promotion(db)
+
+        # 8. Admin roles
         print("\n--- Admin Roles ---")
         roles = await seed_admin_roles(db)
 
-        # 7. Admin user
+        # 9. Admin user
         print("\n--- Admin User ---")
         await seed_admin_user(db, roles)
 
-        # 8. Test user (paid subscription, no promotion — for payment testing)
+        # 10. Test user (paid subscription, no promotion — for payment testing)
         if personal_id:
             print("\n--- Test User ---")
             await seed_test_user(db, personal_id)
@@ -393,7 +426,8 @@ async def main() -> None:
         print(f"  Categories: {cat_count or 'already existed'}")
         print(f"  Permissions: {perm_count or 'already existed'}")
         print(f"  Plans: Pessoal + Familiar")
-        print(f"  Trial: {TRIAL_FREE_DAYS} days free (auto-apply)")
+        print(f"  Trial: {TRIAL_FREE_DAYS} days free (fallback, priority 10)")
+        print(f"  Launch: {LAUNCH_PROMO_FREE_DAYS} days free (active, priority 0)")
         print(f"  Test user: {TEST_USER_PHONE} (paid Pessoal, no promo)")
         print(f"  Admin roles: super_admin, support, billing_admin")
         print(f"  Admin user: {ADMIN_PHONE}")
