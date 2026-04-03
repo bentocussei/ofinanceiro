@@ -26,6 +26,7 @@ from app.models import (
     AdminRole,
     AdminRolePermission,
     AdminUser,
+    CompanySettings,
     Permission,
     Plan,
     PlanPermission,
@@ -137,6 +138,28 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
     await db.flush()
     print(f"Plans created: Pessoal ({PERSONAL_PLAN_MONTHLY // 100} Kz) + Familiar ({FAMILY_PLAN_MONTHLY // 100} Kz)")
     return personal_id, family_id
+
+
+async def seed_company_settings(db: AsyncSession) -> None:
+    """Create default company settings if not exists."""
+    existing = await db.execute(select(CompanySettings).limit(1))
+    if existing.scalar_one_or_none():
+        print("Company settings already exist, skipping.")
+        return
+
+    db.add(CompanySettings(
+        name="O Financeiro, Lda",
+        nif="0000000000",
+        address="Luanda, Angola",
+        city="Luanda",
+        country="AO",
+        email="suporte@ofinanceiro.app",
+        vat_rate=0,
+        vat_exempt_reason="M01",
+        agt_certificate_number="0",
+    ))
+    await db.flush()
+    print("Company settings created (update NIF and address via admin)")
 
 
 async def seed_trial_promotion(db: AsyncSession) -> None:
@@ -338,7 +361,11 @@ async def main() -> None:
             await seed_plan_permissions(db, family_id, family_perms)
             print(f"Assigned: Pessoal ({len(personal_perms)} perms), Familiar ({len(family_perms)} perms)")
 
-        # 5. Trial promotion (30 days free for new users)
+        # 5. Company settings
+        print("\n--- Company Settings ---")
+        await seed_company_settings(db)
+
+        # 6. Trial promotion (30 days free for new users)
         print("\n--- Trial Promotion ---")
         await seed_trial_promotion(db)
 

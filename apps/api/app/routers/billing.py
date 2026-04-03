@@ -13,6 +13,7 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.enums import (
+    DocumentStatus,
     PaymentGatewayType,
     PaymentStatus,
     SubscriptionStatus,
@@ -618,6 +619,7 @@ class InvoiceResponse(BaseModel):
     total: int
     currency: str
     status: str
+    is_paid: bool
     issue_date: str
     atcud: str
     lines: list[InvoiceLineResponse]
@@ -644,7 +646,21 @@ async def list_invoices(
 ) -> list[InvoiceResponse]:
     """Listar facturas do utilizador."""
     from app.services.invoicing import list_user_invoices
+    from app.models.invoice import Receipt as ReceiptModel
     invoices = await list_user_invoices(db, user.id, limit=limit, offset=offset)
+
+    # Check which invoices have receipts (= paid)
+    invoice_ids = [inv.id for inv in invoices]
+    paid_ids: set = set()
+    if invoice_ids:
+        paid_result = await db.scalars(
+            select(ReceiptModel.invoice_id).where(
+                ReceiptModel.invoice_id.in_(invoice_ids),
+                ReceiptModel.status == DocumentStatus.ISSUED,
+            )
+        )
+        paid_ids = set(paid_result.all())
+
     return [
         InvoiceResponse(
             id=str(inv.id),
@@ -658,6 +674,7 @@ async def list_invoices(
             total=inv.total,
             currency=inv.currency.value if hasattr(inv.currency, "value") else str(inv.currency),
             status=inv.status.value if hasattr(inv.status, "value") else str(inv.status),
+            is_paid=inv.id in paid_ids,
             issue_date=inv.issue_date.isoformat(),
             atcud=inv.atcud,
             lines=[
@@ -713,7 +730,9 @@ async def download_invoice_pdf(
         raise HTTPException(status_code=404, detail="Factura nao encontrada")
 
     from app.services.pdf_generator import generate_invoice_pdf
-    pdf_bytes = generate_invoice_pdf(inv, inv.lines or [])
+    from app.services.invoicing import get_company_settings
+    company = await get_company_settings(db)
+    pdf_bytes = generate_invoice_pdf(inv, inv.lines or [], company)
     return FastAPIResponse(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -775,7 +794,9 @@ async def download_receipt_pdf(
         raise HTTPException(status_code=404, detail="Factura associada nao encontrada")
 
     from app.services.pdf_generator import generate_receipt_pdf
-    pdf_bytes = generate_receipt_pdf(receipt, inv)
+    from app.services.invoicing import get_company_settings
+    company = await get_company_settings(db)
+    pdf_bytes = generate_receipt_pdf(receipt, inv, company)
     return FastAPIResponse(
         content=pdf_bytes,
         media_type="application/pdf",

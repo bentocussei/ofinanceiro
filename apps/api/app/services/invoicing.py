@@ -27,14 +27,43 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-# O Financeiro company details for QR code / SAFT
-COMPANY_NIF = "0000000000"  # TODO: set real NIF after registration
-COMPANY_NAME = "O Financeiro, Lda"
-COMPANY_COUNTRY = "AO"
+# Defaults (used if CompanySettings not yet configured)
+_DEFAULT_COMPANY_NIF = "0000000000"
+_DEFAULT_COMPANY_NAME = "O Financeiro, Lda"
+_DEFAULT_COMPANY_COUNTRY = "AO"
+_DEFAULT_VAT_RATE = "exempt"
+_DEFAULT_VAT_EXEMPT_REASON = "M01"
 
-# IVA rate for digital services in Angola (currently exempt for most SaaS)
-DEFAULT_VAT_RATE = "exempt"
-DEFAULT_VAT_EXEMPT_REASON = "M01"  # Artigo 12.o do CIVA — prestacao de servicos digitais
+
+async def get_company_settings(db: AsyncSession) -> dict:
+    """Get company settings from DB, or defaults if not configured."""
+    from app.models.company_settings import CompanySettings
+    result = await db.scalar(select(CompanySettings).limit(1))
+    if result:
+        return {
+            "nif": result.nif,
+            "name": result.name,
+            "country": result.country,
+            "city": result.city,
+            "address": result.address or "",
+            "email": result.email,
+            "phone": result.phone or "",
+            "vat_rate": str(result.vat_rate) if result.vat_rate > 0 else "exempt",
+            "vat_exempt_reason": result.vat_exempt_reason,
+            "agt_certificate_number": result.agt_certificate_number,
+        }
+    return {
+        "nif": _DEFAULT_COMPANY_NIF,
+        "name": _DEFAULT_COMPANY_NAME,
+        "country": _DEFAULT_COMPANY_COUNTRY,
+        "city": "Luanda",
+        "address": "",
+        "email": "suporte@ofinanceiro.app",
+        "phone": "",
+        "vat_rate": _DEFAULT_VAT_RATE,
+        "vat_exempt_reason": _DEFAULT_VAT_EXEMPT_REASON,
+        "agt_certificate_number": "0",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -139,14 +168,16 @@ def generate_qr_code_data(
     invoice: Invoice,
     hash_control: str,
     atcud: str,
+    company: dict | None = None,
 ) -> str:
     """Generate QR code data string per AGT specification."""
+    co = company or {}
     fields = [
-        f"A:{COMPANY_NIF}",
+        f"A:{co.get('nif', _DEFAULT_COMPANY_NIF)}",
         f"B:{invoice.customer_nif or '999999990'}",
-        f"C:{COMPANY_COUNTRY}",
+        f"C:{co.get('country', _DEFAULT_COMPANY_COUNTRY)}",
         f"D:{invoice.document_type.value}",
-        f"E:N",  # N = normal status
+        f"E:N",
         f"F:{invoice.issue_date.strftime('%Y%m%d')}",
         f"G:{invoice.document_number}",
         f"H:{atcud}",
@@ -154,7 +185,7 @@ def generate_qr_code_data(
         f"N:{invoice.vat_total / 100:.2f}",
         f"O:{invoice.total / 100:.2f}",
         f"Q:{hash_control}",
-        f"R:0",  # certificate number (0 = demo)
+        f"R:{co.get('agt_certificate_number', '0')}",
     ]
     return "*".join(fields)
 
@@ -203,11 +234,13 @@ async def create_invoice_for_payment(
     """Create an invoice (FT) for a completed payment.
 
     Generates: document number, hash, ATCUD, QR code, and invoice lines.
+    Uses company settings from DB for NIF, address, etc.
     """
     user = await db.get(User, payment.user_id)
     if not user:
         raise ValueError(f"User {payment.user_id} not found")
 
+    company = await get_company_settings(db)
     now = datetime.now(timezone.utc)
     doc_type = DocumentType.INVOICE
 
@@ -266,7 +299,7 @@ async def create_invoice_for_payment(
         invoice.discount_reason = promo_name or "Desconto aplicado"
 
     # QR code
-    invoice.qr_code_data = generate_qr_code_data(invoice, hash_control, atcud)
+    invoice.qr_code_data = generate_qr_code_data(invoice, hash_control, atcud, company)
 
     db.add(invoice)
     await db.flush()
@@ -430,6 +463,12 @@ async def create_receipt_for_payment(
         payment_method_description=pm_desc,
     )
     db.add(receipt)
+
+    # Mark the invoice as paid
+    invoice.status = DocumentStatus.ISSUED  # Keep as ISSUED per AGT (paid status tracked via receipt)
+    # Note: AGT doesn't have a "PAID" document status — the existence of a receipt proves payment.
+    # But for our internal tracking, we can use a convention in the status label.
+
     await db.flush()
     await db.refresh(receipt)
 

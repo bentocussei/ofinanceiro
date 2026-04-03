@@ -924,6 +924,15 @@ function InvoicesReceiptsSection() {
                   <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
                     {docTypeLabel(inv.document_type)}
                   </span>
+                  {inv.is_paid ? (
+                    <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-xs text-green-700 dark:text-green-400">
+                      Paga
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 text-xs text-yellow-700 dark:text-yellow-400">
+                      Pendente
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {new Date(inv.issue_date).toLocaleDateString("pt-AO")}

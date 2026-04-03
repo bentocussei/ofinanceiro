@@ -67,6 +67,7 @@ export interface InvoiceInfo {
   status: string
   issue_date: string
   atcud: string
+  is_paid: boolean
   lines: Array<{
     description: string
     quantity: number

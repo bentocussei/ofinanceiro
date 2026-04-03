@@ -22,10 +22,12 @@ from app.models.invoice import Invoice, InvoiceLine, Receipt
 
 logger = logging.getLogger(__name__)
 
-COMPANY_NAME = "O Financeiro, Lda"
-COMPANY_ADDRESS = "Luanda, Angola"
-COMPANY_NIF = "0000000000"
-COMPANY_EMAIL = "suporte@ofinanceiro.app"
+_DEFAULT_COMPANY = {
+    "name": "O Financeiro, Lda",
+    "address": "Luanda, Angola",
+    "nif": "0000000000",
+    "email": "suporte@ofinanceiro.app",
+}
 
 
 def _format_kz(centavos: int) -> str:
@@ -52,8 +54,9 @@ def _generate_qr_image(data: str) -> io.BytesIO:
     return buf
 
 
-def generate_invoice_pdf(invoice: Invoice, lines: list[InvoiceLine]) -> bytes:
+def generate_invoice_pdf(invoice: Invoice, lines: list[InvoiceLine], company: dict | None = None) -> bytes:
     """Generate a PDF for an invoice (FT or NC). Returns PDF bytes."""
+    co = {**_DEFAULT_COMPANY, **(company or {})}
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm)
     styles = getSampleStyleSheet()
@@ -69,9 +72,9 @@ def generate_invoice_pdf(invoice: Invoice, lines: list[InvoiceLine]) -> bytes:
     elements: list = []
 
     # Header
-    elements.append(Paragraph(COMPANY_NAME, title_style))
-    elements.append(Paragraph(f"NIF: {COMPANY_NIF} | {COMPANY_ADDRESS}", subtitle_style))
-    elements.append(Paragraph(f"{COMPANY_EMAIL}", subtitle_style))
+    elements.append(Paragraph(co["name"], title_style))
+    elements.append(Paragraph(f"NIF: {co['nif']} | {co.get('address', '')}", subtitle_style))
+    elements.append(Paragraph(co["email"], subtitle_style))
     elements.append(Spacer(1, 8 * mm))
 
     # Document title
@@ -183,8 +186,9 @@ def generate_invoice_pdf(invoice: Invoice, lines: list[InvoiceLine]) -> bytes:
     return buf.getvalue()
 
 
-def generate_receipt_pdf(receipt: Receipt, invoice: Invoice) -> bytes:
+def generate_receipt_pdf(receipt: Receipt, invoice: Invoice, company: dict | None = None) -> bytes:
     """Generate a PDF for a receipt (RC). Returns PDF bytes."""
+    co = {**_DEFAULT_COMPANY, **(company or {})}
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm)
     styles = getSampleStyleSheet()
@@ -197,8 +201,8 @@ def generate_receipt_pdf(receipt: Receipt, invoice: Invoice) -> bytes:
     elements: list = []
 
     # Header
-    elements.append(Paragraph(COMPANY_NAME, title_style))
-    elements.append(Paragraph(f"NIF: {COMPANY_NIF} | {COMPANY_ADDRESS}", subtitle_style))
+    elements.append(Paragraph(co["name"], title_style))
+    elements.append(Paragraph(f"NIF: {co['nif']} | {co.get('address', '')}", subtitle_style))
     elements.append(Spacer(1, 8 * mm))
 
     # Receipt title
