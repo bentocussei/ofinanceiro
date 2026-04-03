@@ -237,16 +237,28 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
               </div>
             )}
 
+            {/* Cancelled banner — user keeps access until end_date */}
+            {!subscription.auto_renew && subscription.status !== "expired" && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800 p-3">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  Subscricao cancelada — acesso ate {formatDate(subscription.end_date)}
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                  Nao sera renovada automaticamente. Pode reactivar a qualquer momento.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              {subscription.status === "cancelled" ? (
+              {!subscription.auto_renew && subscription.status !== "expired" ? (
                 <Button size="sm" onClick={handleReactivate}>
                   Reactivar subscricao
                 </Button>
-              ) : (
+              ) : subscription.status !== "expired" ? (
                 <Button size="sm" variant="outline" onClick={handleCancel}>
                   Cancelar subscricao
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
         ) : (

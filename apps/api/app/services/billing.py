@@ -221,7 +221,10 @@ async def get_active_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> UserSubscription | None:
-    """Get the current active (or trialing) subscription for a user."""
+    """Get the current active (or trialing) subscription for a user.
+
+    Also checks end_date — if the period has passed, auto-expires the subscription.
+    """
     stmt = (
         select(UserSubscription)
         .where(
@@ -235,7 +238,19 @@ async def get_active_subscription(
         .limit(1)
     )
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    sub = result.scalar_one_or_none()
+
+    if not sub:
+        return None
+
+    # Auto-expire if past end_date and not auto-renewing
+    now = datetime.now(timezone.utc)
+    if sub.end_date < now and not sub.auto_renew:
+        sub.status = SubscriptionStatus.EXPIRED
+        await db.flush()
+        return None
+
+    return sub
 
 
 def calculate_proration_credit(
@@ -597,17 +612,34 @@ async def cancel_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> UserSubscription:
-    """Cancel a subscription immediately."""
+    """Cancel a subscription — keeps access until end_date, no refund.
+
+    The user maintains full access to their plan until the billing period ends.
+    auto_renew is set to False so the subscription will expire naturally.
+    They can reactivate at any time before end_date.
+    """
     sub = await get_active_subscription(db, user_id)
     if not sub:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Não tens uma subscrição activa para cancelar.",
+            detail="Nao tens uma subscricao activa para cancelar.",
         )
 
-    sub.status = SubscriptionStatus.CANCELLED
+    if sub.cancelled_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Subscricao ja esta cancelada. Mantem acesso ate ao fim do periodo.",
+        )
+
+    # Keep status ACTIVE/TRIALING — user keeps access until end_date
     sub.cancelled_at = datetime.now(timezone.utc)
     sub.auto_renew = False
+
+    # Clear any pending plan changes
+    sub.pending_plan_id = None
+    sub.pending_billing_cycle = None
+    sub.pending_change_scheduled_at = None
+
     await db.flush()
     await db.refresh(sub)
     return sub
@@ -617,32 +649,44 @@ async def reactivate_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> UserSubscription:
-    """Reactivate a cancelled subscription if still within the billing period."""
-    stmt = (
-        select(UserSubscription)
-        .where(
-            UserSubscription.user_id == user_id,
-            UserSubscription.status == SubscriptionStatus.CANCELLED,
+    """Reactivate a cancelled subscription (re-enable auto-renew).
+
+    Only works if the subscription is still within its billing period.
+    """
+    # Find subscription that was cancelled but still active (has access)
+    sub = await get_active_subscription(db, user_id)
+
+    if not sub:
+        # Also check for recently expired
+        stmt = (
+            select(UserSubscription)
+            .where(
+                UserSubscription.user_id == user_id,
+                UserSubscription.status.in_([
+                    SubscriptionStatus.EXPIRED,
+                    SubscriptionStatus.CANCELLED,
+                ]),
+            )
+            .order_by(UserSubscription.created_at.desc())
+            .limit(1)
         )
-        .order_by(UserSubscription.cancelled_at.desc())
-        .limit(1)
-    )
-    result = await db.execute(stmt)
-    sub = result.scalar_one_or_none()
+        result = await db.execute(stmt)
+        sub = result.scalar_one_or_none()
 
     if not sub:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Não encontrámos uma subscrição cancelada para reactivar.",
+            detail="Nao encontramos uma subscricao para reactivar.",
         )
 
     now = datetime.now(timezone.utc)
     if sub.end_date < now:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="O período da subscrição já terminou. Cria uma nova subscrição.",
+            detail="O periodo da subscricao ja terminou. Cria uma nova subscricao.",
         )
 
+    # Re-enable auto-renew and clear cancellation
     sub.status = SubscriptionStatus.ACTIVE
     sub.cancelled_at = None
     sub.auto_renew = True

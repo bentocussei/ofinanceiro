@@ -93,6 +93,23 @@ async def process_renewals(db: AsyncSession) -> dict:
             stats["failed"] += 1
             logger.exception("Erro ao renovar subscricao %s", sub.id)
 
+    # Also expire cancelled subscriptions past their end_date
+    expired_subs = await db.scalars(
+        select(UserSubscription)
+        .where(
+            UserSubscription.auto_renew.is_(False),
+            UserSubscription.end_date < now,
+            UserSubscription.status.in_([
+                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.TRIALING,
+            ]),
+        )
+    )
+    for sub in expired_subs.all():
+        sub.status = SubscriptionStatus.EXPIRED
+        stats["expired"] += 1
+        logger.info("Subscricao %s expirada (cancelada, periodo terminado)", sub.id)
+
     await db.commit()
     logger.info("Auto-billing concluido: %s", stats)
     return stats
