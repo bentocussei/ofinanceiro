@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background: rounded square with brand green -->
+  <rect width="32" height="32" rx="7" fill="#16A34A"/>
+
+  <!-- Stylized "F" for Financeiro with a coin/chart accent -->
+  <path d="M10 8h12v3.5H14.5v4H20v3.5h-5.5V24H10V8z" fill="white"/>
+
+  <!-- Small upward trend arrow (financial growth) -->
+  <path d="M22 20l2.5-3.5M22 20l-2.5-3.5M22 20V13" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
