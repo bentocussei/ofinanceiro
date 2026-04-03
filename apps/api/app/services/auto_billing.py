@@ -26,7 +26,7 @@ async def process_renewals(db: AsyncSession) -> dict:
     now = datetime.now(timezone.utc)
     cutoff = now + timedelta(days=3)
 
-    # Find subscriptions due for renewal
+    # Find subscriptions due for renewal (includes TRIALING that ended)
     result = await db.scalars(
         select(UserSubscription)
         .where(
@@ -34,6 +34,7 @@ async def process_renewals(db: AsyncSession) -> dict:
             UserSubscription.end_date <= cutoff,
             UserSubscription.status.in_([
                 SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.TRIALING,
                 SubscriptionStatus.PAST_DUE,
             ]),
         )

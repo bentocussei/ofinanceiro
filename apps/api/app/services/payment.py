@@ -81,6 +81,11 @@ async def add_payment_method(
     set_as_default: bool = True,
 ) -> PaymentMethod:
     """Add a payment method from a gateway (e.g. after Stripe SetupIntent completes)."""
+    if not payment_method_token or not payment_method_token.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token de metodo de pagamento invalido",
+        )
     gw = get_gateway(gateway)
     details = await gw.get_payment_method_details(payment_method_token)
 
@@ -287,14 +292,23 @@ async def charge_subscription(
     subscription: UserSubscription,
     payment_method: PaymentMethod | None = None,
 ) -> Payment:
-    """Charge a subscription using its payment method."""
+    """Charge a subscription using its payment method.
+
+    Single commit at the end — no intermediate commits to prevent double-charge.
+    """
     if not payment_method:
         payment_method = await get_default_payment_method(db, subscription.user_id)
 
     if not payment_method:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nenhum método de pagamento configurado",
+            detail="Nenhum metodo de pagamento configurado",
+        )
+
+    if not payment_method.gateway_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Metodo de pagamento sem token — reconfigure o cartao",
         )
 
     gw = get_gateway(payment_method.gateway)
@@ -307,7 +321,7 @@ async def charge_subscription(
         phone=user.phone if user else None,
     )
 
-    plan_name = subscription.plan_snapshot.get("name", "Subscrição")
+    plan_name = subscription.plan_snapshot.get("name", "Subscricao")
     description = f"O Financeiro — {plan_name}"
 
     # Create pending payment record
@@ -325,18 +339,27 @@ async def charge_subscription(
     db.add(payment)
     await db.flush()
 
-    # Charge
-    result: ChargeResult = await gw.create_charge(
-        amount=subscription.final_price,
-        currency="aoa",
-        payment_method_token=payment_method.gateway_token,
-        customer_id=customer_id,
-        metadata={
-            "user_id": str(subscription.user_id),
-            "subscription_id": str(subscription.id),
-            "payment_id": str(payment.id),
-        },
-    )
+    # Charge — wrap in try/except to handle gateway unavailability
+    try:
+        result: ChargeResult = await gw.create_charge(
+            amount=subscription.final_price,
+            currency="aoa",
+            payment_method_token=payment_method.gateway_token,
+            customer_id=customer_id,
+            metadata={
+                "user_id": str(subscription.user_id),
+                "subscription_id": str(subscription.id),
+                "payment_id": str(payment.id),
+            },
+        )
+    except Exception as e:
+        # Gateway unavailable — mark payment as FAILED
+        payment.status = PaymentStatus.FAILED
+        payment.failure_reason = f"Gateway indisponivel: {e!s}"
+        await db.commit()
+        await db.refresh(payment)
+        logger.exception("Gateway indisponivel para pagamento %s", payment.id)
+        return payment
 
     # Update payment record
     payment.status = result.status
@@ -346,19 +369,18 @@ async def charge_subscription(
     if result.success:
         payment.paid_at = datetime.now(timezone.utc)
 
-    await db.commit()
-    await db.refresh(payment)
-
-    # Generate invoice + receipt for completed payments
+    # Generate invoice + receipt for completed payments (same transaction)
     if result.success:
         try:
             from app.services.invoicing import create_invoice_for_payment, create_receipt_for_payment
             invoice = await create_invoice_for_payment(db, payment, subscription)
             await create_receipt_for_payment(db, payment, invoice)
-            await db.commit()
         except Exception:
             logger.exception("Erro ao gerar factura/recibo para pagamento %s", payment.id)
 
+    # Single commit for payment + invoice + receipt
+    await db.commit()
+    await db.refresh(payment)
     return payment
 
 

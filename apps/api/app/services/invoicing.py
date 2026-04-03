@@ -164,7 +164,20 @@ async def get_previous_hash(
     doc_type: DocumentType,
     series_id: uuid.UUID,
 ) -> str | None:
-    """Get the hash of the most recent document in this series (for chain)."""
+    """Get the hash of the most recent document in this series (for chain).
+
+    Uses FOR UPDATE to lock the row and prevent concurrent hash chain breaks.
+    """
+    if doc_type == DocumentType.RECEIPT:
+        result = await db.scalar(
+            select(Receipt.hash)
+            .where(Receipt.series_id == series_id)
+            .order_by(Receipt.created_at.desc())
+            .limit(1)
+            .with_for_update()
+        )
+        return result
+
     result = await db.scalar(
         select(Invoice.hash)
         .where(
@@ -173,18 +186,8 @@ async def get_previous_hash(
         )
         .order_by(Invoice.created_at.desc())
         .limit(1)
+        .with_for_update()
     )
-    if result:
-        return result
-
-    # Also check receipts if doc_type is RC
-    if doc_type == DocumentType.RECEIPT:
-        result = await db.scalar(
-            select(Receipt.hash)
-            .where(Receipt.series_id == series_id)
-            .order_by(Receipt.created_at.desc())
-            .limit(1)
-        )
     return result
 
 
@@ -311,14 +314,14 @@ def _build_invoice_lines(
         ))
         line_num += 1
 
-        # Extra members line
-        if subscription.extra_members_cost > 0:
+        # Extra members line (only if there are actual extra members)
+        if subscription.extra_members_cost > 0 and subscription.extra_members_count > 0:
             lines.append(InvoiceLine(
                 invoice_id=invoice_id,
                 line_number=line_num,
                 description=f"Membros extra ({subscription.extra_members_count})",
                 quantity=subscription.extra_members_count,
-                unit_price=subscription.extra_members_cost // max(1, subscription.extra_members_count),
+                unit_price=subscription.extra_members_cost // subscription.extra_members_count,
                 discount_amount=0,
                 vat_rate=DEFAULT_VAT_RATE,
                 vat_exempt_reason=DEFAULT_VAT_EXEMPT_REASON,

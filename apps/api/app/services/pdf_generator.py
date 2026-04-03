@@ -103,7 +103,7 @@ def generate_invoice_pdf(invoice: Invoice, lines: list[InvoiceLine]) -> bytes:
     elements.append(Paragraph("CLIENTE", ParagraphStyle(
         "SectionTitle", parent=styles["Normal"], fontSize=10, textColor=colors.grey, spaceAfter=2
     )))
-    elements.append(Paragraph(invoice.customer_name, normal_style))
+    elements.append(Paragraph(invoice.customer_name or "Consumidor Final", normal_style))
     if invoice.customer_nif:
         elements.append(Paragraph(f"NIF: {invoice.customer_nif}", small_style))
     if invoice.customer_phone:

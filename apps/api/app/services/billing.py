@@ -545,11 +545,18 @@ async def change_subscription(
             pm = await payment_service.get_default_payment_method(db, user_id)
             if pm:
                 try:
-                    await payment_service.charge_subscription(db, current, pm)
+                    payment = await payment_service.charge_subscription(db, current, pm)
+                    if not payment.paid_at:
+                        # Payment failed — revert subscription change
+                        raise ValueError(f"Pagamento falhou: {payment.failure_reason}")
                 except Exception:
                     import logging
                     logging.getLogger(__name__).exception(
-                        "Cobranca de prorateio falhou para user %s", user_id
+                        "Cobranca de prorateio falhou para user %s — a reverter", user_id
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                        detail="Pagamento falhou. O plano nao foi alterado.",
                     )
     else:
         # --- SCHEDULED: downgrade or annual→monthly ---
@@ -605,6 +612,7 @@ async def apply_pending_change(
         sub.pending_plan_id = None
         sub.pending_billing_cycle = None
         sub.pending_change_scheduled_at = None
+        await db.flush()
         return
 
     new_cycle = sub.pending_billing_cycle or sub.billing_cycle
@@ -638,6 +646,7 @@ async def apply_pending_change(
     # Sync permissions
     from app.services.permission import sync_user_permissions_from_plan
     await sync_user_permissions_from_plan(db, sub.user_id, sub.plan_snapshot)
+    await db.flush()
 
 
 # Legacy aliases for backward compatibility
@@ -1292,7 +1301,8 @@ async def add_addon_to_subscription(
                     db.add(addon_payment)
                     await db.flush()
 
-                    gw = payment_service.get_gateway(pm.gateway)
+                    from app.gateways import get_gateway
+                    gw = get_gateway(pm.gateway)
                     customer_id = await gw.get_or_create_customer(user_id=str(user_id))
                     charge_result = await gw.create_charge(
                         amount=prorated_price,

@@ -30,6 +30,7 @@ class Invoice(BaseModel):
     __tablename__ = "invoices"
     __table_args__ = (
         UniqueConstraint("document_number", name="uq_invoice_document_number"),
+        UniqueConstraint("atcud", name="uq_invoice_atcud"),
         Index("idx_invoice_user", "user_id"),
         Index("idx_invoice_status", "status"),
     )
