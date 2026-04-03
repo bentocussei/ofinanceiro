@@ -62,9 +62,11 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 | 2 | **CORS origins** | Railway env vars | `ALLOWED_ORIGINS` — domínios de produção |
 | 3 | **Database URL** | Railway auto-injection | PostgreSQL managed |
 | 4 | **Redis URL** | Railway auto-injection | Redis managed |
-| 5 | **Stripe keys** | Railway env vars | Para billing (Phase 6) |
-| 6 | **Sentry DSN** | Railway env vars | Monitoring (Phase 6) |
-| 7 | **PostHog key** | Railway env vars | Analytics (Phase 6) |
+| 5 | **Stripe keys (test)** | Railway env vars | ✅ Configurado em staging (test mode). Produção: trocar para live keys |
+| 6 | **Stripe keys (live)** | Railway env vars | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — obter do dashboard Stripe |
+| 7 | **File storage** | Railway env vars | `STORAGE_ENDPOINT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET` — para OCR, imports, avatars (Phase 5) |
+| 8 | **Sentry DSN** | Railway env vars | Monitoring (Phase 6) |
+| 9 | **PostHog key** | Railway env vars | Analytics (Phase 6) |
 
 ---
 
@@ -95,7 +97,33 @@ curl -X POST https://api.ofinanceiro.ao/api/v1/snapshots/generate \
 
 ---
 
-## 5. Items Temporários (Remover Antes de Produção)
+## 5. File Storage (Supabase Storage / S3 / Cloudflare R2)
+
+Necessário configurar um serviço de storage para ficheiros antes das funcionalidades que dependem dele.
+
+| # | Funcionalidade | Tipo de Ficheiro | Estratégia | Fase | Notas |
+|---|---------------|-----------------|------------|------|-------|
+| 1 | **OCR de recibos** | Fotos (JPEG/PNG) do utilizador | Guardar em storage | Phase 5 | Utilizador pode rever, anexar a transacção. Reter enquanto conta activa |
+| 2 | **Import de extractos** | CSV/Excel bancários | Guardar em storage | Phase 5 | Auditoria, possibilidade de re-processar. Reter 1 ano |
+| 3 | **Avatar do utilizador** | Imagem de perfil (JPEG/PNG) | Guardar em storage | Já existe no modelo (`User.avatar_url`) | Mostrado em toda a app. Limitar a 2MB |
+| 4 | **Facturas/Recibos PDF** | PDF gerado pelo sistema | On-demand (não guardar) | Implementado | Gerado em memória com ReportLab a cada pedido. Campo `pdf_storage_key` preparado para cache futuro |
+| 5 | **Audio (input por voz)** | Audio temporário (WAV/WebM) | Temporário — processar e apagar | Phase 5 | Enviar ao Whisper API, obter texto, descartar audio. Não guardar permanentemente |
+| 6 | **Relatórios exportados** | PDF/Excel gerado pelo sistema | On-demand (não guardar) | Phase 6 | Dados mudam, gerar sempre fresco. Sem necessidade de storage |
+
+**Configuração necessária:**
+- Criar bucket S3-compatible (Cloudflare R2 recomendado — mais barato, sem egress fees)
+- Variáveis de ambiente: `STORAGE_ENDPOINT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET`
+- Ou Supabase Storage se já usarmos Supabase para auth
+
+**Regras de storage:**
+- Ficheiros do utilizador isolados por `user_id/` prefix
+- Limite de upload: 10MB para fotos, 50MB para extractos
+- Audio temporário: apagar após processamento (max 5 minutos de retenção)
+- Backups: incluir bucket no plano de backup
+
+---
+
+## 6. Items Temporários (Remover Antes de Produção)
 
 | # | Item | Ficheiros | Razão | Quando Remover |
 |---|------|-----------|-------|----------------|
@@ -113,4 +141,4 @@ curl -X POST https://api.ofinanceiro.ao/api/v1/snapshots/generate \
 
 ---
 
-*Última actualização: 2026-03-29*
+*Última actualização: 2026-04-03*
