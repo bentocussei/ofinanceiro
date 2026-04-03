@@ -842,7 +842,11 @@ async def stripe_webhook(
         raise HTTPException(status_code=400, detail=f"Erro webhook: {e!s}") from e
 
     event_type = event["type"]
-    data = event["data"]["object"]
+    # Convert StripeObject to plain dict — StripeObject doesn't support .get()
+    data_obj = event["data"]["object"]
+    data = dict(data_obj) if not isinstance(data_obj, dict) else data_obj
+    if "metadata" in data and not isinstance(data["metadata"], dict):
+        data["metadata"] = dict(data["metadata"])
     logger.info("Webhook Stripe: %s", event_type)
 
     if event_type == "payment_intent.succeeded":
@@ -916,7 +920,11 @@ async def _handle_payment_failed(db: AsyncSession, data: dict) -> None:
         payment = await db.get(Payment, uuid.UUID(payment_id))
         if payment:
             payment.status = PaymentStatus.FAILED
-            payment.failure_reason = data.get("last_payment_error", {}).get("message", "Pagamento recusado")
+            last_error = data.get("last_payment_error")
+            if last_error and isinstance(last_error, dict):
+                payment.failure_reason = last_error.get("message", "Pagamento recusado")
+            else:
+                payment.failure_reason = "Pagamento recusado"
             payment.gateway_response = {"stripe_event": "payment_intent.payment_failed"}
 
     if subscription_id:
