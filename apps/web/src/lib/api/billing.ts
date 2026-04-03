@@ -1,5 +1,7 @@
 import { apiFetch } from "./client"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
 export interface PlanInfo {
   id: string
   type: string
@@ -278,11 +280,11 @@ export const billingApi = {
     apiFetch<InvoiceInfo[]>(`/api/v1/billing/invoices?limit=${limit}&offset=${offset}`),
 
   invoicePdfUrl: (id: string, token?: string) =>
-    `/api/v1/billing/invoices/${id}/pdf${token ? `?token=${token}` : ""}`,
+    `${API_URL}/api/v1/billing/invoices/${id}/pdf${token ? `?token=${token}` : ""}`,
 
   receipts: (limit = 20, offset = 0) =>
     apiFetch<ReceiptInfo[]>(`/api/v1/billing/receipts?limit=${limit}&offset=${offset}`),
 
   receiptPdfUrl: (id: string, token?: string) =>
-    `/api/v1/billing/receipts/${id}/pdf${token ? `?token=${token}` : ""}`,
+    `${API_URL}/api/v1/billing/receipts/${id}/pdf${token ? `?token=${token}` : ""}`,
 }

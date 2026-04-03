@@ -41,6 +41,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
   const [promoCode, setPromoCode] = useState("")
   const [applyingPromo, setApplyingPromo] = useState(false)
   const [changingPlan, setChangingPlan] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     Promise.all([
@@ -80,6 +81,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
     try {
       const result = await billingApi.changePlan({ target_plan_id: planId })
       setSubscription(result)
+      setRefreshKey((k) => k + 1)
       if (result.pending_plan_name) {
         toast.success(`Mudanca para ${result.pending_plan_name} agendada para o final do periodo`)
       } else {
@@ -357,7 +359,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
       }} />
 
       {/* Invoices & Receipts */}
-      <InvoicesReceiptsSection />
+      <InvoicesReceiptsSection key={refreshKey} />
 
       {/* Payment history */}
       <PaymentHistorySection />
