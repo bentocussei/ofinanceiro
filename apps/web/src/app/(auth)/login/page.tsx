@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Lock, Smartphone } from "lucide-react"
-import { LogoFull } from "@/components/Logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -104,9 +103,7 @@ export default function LoginPage() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-sm w-full max-w-sm">
-      <div className="flex justify-center mb-6">
-        <LogoFull className="h-10" />
-      </div>
+      <h2 className="mb-6 text-center text-lg font-semibold">Entrar</h2>
 
       {/* Method selector */}
       {step === "form" && (

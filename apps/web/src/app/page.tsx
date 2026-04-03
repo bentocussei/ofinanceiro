@@ -124,7 +124,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex items-center justify-between px-8 py-3 max-w-[1600px]">
-          <LogoFull className="h-9" />
+          <LogoFull className="h-12" />
           <nav className="hidden items-center gap-6 text-sm md:flex">
             <a href="#funcionalidades" className="text-muted-foreground transition-colors hover:text-foreground">
               Funcionalidades
@@ -440,7 +440,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex flex-col items-center justify-between gap-4 px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
-          <LogoFull className="h-8" />
+          <LogoFull className="h-10" />
           <p>Gestao financeira pessoal e familiar para Angola</p>
           <p className="text-xs text-muted-foreground/60">Powered by Magiflex</p>
         </div>

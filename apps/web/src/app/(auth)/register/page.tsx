@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Loader2, CheckCircle, Gift, ArrowRight, Smartphone, RefreshCw } from "lucide-react"
-import { LogoFull } from "@/components/Logo"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -205,9 +204,7 @@ export default function RegisterPage() {
       {/* ============================================================ */}
       {step === "form" && (
         <>
-          <div className="flex justify-center mb-6">
-            <LogoFull className="h-10" />
-          </div>
+          <h2 className="mb-6 text-center text-lg font-semibold">Criar conta</h2>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
