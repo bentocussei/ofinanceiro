@@ -784,11 +784,22 @@ async def record_promotion_usage(
     user_id: uuid.UUID,
     subscription_id: uuid.UUID,
     discount_amount: int,
-) -> PromotionUsage:
+) -> PromotionUsage | None:
     """Record that a promotion was used by a user.
 
     Creates a PromotionUsage record and increments the promotion's usage counter.
+    Skips if this user already used this promotion (unique constraint).
     """
+    # Check if already recorded
+    existing = await db.scalar(
+        select(PromotionUsage).where(
+            PromotionUsage.promotion_id == promotion.id,
+            PromotionUsage.user_id == user_id,
+        )
+    )
+    if existing:
+        return existing
+
     usage = PromotionUsage(
         promotion_id=promotion.id,
         user_id=user_id,
