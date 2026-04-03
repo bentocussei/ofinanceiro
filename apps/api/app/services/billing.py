@@ -366,7 +366,23 @@ async def change_subscription(
     Downgrade (lower plan or annual→monthly): scheduled for end of period.
     Updates the existing subscription in place.
     """
-    current = await get_active_subscription(db, user_id)
+    # Lock subscription to prevent race conditions
+    stmt = (
+        select(UserSubscription)
+        .where(
+            UserSubscription.user_id == user_id,
+            UserSubscription.status.in_([
+                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.TRIALING,
+            ]),
+        )
+        .order_by(UserSubscription.created_at.desc())
+        .limit(1)
+        .with_for_update()
+    )
+    result = await db.execute(stmt)
+    current = result.scalar_one_or_none()
+
     if not current:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -376,6 +392,13 @@ async def change_subscription(
     target_plan = await _get_plan_or_404(db, target_plan_id)
     new_cycle = target_billing_cycle or current.billing_cycle
     now = datetime.now(timezone.utc)
+
+    # Prevent no-op changes (same plan and same cycle)
+    if current.plan_id == target_plan.id and current.billing_cycle == new_cycle:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ja estas neste plano e periodicidade.",
+        )
 
     # Determine direction
     current_monthly = current.plan_snapshot.get("base_price_monthly", current.base_price)
@@ -398,6 +421,19 @@ async def change_subscription(
         proration_credit = calculate_proration_credit(
             current.final_price, current.billing_cycle, current.start_date, now
         )
+        amount_due_now = max(0, breakdown.final_price - proration_credit)
+
+        # Preserve trial status and dates
+        is_trialing = current.status == SubscriptionStatus.TRIALING
+        original_trial_end = current.trial_end_date
+
+        # If on trial, preserve trial end date and don't charge
+        if is_trialing and original_trial_end and original_trial_end > now:
+            # Trial carries over to new plan — keep trial dates
+            new_end_date = original_trial_end
+            amount_due_now = 0  # No charge during trial
+        else:
+            new_end_date = _period_end(now, new_cycle)
 
         # Update subscription in place
         current.plan_id = target_plan.id
@@ -410,8 +446,12 @@ async def change_subscription(
         current.final_price = breakdown.final_price
         current.proration_credit = proration_credit
         current.start_date = now
-        current.end_date = _period_end(now, new_cycle)
-        current.status = SubscriptionStatus.ACTIVE
+        current.end_date = new_end_date
+        # Preserve trial status if still trialing
+        if is_trialing and original_trial_end and original_trial_end > now:
+            current.status = SubscriptionStatus.TRIALING
+        else:
+            current.status = SubscriptionStatus.ACTIVE
         current.promotion_id = promotion.id if promotion else current.promotion_id
 
         # Clear any pending change
@@ -428,6 +468,21 @@ async def change_subscription(
             await record_promotion_usage(
                 db, promotion, user_id, current.id, breakdown.discount_amount
             )
+
+        await db.flush()
+
+        # Charge the proration difference (only if not on trial and amount > 0)
+        if amount_due_now > 0:
+            from app.services import payment as payment_service
+            pm = await payment_service.get_default_payment_method(db, user_id)
+            if pm:
+                try:
+                    await payment_service.charge_subscription(db, current, pm)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "Cobranca de prorateio falhou para user %s", user_id
+                    )
     else:
         # --- SCHEDULED: downgrade or annual→monthly ---
         current.pending_plan_id = target_plan.id

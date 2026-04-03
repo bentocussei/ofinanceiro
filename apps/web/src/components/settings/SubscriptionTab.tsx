@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo, type PaymentMethodInfo, type PaymentInfo, type InvoiceInfo, type ReceiptInfo } from "@/lib/api/billing"
+import { getToken } from "@/lib/auth"
 import { type UserProfile } from "@/lib/auth"
 import { formatKz } from "@/lib/format"
 
@@ -918,7 +919,7 @@ function InvoicesReceiptsSection() {
               <div className="flex items-center gap-3">
                 <p className="font-mono text-sm font-semibold">{formatKz(inv.total)}</p>
                 <a
-                  href={billingApi.invoicePdfUrl(inv.id)}
+                  href={billingApi.invoicePdfUrl(inv.id, getToken() || undefined)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline"
@@ -943,7 +944,7 @@ function InvoicesReceiptsSection() {
               <div className="flex items-center gap-3">
                 <p className="font-mono text-sm font-semibold">{formatKz(r.amount)}</p>
                 <a
-                  href={billingApi.receiptPdfUrl(r.id)}
+                  href={billingApi.receiptPdfUrl(r.id, getToken() || undefined)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline"

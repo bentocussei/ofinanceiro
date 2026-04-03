@@ -112,7 +112,11 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):  # type: ignore[override]
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            # Let the exception propagate but ensure CORS can still process it
+            raise
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"

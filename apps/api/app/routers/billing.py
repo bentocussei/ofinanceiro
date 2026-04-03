@@ -677,14 +677,36 @@ async def list_invoices(
     ]
 
 
+async def _get_user_from_token_or_header(
+    request: Request,
+    db: AsyncSession,
+    token: str | None = None,
+) -> User:
+    """Authenticate via Authorization header OR ?token= query param (for PDF downloads in new tab)."""
+    if token:
+        from app.services.auth import decode_access_token
+        user_id = decode_access_token(token)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Token invalido")
+        user = await db.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="Utilizador nao encontrado")
+        return user
+    # Fallback to standard auth header
+    return await get_current_user(request=request, db=db)
+
+
 @router.get("/invoices/{invoice_id}/pdf")
 async def download_invoice_pdf(
     invoice_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    token: str | None = None,
 ) -> "Response":
-    """Descarregar PDF de factura."""
+    """Descarregar PDF de factura. Aceita auth via header ou ?token= query param."""
     from fastapi.responses import Response as FastAPIResponse
+    user = await _get_user_from_token_or_header(request, db, token)
+
     from app.models.invoice import Invoice as InvoiceModel
     inv = await db.get(InvoiceModel, invoice_id)
     if not inv or inv.user_id != user.id:
@@ -735,11 +757,14 @@ async def list_receipts(
 @router.get("/receipts/{receipt_id}/pdf")
 async def download_receipt_pdf(
     receipt_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    token: str | None = None,
 ) -> "Response":
-    """Descarregar PDF de recibo."""
+    """Descarregar PDF de recibo. Aceita auth via header ou ?token= query param."""
     from fastapi.responses import Response as FastAPIResponse
+    user = await _get_user_from_token_or_header(request, db, token)
+
     from app.models.invoice import Receipt as ReceiptModel, Invoice as InvModel
     receipt = await db.get(ReceiptModel, receipt_id)
     if not receipt or receipt.user_id != user.id:
