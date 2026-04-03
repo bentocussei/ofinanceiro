@@ -20,11 +20,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session
 from app.models import (
     Account,
+    AdminRole,
+    AdminRolePermission,
+    AdminUser,
     Asset,
     Bill,
     Budget,
     BudgetItem,
     Category,
+    CompanySettings,
     Debt,
     DebtPayment,
     Family,
@@ -637,6 +641,13 @@ async def main() -> None:
             base_price_monthly=199000, base_price_annual=1990000,
             max_family_members=0, extra_member_cost=0,
             features=personal_features,
+            gateway_metadata={
+                "stripe": {
+                    "product_id": "prod_UGk9Uom5QNNrpl",
+                    "price_monthly_id": "price_1TICgAKqiSjhepmTuTQzMonL",
+                    "price_annual_id": "price_1TICgBKqiSjhepmTTmW87m5d",
+                }
+            },
         )
         plan_family = Plan(
             id=plan_family_id, type=PlanType.FAMILY,
@@ -644,14 +655,53 @@ async def main() -> None:
             base_price_monthly=499000, base_price_annual=4990000,
             max_family_members=5, extra_member_cost=99000,
             features=family_features,
+            gateway_metadata={
+                "stripe": {
+                    "product_id": "prod_UGkAswvgHiGOdm",
+                    "price_monthly_id": "price_1TICgwKqiSjhepmT7AuvfKNm",
+                    "price_annual_id": "price_1TICgxKqiSjhepmTz3O2usQP",
+                }
+            },
         )
         db.add_all([plan_personal, plan_family])
 
         # ==========================================
+        # COMPANY SETTINGS
+        # ==========================================
+        db.add(CompanySettings(
+            name="O Financeiro",
+            trade_name="Magiflex, Lda",
+            nif="5002526620",
+            address="Luanda, Angola",
+            city="Luanda",
+            country="AO",
+            email="suporte@ofinanceiro.app",
+            website="https://ofinanceiro.app",
+            vat_rate=0,
+            vat_exempt_reason="M01",
+            tax_regime="Regime Geral",
+            agt_certificate_number="0",
+        ))
+
+        # ==========================================
         # PROMOTIONS
         # ==========================================
+        promo_trial = Promotion(
+            name="Trial Gratuito",
+            code=None,
+            type=PromotionType.FREE_DAYS,
+            value=30,
+            start_date=NOW,
+            end_date=None,
+            apply_to_all=True,
+            applicable_plan_types=["personal", "family"],
+            max_beneficiaries=None,
+            auto_apply_on_register=True,
+            free_days=30,
+            priority=10,
+        )
         promo_launch = Promotion(
-            name="Lançamento O Financeiro",
+            name="Lancamento O Financeiro",
             code=None,
             type=PromotionType.FREE_DAYS,
             value=90,
@@ -662,6 +712,7 @@ async def main() -> None:
             max_beneficiaries=None,
             auto_apply_on_register=True,
             free_days=90,
+            priority=0,
         )
         promo_first100 = Promotion(
             name="Primeiros 100 utilizadores",
@@ -675,8 +726,9 @@ async def main() -> None:
             max_beneficiaries=100,
             auto_apply_on_register=False,
             free_days=0,
+            priority=5,
         )
-        db.add_all([promo_launch, promo_first100])
+        db.add_all([promo_trial, promo_launch, promo_first100])
         await db.flush()
 
         # ==========================================
@@ -738,6 +790,33 @@ async def main() -> None:
         await sync_user_permissions_from_plan(db, cussei_id, cussei_sub.plan_snapshot)
         await sync_user_permissions_from_plan(db, ana_id, ana_sub.plan_snapshot)
 
+        # ==========================================
+        # ADMIN ROLES + ADMIN USER
+        # ==========================================
+        from app.permissions import generate_admin_permissions
+
+        admin_perms = generate_admin_permissions()
+        roles_data = {
+            "super_admin": admin_perms,
+            "support": [p for p in admin_perms if "read" in p],
+            "billing_admin": [p for p in admin_perms if "billing" in p],
+        }
+
+        from app.models import Permission
+        for role_name, perm_codes in roles_data.items():
+            role = AdminRole(name=role_name)
+            db.add(role)
+            await db.flush()
+            for code in perm_codes:
+                perm = await db.scalar(select(Permission).where(Permission.code == code))
+                if perm:
+                    db.add(AdminRolePermission(role_id=role.id, permission_id=perm.id))
+
+        # Admin user (same as Cussei for demo)
+        admin_role = await db.scalar(select(AdminRole).where(AdminRole.name == "super_admin"))
+        if admin_role:
+            db.add(AdminUser(user_id=cussei_id, role_id=admin_role.id))
+
         await db.commit()
         print("=" * 50)
         print("Demo data seeded successfully!")
@@ -757,9 +836,11 @@ async def main() -> None:
         print(f"Assets: 3 personal + 1 family")
         print(f"Notifications: 4")
         print(f"Plans: 2 (Pessoal + Familiar)")
-        print(f"Promotions: 2 (Lançamento 90 dias + Primeiro100 50%)")
+        print(f"Company: O Financeiro (NIF 5002526620)")
+        print(f"Promotions: 3 (Trial 30d + Lancamento 90d + Primeiro100 50%)")
         print(f"Subscriptions: 2 (Cussei Familiar + Ana Pessoal, trial 90 dias)")
         print(f"Permissions: {perm_count} seeded + plan mappings + user sync")
+        print(f"Admin: Cussei = super_admin")
         print("=" * 50)
 
 
