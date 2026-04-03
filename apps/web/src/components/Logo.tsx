@@ -36,7 +36,7 @@ export function LogoCompact({ className = "h-8" }: { className?: string }) {
 
 export function LogoFull({ className = "h-12" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg" fill="none">
+    <svg className={className} viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg" fill="none">
       {/* Mark */}
       <circle cx="50" cy="40" r="38" fill="none" stroke="#0D9488" strokeWidth="2.5" opacity="0.3"/>
       <circle cx="50" cy="40" r="28" fill="none" stroke="#0D9488" strokeWidth="2"/>
