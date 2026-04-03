@@ -1,5 +1,7 @@
 import { apiFetch } from "./client"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
 export interface UpdateProfileData {
   name?: string
   email?: string
@@ -25,5 +27,24 @@ export const usersApi = {
         new_password: newPassword,
       }),
       ...opts,
+    }),
+
+  uploadAvatar: async (file: File): Promise<{ avatar_url: string; file_id: string }> => {
+    const token = localStorage.getItem("access_token")
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const res = await fetch(`${API_URL}/api/v1/users/me/avatar`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+    if (!res.ok) throw new Error("Erro ao enviar foto")
+    return res.json()
+  },
+
+  deleteAvatar: () =>
+    apiFetch<{ message: string }>("/api/v1/users/me/avatar", {
+      method: "DELETE",
     }),
 }

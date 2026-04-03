@@ -243,9 +243,17 @@ export function Sidebar() {
           <PopoverTrigger
             className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent cursor-pointer ${collapsed ? "justify-center" : ""}`}
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              {user?.name?.charAt(0)?.toUpperCase() || "?"}
-            </div>
+            {user?.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.name || "Avatar"}
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                {user?.name?.charAt(0)?.toUpperCase() || "?"}
+              </div>
+            )}
             {!collapsed && (
               <div className="min-w-0 flex-1 text-left">
                 <p className="truncate text-sm font-medium text-sidebar-foreground">
@@ -263,13 +271,22 @@ export function Sidebar() {
             className="w-56 p-0"
           >
             {/* User info */}
-            <div className="px-4 py-3 border-b border-border">
-              <p className="text-sm font-medium truncate">
-                {user?.name || "Utilizador"}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.phone || ""}
-              </p>
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  {user?.name?.charAt(0)?.toUpperCase() || "?"}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">
+                  {user?.name || "Utilizador"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.phone || ""}
+                </p>
+              </div>
             </div>
 
             {/* Settings link */}

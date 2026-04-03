@@ -1,14 +1,16 @@
 "use client"
 
 import {
+  Camera,
   CreditCard,
   Mail,
   Phone,
   ShieldCheck,
   Tag as TagIcon,
+  Trash2,
   User,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -80,7 +82,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "profile" && <ProfileTab user={user} />}
+      {tab === "profile" && <ProfileTab user={user} onUserUpdate={() => getCurrentUser().then(setUser)} />}
       {tab === "subscription" && <SubscriptionTab user={user} />}
       {tab === "tags" && <TagsTab />}
       {tab === "security" && <SecurityTab />}
@@ -92,11 +94,14 @@ export default function SettingsPage() {
 // Profile tab (personal-only)
 // ---------------------------------------------------------------------------
 
-function ProfileTab({ user }: { user: UserProfile | null }) {
+function ProfileTab({ user, onUserUpdate }: { user: UserProfile | null; onUserUpdate?: () => void }) {
   const [name, setName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
   const [currency, setCurrency] = useState(user?.currency || "AOA")
   const [salaryDay, setSalaryDay] = useState(String(user?.salary_day || 25))
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || "")
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function handleSave() {
     try {
@@ -107,20 +112,111 @@ function ProfileTab({ user }: { user: UserProfile | null }) {
         salary_day: parseInt(salaryDay, 10),
       })
       toast.success("Alteracoes guardadas com sucesso.")
+      onUserUpdate?.()
     } catch {
       toast.error("Erro ao guardar. Tente novamente.")
     }
   }
 
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Formato nao suportado. Use JPEG, PNG ou WebP.")
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Foto muito grande. Maximo 2MB.")
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const result = await usersApi.uploadAvatar(file)
+      setAvatarUrl(result.avatar_url)
+      toast.success("Foto actualizada")
+      onUserUpdate?.()
+    } catch {
+      toast.error("Erro ao enviar foto")
+    } finally {
+      setUploadingAvatar(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  async function handleAvatarDelete() {
+    try {
+      await usersApi.deleteAvatar()
+      setAvatarUrl("")
+      toast.success("Foto removida")
+      onUserUpdate?.()
+    } catch {
+      toast.error("Erro ao remover foto")
+    }
+  }
+
   return (
     <div className="max-w-lg space-y-6">
+      {/* Avatar section */}
+      <section className="rounded-xl bg-card shadow-sm p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <Camera className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-[15px] font-semibold">Foto de perfil</h2>
+            <p className="text-xs text-muted-foreground">JPEG, PNG ou WebP. Maximo 2MB.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={user?.name || "Avatar"}
+                className="h-16 w-16 rounded-full object-cover border-2 border-border"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                {user?.name?.charAt(0)?.toUpperCase() || "?"}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+            >
+              {uploadingAvatar ? "A enviar..." : avatarUrl ? "Alterar foto" : "Adicionar foto"}
+            </Button>
+            {avatarUrl && (
+              <Button size="sm" variant="ghost" className="text-destructive" onClick={handleAvatarDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
+        </div>
+      </section>
+
+      {/* Profile fields */}
       <section className="rounded-xl bg-card shadow-sm p-5">
         <div className="flex items-center gap-3 mb-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold">Perfil</h2>
+            <h2 className="text-[15px] font-semibold">Dados pessoais</h2>
             <p className="text-xs text-muted-foreground">Informacoes da sua conta</p>
           </div>
         </div>

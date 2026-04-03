@@ -7,6 +7,7 @@ export interface UserProfile {
   name: string
   phone: string
   email?: string
+  avatar_url?: string
   plan?: string
   currency?: string
   language?: string
