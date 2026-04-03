@@ -17,7 +17,7 @@ export default function AuthLayout({
         Inicio
       </Link>
       <div className="mb-8 flex items-center justify-center w-full">
-        <LogoFull className="h-20" />
+        <LogoFull className="h-16" />
       </div>
       <div className="w-full max-w-sm">{children}</div>
     </div>
