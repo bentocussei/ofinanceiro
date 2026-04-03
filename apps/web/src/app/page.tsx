@@ -125,9 +125,7 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex items-center justify-between px-8 py-3 max-w-[1600px]">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Banknote className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img src="/logo/logo_icon.svg" alt="O Financeiro" className="h-8 w-8" />
             <span className="text-lg font-bold tracking-tight">O Financeiro</span>
           </div>
           <nav className="hidden items-center gap-6 text-sm md:flex">
@@ -446,9 +444,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex flex-col items-center justify-between gap-4 px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
-              <Banknote className="h-3 w-3 text-primary-foreground" />
-            </div>
+            <img src="/logo/logo_icon.svg" alt="O Financeiro" className="h-6 w-6" />
             <span className="font-semibold text-foreground">O Financeiro</span>
           </div>
           <p>Gestao financeira pessoal e familiar para Angola</p>

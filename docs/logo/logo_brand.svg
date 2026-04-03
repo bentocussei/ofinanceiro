@@ -1,0 +1,13 @@
+<svg width="160" height="60" viewBox="0 0 160 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="160" height="60" rx="12" fill="#0D9488"/>
+
+  <!-- Mark -->
+  <circle cx="32" cy="30" r="16" fill="none" stroke="#FFFFFF" stroke-width="1.3" opacity="0.4"/>
+  <circle cx="32" cy="30" r="11" fill="none" stroke="#FFFFFF" stroke-width="1.1"/>
+  <path d="M24 34 L29 29 L35 32 L43 18" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="43" cy="18" r="1.8" fill="#FFFFFF"/>
+
+  <!-- Wordmark -->
+  <text x="56" y="36" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="300" fill="#FFFFFF" letter-spacing="-0.3">O</text>
+  <text x="70" y="36" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="600" fill="#FFFFFF" letter-spacing="-0.3">Financeiro</text>
+</svg>

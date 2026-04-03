@@ -1,10 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Green rounded square (same as landing page bg-primary) -->
-  <rect width="32" height="32" rx="8" fill="#16A34A"/>
-  <!-- Lucide Banknote icon centered, white, scaled to fit -->
-  <g transform="translate(4, 8) scale(1)">
-    <rect width="20" height="12" x="2" y="2" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
-    <circle cx="12" cy="8" r="2" stroke="white" stroke-width="1.5" fill="none"/>
-    <path d="M6 8h.01M18 8h.01" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-  </g>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="120" height="120" rx="24" fill="#0F766E" opacity="0.08"/>
+  <circle cx="60" cy="60" r="34" fill="none" stroke="#0D9488" stroke-width="2.2" opacity="0.35"/>
+  <circle cx="60" cy="60" r="24" fill="none" stroke="#0D9488" stroke-width="1.8"/>
+  <path d="M44 68 L56 56 L68 63 L82 34" fill="none" stroke="#0D9488" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="82" cy="34" r="3" fill="#0D9488"/>
 </svg>
