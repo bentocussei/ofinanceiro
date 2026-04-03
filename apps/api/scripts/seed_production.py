@@ -31,10 +31,13 @@ from app.models import (
     PlanPermission,
     Promotion,
     User,
+    UserSubscription,
 )
 from app.models.enums import (
+    BillingCycle,
     PlanType,
     PromotionType,
+    SubscriptionStatus,
 )
 from app.permissions import (
     generate_admin_permissions,
@@ -59,7 +62,13 @@ FAMILY_PLAN_ANNUAL = 4990000     # 49.900 Kz (2 meses grátis)
 FAMILY_MAX_MEMBERS = 5
 FAMILY_EXTRA_MEMBER_COST = 99000  # 990 Kz
 
-LAUNCH_PROMO_FREE_DAYS = 90
+TRIAL_FREE_DAYS = 30  # Default trial: 30 days free for all new users
+LAUNCH_PROMO_FREE_DAYS = 90  # Launch promotion: 90 days (can be activated via admin)
+
+# Test user for payment testing (no promotion)
+TEST_USER_PHONE = "+244900000001"
+TEST_USER_NAME = "Utilizador Teste"
+TEST_USER_PASSWORD = "teste12345"
 
 
 async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
@@ -130,33 +139,33 @@ async def seed_plans(db: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
     return personal_id, family_id
 
 
-async def seed_launch_promotion(db: AsyncSession) -> None:
-    """Create launch promotion if none exists."""
+async def seed_trial_promotion(db: AsyncSession) -> None:
+    """Create default trial promotion (30 days free for all new users)."""
     existing = await db.execute(
         select(Promotion).where(Promotion.auto_apply_on_register.is_(True), Promotion.is_active.is_(True)).limit(1)
     )
     if existing.scalar_one_or_none():
-        print("Launch promotion already exists, skipping.")
+        print("Trial promotion already exists, skipping.")
         return
 
     from datetime import UTC, datetime
 
     db.add(Promotion(
-        name="Lançamento O Financeiro",
+        name="Trial Gratuito",
         code=None,
         type=PromotionType.FREE_DAYS,
-        value=LAUNCH_PROMO_FREE_DAYS,
+        value=TRIAL_FREE_DAYS,
         start_date=datetime.now(UTC),
         end_date=None,
         apply_to_all=True,
         applicable_plan_types=["personal", "family"],
         max_beneficiaries=None,
         auto_apply_on_register=True,
-        free_days=LAUNCH_PROMO_FREE_DAYS,
-        priority=0,
+        free_days=TRIAL_FREE_DAYS,
+        priority=10,
     ))
     await db.flush()
-    print(f"Launch promotion created: {LAUNCH_PROMO_FREE_DAYS} days free for all new users")
+    print(f"Trial promotion created: {TRIAL_FREE_DAYS} days free for all new users")
 
 
 async def seed_admin_roles(db: AsyncSession) -> dict[str, uuid.UUID]:
@@ -243,6 +252,64 @@ async def seed_admin_user(db: AsyncSession, roles: dict[str, uuid.UUID]) -> None
     print(f"  ⚠ CHANGE THE PASSWORD after first login!")
 
 
+async def seed_test_user(db: AsyncSession, personal_plan_id: uuid.UUID) -> None:
+    """Create a test user with paid Pessoal subscription (no promotion) for payment testing."""
+    existing = await db.execute(select(User).where(User.phone == TEST_USER_PHONE))
+    if existing.scalar_one_or_none():
+        print(f"Test user already exists ({TEST_USER_PHONE}), skipping.")
+        return
+
+    test_user = User(
+        phone=TEST_USER_PHONE,
+        name=TEST_USER_NAME,
+        password_hash=hash_password(TEST_USER_PASSWORD),
+        country="AO",
+        language="pt-AO",
+        onboarding_completed=True,
+    )
+    db.add(test_user)
+    await db.flush()
+
+    # Get the plan for snapshot
+    plan = await db.get(Plan, personal_plan_id)
+    if not plan:
+        print("  WARNING: Pessoal plan not found, skipping subscription")
+        return
+
+    from app.services.billing import create_plan_snapshot
+
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    sub = UserSubscription(
+        user_id=test_user.id,
+        plan_id=plan.id,
+        plan_snapshot=create_plan_snapshot(plan),
+        billing_cycle=BillingCycle.MONTHLY,
+        status=SubscriptionStatus.ACTIVE,
+        base_price=plan.base_price_monthly,
+        discount_amount=0,
+        extra_members_count=0,
+        extra_members_cost=0,
+        module_addons_cost=0,
+        final_price=plan.base_price_monthly,
+        start_date=now,
+        end_date=now + timedelta(days=30),
+        auto_renew=True,
+    )
+    db.add(sub)
+    await db.flush()
+
+    # Sync permissions
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, test_user.id, sub.plan_snapshot)
+
+    print(f"Test user created: {TEST_USER_NAME} ({TEST_USER_PHONE})")
+    print(f"  Password: {TEST_USER_PASSWORD}")
+    print(f"  Plan: Pessoal (paid, no promotion)")
+    print(f"  Price: {plan.base_price_monthly // 100} Kz/mes")
+
+
 async def main() -> None:
     async with async_session() as db:
         print("=" * 60)
@@ -271,9 +338,9 @@ async def main() -> None:
             await seed_plan_permissions(db, family_id, family_perms)
             print(f"Assigned: Pessoal ({len(personal_perms)} perms), Familiar ({len(family_perms)} perms)")
 
-        # 5. Launch promotion (TEMPORARILY DISABLED for payment testing)
-        # print("\n--- Promotion ---")
-        # await seed_launch_promotion(db)
+        # 5. Trial promotion (30 days free for new users)
+        print("\n--- Trial Promotion ---")
+        await seed_trial_promotion(db)
 
         # 6. Admin roles
         print("\n--- Admin Roles ---")
@@ -282,6 +349,11 @@ async def main() -> None:
         # 7. Admin user
         print("\n--- Admin User ---")
         await seed_admin_user(db, roles)
+
+        # 8. Test user (paid subscription, no promotion — for payment testing)
+        if personal_id:
+            print("\n--- Test User ---")
+            await seed_test_user(db, personal_id)
 
         await db.commit()
 
@@ -294,7 +366,8 @@ async def main() -> None:
         print(f"  Categories: {cat_count or 'already existed'}")
         print(f"  Permissions: {perm_count or 'already existed'}")
         print(f"  Plans: Pessoal + Familiar")
-        print(f"  Promotion: DISABLED (payment testing)")
+        print(f"  Trial: {TRIAL_FREE_DAYS} days free (auto-apply)")
+        print(f"  Test user: {TEST_USER_PHONE} (paid Pessoal, no promo)")
         print(f"  Admin roles: super_admin, support, billing_admin")
         print(f"  Admin user: {ADMIN_PHONE}")
         print()
