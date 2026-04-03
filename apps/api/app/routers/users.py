@@ -1,6 +1,6 @@
-"""Users router: profile, preferences, password change."""
+"""Users router: profile, preferences, password change, avatar upload."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ class UserProfileResponse(BaseModel):
     name: str
     phone: str | None
     email: str | None
+    avatar_url: str | None
     currency_default: str
     country: str
     language: str
@@ -54,6 +55,7 @@ async def get_profile(user: User = Depends(get_current_user)) -> UserProfileResp
         name=user.name,
         phone=user.phone,
         email=user.email,
+        avatar_url=user.avatar_url,
         currency_default=user.currency_default,
         country=user.country,
         language=user.language,
@@ -82,6 +84,7 @@ async def update_profile(
         name=user.name,
         phone=user.phone,
         email=user.email,
+        avatar_url=user.avatar_url,
         currency_default=user.currency_default,
         country=user.country,
         language=user.language,
@@ -124,3 +127,53 @@ async def update_preferences(
     user.preferences = prefs
     await db.flush()
     return {"preferences": user.preferences}
+
+
+@router.post("/me/avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Upload avatar photo. Replaces previous avatar automatically."""
+    from app.services import storage as storage_service
+
+    file_record = await storage_service.upload_file(
+        db, user.id, file, category="avatar",
+    )
+
+    # Generate download URL and update user profile
+    url = await storage_service.get_download_url(db, file_record.id, user.id, expires_in=86400 * 365)
+    user.avatar_url = url
+    await db.commit()
+
+    return {
+        "avatar_url": url,
+        "file_id": str(file_record.id),
+    }
+
+
+@router.delete("/me/avatar")
+async def delete_avatar(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Remove avatar photo."""
+    from app.services import storage as storage_service
+    from sqlalchemy import select
+    from app.models.file import File as FileModel
+
+    # Find and delete current avatar
+    result = await db.scalars(
+        select(FileModel).where(
+            FileModel.user_id == user.id,
+            FileModel.category == "avatar",
+            FileModel.is_deleted.is_(False),
+        )
+    )
+    for f in result.all():
+        await storage_service.delete_file(db, f.id, user.id)
+
+    user.avatar_url = None
+    await db.commit()
+    return {"message": "Avatar removido"}

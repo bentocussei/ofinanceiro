@@ -1,8 +1,8 @@
-"""Import router: bank statement upload and processing."""
+"""Import router: bank statement upload (file or text) and processing."""
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,24 +37,81 @@ async def preview_import(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    """Parse and preview bank statement before importing."""
+    """Parse and preview bank statement (text content) before importing."""
     if data.file_type == "csv":
         transactions = parse_csv_statement(data.content)
     else:
-        return {"error": "Apenas CSV suportado nesta versão. PDF será adicionado em breve."}
+        return {"error": "Apenas CSV suportado nesta versao. PDF sera adicionado em breve."}
 
     if not transactions:
-        return {"error": "Nenhuma transacção encontrada no ficheiro."}
+        return {"error": "Nenhuma transaccao encontrada no ficheiro."}
 
-    # Check duplicates
     transactions = await check_duplicates(db, user.id, transactions)
-
-    # Auto-categorize
     transactions = await categorize_imported_transactions(db, transactions)
 
     duplicates = sum(1 for t in transactions if t.get("is_duplicate"))
 
     return {
+        "total": len(transactions),
+        "duplicates": duplicates,
+        "new": len(transactions) - duplicates,
+        "transactions": transactions,
+    }
+
+
+@router.post("/upload")
+async def upload_and_preview(
+    file: UploadFile = File(...),
+    account_id: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Upload bank statement file (CSV/Excel), save to R2, and preview transactions."""
+    from app.services import storage as storage_service
+
+    acct_uuid = uuid.UUID(account_id)
+
+    # Verify account ownership
+    acct_result = await db.execute(
+        select(Account).where(Account.id == acct_uuid, Account.user_id == user.id)
+    )
+    if not acct_result.scalar_one_or_none():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta nao encontrada")
+
+    # Read content before storage consumes the file
+    content_bytes = await file.read()
+    await file.seek(0)  # Reset for storage upload
+
+    # Save file to R2
+    file_record = await storage_service.upload_file(
+        db, user.id, file, category="bank_import",
+        entity_type="account", entity_id=acct_uuid,
+    )
+
+    # Parse content
+    content_type = file.content_type or ""
+    if "csv" in content_type or (file.filename and file.filename.endswith(".csv")):
+        content_str = content_bytes.decode("utf-8", errors="replace")
+        transactions = parse_csv_statement(content_str)
+    else:
+        return {
+            "file_id": str(file_record.id),
+            "error": "Formato nao suportado. Apenas CSV por agora.",
+        }
+
+    if not transactions:
+        return {
+            "file_id": str(file_record.id),
+            "error": "Nenhuma transaccao encontrada no ficheiro.",
+        }
+
+    transactions = await check_duplicates(db, user.id, transactions)
+    transactions = await categorize_imported_transactions(db, transactions)
+
+    duplicates = sum(1 for t in transactions if t.get("is_duplicate"))
+
+    return {
+        "file_id": str(file_record.id),
         "total": len(transactions),
         "duplicates": duplicates,
         "new": len(transactions) - duplicates,
@@ -69,12 +126,11 @@ async def confirm_import(
     user: User = Depends(get_current_user),
 ) -> dict:
     """Import confirmed transactions into the database."""
-    # Verify account ownership
     acct_result = await db.execute(
         select(Account).where(Account.id == data.account_id, Account.user_id == user.id)
     )
     if not acct_result.scalar_one_or_none():
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta nao encontrada")
 
     from app.models.transaction import Transaction
 
@@ -95,4 +151,4 @@ async def confirm_import(
         imported += 1
 
     await db.flush()
-    return {"imported": imported, "message": f"{imported} transacções importadas com sucesso"}
+    return {"imported": imported, "message": f"{imported} transaccoes importadas com sucesso"}
