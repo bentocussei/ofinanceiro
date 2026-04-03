@@ -35,6 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
+import { LogoCompact, LogoIcon } from "@/components/Logo"
 import { usePermissions } from "@/providers/PermissionProvider"
 
 interface NavItem {
@@ -177,14 +178,9 @@ export function Sidebar() {
       {/* Header */}
       <div className={`flex items-center h-14 px-3 ${collapsed ? "justify-center" : "justify-between"}`}>
         {!collapsed ? (
-          <div className="flex items-center gap-2 pl-2">
-            <img src="/logo/logo_icon.svg" alt="O Financeiro" className="h-7 w-7" />
-            <h1 className="text-base font-bold tracking-tight text-sidebar-foreground">
-              O Financeiro
-            </h1>
-          </div>
+          <LogoCompact className="h-7 pl-2" />
         ) : (
-          <img src="/logo/logo_icon.svg" alt="O Financeiro" className="h-7 w-7" />
+          <LogoIcon className="h-7 w-7" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
