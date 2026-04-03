@@ -49,13 +49,27 @@ class PreferencesUpdateRequest(BaseModel):
 
 
 @router.get("/me", response_model=UserProfileResponse)
-async def get_profile(user: User = Depends(get_current_user)) -> UserProfileResponse:
+async def get_profile(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> UserProfileResponse:
+    # Resolve avatar file_id to presigned URL
+    avatar_url: str | None = None
+    if user.avatar_url:
+        try:
+            import uuid as _uuid
+            from app.services import storage as storage_service
+            file_id = _uuid.UUID(user.avatar_url)
+            avatar_url = await storage_service.get_download_url(db, file_id, user.id, expires_in=3600)
+        except (ValueError, Exception):
+            pass
+
     return UserProfileResponse(
         id=str(user.id),
         name=user.name,
         phone=user.phone,
         email=user.email,
-        avatar_url=user.avatar_url,
+        avatar_url=avatar_url,
         currency_default=user.currency_default,
         country=user.country,
         language=user.language,
@@ -79,12 +93,23 @@ async def update_profile(
         setattr(user, field, value)
     await db.flush()
 
+    # Resolve avatar
+    avatar_url: str | None = None
+    if user.avatar_url:
+        try:
+            import uuid as _uuid
+            from app.services import storage as storage_service
+            file_id = _uuid.UUID(user.avatar_url)
+            avatar_url = await storage_service.get_download_url(db, file_id, user.id, expires_in=3600)
+        except (ValueError, Exception):
+            pass
+
     return UserProfileResponse(
         id=str(user.id),
         name=user.name,
         phone=user.phone,
         email=user.email,
-        avatar_url=user.avatar_url,
+        avatar_url=avatar_url,
         currency_default=user.currency_default,
         country=user.country,
         language=user.language,
@@ -142,15 +167,37 @@ async def upload_avatar(
         db, user.id, file, category="avatar",
     )
 
-    # Generate download URL and update user profile
-    url = await storage_service.get_download_url(db, file_record.id, user.id, expires_in=86400 * 365)
-    user.avatar_url = url
+    # Store file_id as avatar reference (not presigned URL)
+    user.avatar_url = str(file_record.id)
     await db.commit()
 
+    # Return a fresh download URL for immediate display
+    url = await storage_service.get_download_url(db, file_record.id, user.id, expires_in=3600)
     return {
         "avatar_url": url,
         "file_id": str(file_record.id),
     }
+
+
+@router.get("/me/avatar")
+async def get_avatar_url(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Get a fresh presigned URL for the user's avatar (valid 1 hour)."""
+    if not user.avatar_url:
+        raise HTTPException(status_code=404, detail="Sem foto de perfil")
+
+    from app.services import storage as storage_service
+    import uuid as _uuid
+
+    try:
+        file_id = _uuid.UUID(user.avatar_url)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Referencia de avatar invalida")
+
+    url = await storage_service.get_download_url(db, file_id, user.id, expires_in=3600)
+    return {"avatar_url": url}
 
 
 @router.delete("/me/avatar")
