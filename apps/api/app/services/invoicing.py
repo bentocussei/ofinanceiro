@@ -28,8 +28,8 @@ from app.models.user import User
 logger = logging.getLogger(__name__)
 
 # Defaults (used if CompanySettings not yet configured)
-_DEFAULT_COMPANY_NIF = "0000000000"
-_DEFAULT_COMPANY_NAME = "O Financeiro, Lda"
+_DEFAULT_COMPANY_NIF = "5002526620"
+_DEFAULT_COMPANY_NAME = "O Financeiro"
 _DEFAULT_COMPANY_COUNTRY = "AO"
 _DEFAULT_VAT_RATE = "exempt"
 _DEFAULT_VAT_EXEMPT_REASON = "M01"

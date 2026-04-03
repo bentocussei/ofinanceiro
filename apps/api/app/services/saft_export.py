@@ -17,8 +17,8 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-COMPANY_NIF = "0000000000"
-COMPANY_NAME = "O Financeiro, Lda"
+COMPANY_NIF = "5002526620"
+COMPANY_NAME = "O Financeiro"
 COMPANY_ADDRESS = "Luanda"
 COMPANY_COUNTRY = "AO"
 SAFT_VERSION = "1.01_01"

@@ -148,14 +148,17 @@ async def seed_company_settings(db: AsyncSession) -> None:
         return
 
     db.add(CompanySettings(
-        name="O Financeiro, Lda",
-        nif="0000000000",
+        name="O Financeiro",
+        trade_name="Magiflex, Lda",
+        nif="5002526620",
         address="Luanda, Angola",
         city="Luanda",
         country="AO",
         email="suporte@ofinanceiro.app",
+        website="https://ofinanceiro.app",
         vat_rate=0,
         vat_exempt_reason="M01",
+        tax_regime="Regime Geral",
         agt_certificate_number="0",
     ))
     await db.flush()

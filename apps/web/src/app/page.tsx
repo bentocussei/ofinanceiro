@@ -451,7 +451,8 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold text-foreground">O Financeiro</span>
           </div>
-          <p>Gestão financeira pessoal e familiar para Angola</p>
+          <p>Gestao financeira pessoal e familiar para Angola</p>
+          <p className="text-xs text-muted-foreground/60">Powered by Magiflex</p>
         </div>
       </footer>
     </div>

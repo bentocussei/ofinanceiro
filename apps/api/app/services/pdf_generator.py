@@ -23,9 +23,9 @@ from app.models.invoice import Invoice, InvoiceLine, Receipt
 logger = logging.getLogger(__name__)
 
 _DEFAULT_COMPANY = {
-    "name": "O Financeiro, Lda",
+    "name": "O Financeiro",
     "address": "Luanda, Angola",
-    "nif": "0000000000",
+    "nif": "5002526620",
     "email": "suporte@ofinanceiro.app",
 }
 
