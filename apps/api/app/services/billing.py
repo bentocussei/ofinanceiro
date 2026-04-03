@@ -181,6 +181,19 @@ async def subscribe(
     if breakdown.free_days > 0:
         trial_end = now + timedelta(days=breakdown.free_days)
 
+    # For paid subscriptions (no trial), require payment method and charge immediately
+    is_trial = trial_end is not None
+    needs_immediate_payment = not is_trial and breakdown.final_price > 0
+
+    if needs_immediate_payment:
+        from app.services import payment as payment_service
+        pm = await payment_service.get_default_payment_method(db, user_id)
+        if not pm:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Configura um metodo de pagamento antes de subscrever.",
+            )
+
     sub = UserSubscription(
         user_id=user_id,
         plan_id=plan.id,
@@ -195,7 +208,7 @@ async def subscribe(
         final_price=breakdown.final_price,
         promotion_id=promotion.id if promotion else None,
         start_date=now,
-        end_date=end,
+        end_date=trial_end if trial_end else end,
         trial_end_date=trial_end,
         auto_renew=True,
     )
@@ -213,6 +226,24 @@ async def subscribe(
             db, promotion, user_id, sub.id, breakdown.discount_amount
         )
 
+    # Charge immediately for paid subscriptions
+    if needs_immediate_payment:
+        from app.services import payment as payment_service
+        pm = await payment_service.get_default_payment_method(db, user_id)
+        try:
+            payment = await payment_service.charge_subscription(db, sub, pm)
+            if not payment.paid_at:
+                # Payment failed — revert subscription
+                sub.status = SubscriptionStatus.PAST_DUE
+                await db.flush()
+        except Exception:
+            sub.status = SubscriptionStatus.PAST_DUE
+            await db.flush()
+            import logging
+            logging.getLogger(__name__).exception(
+                "Cobranca inicial falhou para user %s", user_id
+            )
+
     await db.refresh(sub)
     return sub
 
@@ -223,7 +254,7 @@ async def get_active_subscription(
 ) -> UserSubscription | None:
     """Get the current active (or trialing) subscription for a user.
 
-    Also checks end_date — if the period has passed, auto-expires the subscription.
+    Enforces end_date — no access past the billing period regardless of status.
     """
     stmt = (
         select(UserSubscription)
@@ -243,12 +274,29 @@ async def get_active_subscription(
     if not sub:
         return None
 
-    # Auto-expire if past end_date and not auto-renewing
     now = datetime.now(timezone.utc)
-    if sub.end_date < now and not sub.auto_renew:
-        sub.status = SubscriptionStatus.EXPIRED
-        await db.flush()
-        return None
+
+    # For trialing subscriptions, check trial_end_date
+    if sub.status == SubscriptionStatus.TRIALING and sub.trial_end_date:
+        if sub.trial_end_date < now:
+            # Trial ended — mark as PAST_DUE (needs payment to continue)
+            sub.status = SubscriptionStatus.PAST_DUE
+            await db.flush()
+            return None
+
+    # For all subscriptions, check end_date
+    if sub.end_date < now:
+        if not sub.auto_renew:
+            # Cancelled — expire
+            sub.status = SubscriptionStatus.EXPIRED
+            await db.flush()
+            return None
+        else:
+            # Should have been renewed by cron but wasn't yet — mark PAST_DUE
+            # This closes the gap between end_date and cron execution
+            sub.status = SubscriptionStatus.PAST_DUE
+            await db.flush()
+            return None
 
     return sub
 
@@ -333,9 +381,11 @@ async def preview_plan_change(
     is_cycle_upgrade = (current.billing_cycle == BillingCycle.MONTHLY and new_cycle == BillingCycle.ANNUAL)
     is_immediate = is_plan_upgrade or is_cycle_upgrade
 
-    # Check for auto-apply promotion
+    # Check for auto-apply promotion (exclude free_days — registration only)
     plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
     promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+    if promotion and promotion.type == PromotionType.FREE_DAYS:
+        promotion = None
 
     # Calculate new price
     breakdown = await calculate_price(
@@ -422,9 +472,11 @@ async def change_subscription(
     is_cycle_upgrade = (current.billing_cycle == BillingCycle.MONTHLY and new_cycle == BillingCycle.ANNUAL)
     is_immediate = is_plan_upgrade or is_cycle_upgrade
 
-    # Check for auto-apply promotion
+    # Check for auto-apply promotion (exclude free_days — registration only)
     plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
     promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+    if promotion and promotion.type == PromotionType.FREE_DAYS:
+        promotion = None
 
     # Calculate new price
     breakdown = await calculate_price(
@@ -539,13 +591,16 @@ async def apply_pending_change(
     db: AsyncSession,
     sub: UserSubscription,
 ) -> None:
-    """Apply a pending plan/cycle change. Called by auto-billing at renewal."""
+    """Apply a pending plan/cycle change. Called by auto-billing at renewal.
+
+    Only applies percentage/fixed promotions — free_days promotions are NOT
+    re-applied on plan changes (only on initial registration).
+    """
     if not sub.pending_plan_id:
         return
 
     target_plan = await db.get(Plan, sub.pending_plan_id)
     if not target_plan or not target_plan.is_active:
-        # Plan no longer available, clear pending
         sub.pending_plan_id = None
         sub.pending_billing_cycle = None
         sub.pending_change_scheduled_at = None
@@ -553,9 +608,11 @@ async def apply_pending_change(
 
     new_cycle = sub.pending_billing_cycle or sub.billing_cycle
 
-    # Check for promotion
+    # Check for promotion (exclude free_days — those are registration-only)
     plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
     promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+    if promotion and promotion.type == PromotionType.FREE_DAYS:
+        promotion = None  # Don't re-apply trial on plan change
 
     breakdown = await calculate_price(db, target_plan, new_cycle, promotion=promotion)
 
@@ -569,6 +626,8 @@ async def apply_pending_change(
     sub.final_price = breakdown.final_price
     sub.promotion_id = promotion.id if promotion else None
     sub.proration_credit = 0
+    sub.status = SubscriptionStatus.ACTIVE  # Always ACTIVE after renewal
+    sub.trial_end_date = None  # Clear trial — user is now paying
 
     # Clear pending
     sub.pending_plan_id = None
