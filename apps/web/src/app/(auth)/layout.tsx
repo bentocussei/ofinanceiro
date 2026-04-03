@@ -16,8 +16,8 @@ export default function AuthLayout({
         <Home className="h-4 w-4" />
         Inicio
       </Link>
-      <div className="mb-8 w-full max-w-sm">
-        <LogoFull className="h-20 mx-auto block" />
+      <div className="mb-8 flex items-center justify-center w-full">
+        <LogoFull className="h-20" />
       </div>
       <div className="w-full max-w-sm">{children}</div>
     </div>
