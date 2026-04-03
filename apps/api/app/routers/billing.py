@@ -842,11 +842,9 @@ async def stripe_webhook(
         raise HTTPException(status_code=400, detail=f"Erro webhook: {e!s}") from e
 
     event_type = event["type"]
-    # Convert StripeObject to plain dict — StripeObject doesn't support .get()
+    # Convert StripeObject to plain dict — StripeObject doesn't support .get() or dict()
     data_obj = event["data"]["object"]
-    data = dict(data_obj) if not isinstance(data_obj, dict) else data_obj
-    if "metadata" in data and not isinstance(data["metadata"], dict):
-        data["metadata"] = dict(data["metadata"])
+    data = data_obj.to_dict() if hasattr(data_obj, "to_dict") else data_obj
     logger.info("Webhook Stripe: %s", event_type)
 
     if event_type == "payment_intent.succeeded":
