@@ -876,6 +876,17 @@ async def _handle_payment_succeeded(db: AsyncSession, data: dict) -> None:
             payment.gateway_response = {"stripe_event": "payment_intent.succeeded"}
             await db.commit()
             logger.info("Pagamento %s actualizado para COMPLETED", payment_id)
+
+            # Generate invoice + receipt
+            try:
+                from app.services.invoicing import create_invoice_for_payment, create_receipt_for_payment
+                from app.models.subscription import UserSubscription as SubModel
+                sub = await db.get(SubModel, payment.subscription_id) if payment.subscription_id else None
+                invoice = await create_invoice_for_payment(db, payment, sub)
+                await create_receipt_for_payment(db, payment, invoice)
+                await db.commit()
+            except Exception:
+                logger.exception("Erro ao gerar factura/recibo via webhook para pagamento %s", payment_id)
     elif user_id:
         # Record new payment from webhook
         from app.models.enums import CurrencyCode, PaymentType

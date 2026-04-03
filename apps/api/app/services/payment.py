@@ -404,6 +404,22 @@ async def record_payment(
     db.add(payment)
     await db.commit()
     await db.refresh(payment)
+
+    # Generate invoice + receipt for completed payments
+    if payment_status == PaymentStatus.COMPLETED:
+        try:
+            from app.services.invoicing import create_invoice_for_payment, create_receipt_for_payment
+            from app.models.subscription import UserSubscription
+
+            sub = None
+            if subscription_id:
+                sub = await db.get(UserSubscription, subscription_id)
+            invoice = await create_invoice_for_payment(db, payment, sub)
+            await create_receipt_for_payment(db, payment, invoice)
+            await db.commit()
+        except Exception:
+            logger.exception("Erro ao gerar factura/recibo para pagamento %s", payment.id)
+
     return payment
 
 

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import (
     BillingCycle,
+    PaymentStatus,
     PlanType,
     PromotionType,
     SubscriptionStatus,
@@ -1259,6 +1260,65 @@ async def add_addon_to_subscription(
                         if enabled is True:
                             code = f"{module_key}:{feature_key}:{action}"
                             await grant_user_permission(db, user_id, code, source="addon")
+
+    await db.flush()
+
+    # Charge prorated addon price for remaining days in current period
+    # (skip if on trial — addons are included during trial)
+    if sub.status != SubscriptionStatus.TRIALING and price > 0:
+        now = datetime.now(timezone.utc)
+        total_days = 365 if sub.billing_cycle == BillingCycle.ANNUAL else 30
+        remaining = max(1, (sub.end_date - now).days)
+        prorated_price = (price * remaining) // total_days
+
+        if prorated_price > 0:
+            from app.services import payment as payment_service
+            pm = await payment_service.get_default_payment_method(db, user_id)
+            if pm:
+                try:
+                    from app.models.enums import CurrencyCode, PaymentType as PT
+                    from app.models.payment import Payment
+                    addon_payment = Payment(
+                        user_id=user_id,
+                        subscription_id=sub.id,
+                        payment_method_id=pm.id,
+                        gateway=pm.gateway,
+                        payment_type=PT.ADDON,
+                        status=PaymentStatus.PENDING,
+                        amount=prorated_price,
+                        currency=CurrencyCode.AOA,
+                        description=f"Modulo: {addon.name} (pro-rata)",
+                    )
+                    db.add(addon_payment)
+                    await db.flush()
+
+                    gw = payment_service.get_gateway(pm.gateway)
+                    customer_id = await gw.get_or_create_customer(user_id=str(user_id))
+                    charge_result = await gw.create_charge(
+                        amount=prorated_price,
+                        currency="aoa",
+                        payment_method_token=pm.gateway_token,
+                        customer_id=customer_id,
+                        metadata={"user_id": str(user_id), "addon_id": str(addon.id)},
+                    )
+                    addon_payment.status = charge_result.status
+                    addon_payment.gateway_payment_id = charge_result.gateway_payment_id
+                    addon_payment.gateway_response = charge_result.gateway_response
+                    if charge_result.success:
+                        addon_payment.paid_at = now
+                    await db.flush()
+
+                    # Generate invoice + receipt
+                    if charge_result.success:
+                        from app.services.invoicing import create_invoice_for_payment, create_receipt_for_payment
+                        invoice = await create_invoice_for_payment(db, addon_payment, sub)
+                        await create_receipt_for_payment(db, addon_payment, invoice)
+                        await db.flush()
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "Cobranca de addon falhou para user %s", user_id
+                    )
 
     await db.refresh(sub_addon)
     return sub_addon
