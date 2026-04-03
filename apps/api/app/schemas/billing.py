@@ -66,6 +66,12 @@ class UpgradeRequest(BaseModel):
     extra_members: int = Field(0, ge=0)
 
 
+class ChangePlanRequest(BaseModel):
+    target_plan_id: str
+    target_billing_cycle: BillingCycle | None = None
+    extra_members: int = Field(0, ge=0)
+
+
 class PriceBreakdown(BaseModel):
     base_price: int
     billing_cycle: BillingCycle
@@ -97,6 +103,10 @@ class SubscriptionResponse(BaseModel):
     end_date: str
     trial_end_date: str | None
     auto_renew: bool
+    proration_credit: int = 0
+    pending_plan_name: str | None = None
+    pending_billing_cycle: str | None = None
+    pending_change_date: str | None = None
     features: dict  # effective features (plan + addons)
 
 

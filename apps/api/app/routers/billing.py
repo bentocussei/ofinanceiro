@@ -21,6 +21,7 @@ from app.models.plan import Plan
 from app.models.subscription import UserSubscription
 from app.models.user import User
 from app.schemas.billing import (
+    ChangePlanRequest,
     ModuleAddonResponse,
     PlanResponse,
     PriceBreakdown,
@@ -40,9 +41,20 @@ router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _sub_to_response(sub: UserSubscription, features: dict) -> SubscriptionResponse:
+async def _sub_to_response(db: AsyncSession, sub: UserSubscription, features: dict) -> SubscriptionResponse:
     """Convert a UserSubscription model to a SubscriptionResponse schema."""
     snapshot = sub.plan_snapshot or {}
+
+    pending_plan_name: str | None = None
+    pending_cycle: str | None = None
+    pending_date: str | None = None
+    if sub.pending_plan_id:
+        pending_plan = await db.get(Plan, sub.pending_plan_id)
+        if pending_plan:
+            pending_plan_name = pending_plan.name
+        pending_cycle = sub.pending_billing_cycle.value if sub.pending_billing_cycle else None
+        pending_date = sub.end_date.isoformat()
+
     return SubscriptionResponse(
         id=str(sub.id),
         plan_type=snapshot.get("type", ""),
@@ -59,6 +71,10 @@ def _sub_to_response(sub: UserSubscription, features: dict) -> SubscriptionRespo
         end_date=sub.end_date.isoformat(),
         trial_end_date=sub.trial_end_date.isoformat() if sub.trial_end_date else None,
         auto_renew=sub.auto_renew,
+        proration_credit=sub.proration_credit or 0,
+        pending_plan_name=pending_plan_name,
+        pending_billing_cycle=pending_cycle,
+        pending_change_date=pending_date,
         features=features,
     )
 
@@ -130,7 +146,7 @@ async def get_subscription(
         return None
 
     features = await billing_service.get_user_features(db, user.id)
-    return _sub_to_response(sub, features)
+    return await _sub_to_response(db, sub, features)
 
 
 @router.post("/subscribe", response_model=SubscriptionResponse)
@@ -148,7 +164,7 @@ async def subscribe(
         promo_code=data.promo_code,
     )
     features = await billing_service.get_user_features(db, user.id)
-    return _sub_to_response(sub, features)
+    return await _sub_to_response(db, sub, features)
 
 
 @router.post("/preview-price", response_model=PriceBreakdown)
@@ -184,7 +200,52 @@ async def upgrade(
         extra_members=data.extra_members,
     )
     features = await billing_service.get_user_features(db, user.id)
-    return _sub_to_response(sub, features)
+    return await _sub_to_response(db, sub, features)
+
+
+@router.post("/change-plan", response_model=SubscriptionResponse)
+async def change_plan(
+    data: ChangePlanRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Mudar de plano e/ou periodicidade. Detecta direccao automaticamente."""
+    sub = await billing_service.change_subscription(
+        db,
+        user_id=user.id,
+        target_plan_id=data.target_plan_id,
+        target_billing_cycle=data.target_billing_cycle,
+        extra_members=data.extra_members,
+    )
+    features = await billing_service.get_user_features(db, user.id)
+    return await _sub_to_response(db, sub, features)
+
+
+@router.post("/preview-change")
+async def preview_change(
+    data: ChangePlanRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Pre-visualizar mudanca de plano com detalhes de prorateio."""
+    return await billing_service.preview_plan_change(
+        db,
+        user_id=user.id,
+        target_plan_id=data.target_plan_id,
+        target_billing_cycle=data.target_billing_cycle,
+        extra_members=data.extra_members,
+    )
+
+
+@router.post("/cancel-pending-change", response_model=SubscriptionResponse)
+async def cancel_pending(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SubscriptionResponse:
+    """Cancelar mudanca de plano agendada."""
+    sub = await billing_service.cancel_pending_change(db, user.id)
+    features = await billing_service.get_user_features(db, user.id)
+    return await _sub_to_response(db, sub, features)
 
 
 @router.post("/cancel", response_model=SubscriptionResponse)
@@ -195,7 +256,7 @@ async def cancel(
     """Cancelar subscrição (mantém acesso até ao fim do período)."""
     sub = await billing_service.cancel_subscription(db, user.id)
     features = await billing_service.get_user_features(db, user.id)
-    return _sub_to_response(sub, features)
+    return await _sub_to_response(db, sub, features)
 
 
 @router.post("/reactivate", response_model=SubscriptionResponse)
@@ -206,7 +267,7 @@ async def reactivate(
     """Reactivar subscrição cancelada (se ainda dentro do período)."""
     sub = await billing_service.reactivate_subscription(db, user.id)
     features = await billing_service.get_user_features(db, user.id)
-    return _sub_to_response(sub, features)
+    return await _sub_to_response(db, sub, features)
 
 
 # ---------------------------------------------------------------------------
@@ -529,6 +590,172 @@ async def list_payments(
         )
         for p in payments
     ]
+
+
+# ---------------------------------------------------------------------------
+# Invoices & Receipts (user-facing)
+# ---------------------------------------------------------------------------
+
+class InvoiceLineResponse(BaseModel):
+    description: str
+    quantity: int
+    unit_price: int
+    discount_amount: int
+    vat_rate: str
+    vat_amount: int
+    line_total: int
+
+
+class InvoiceResponse(BaseModel):
+    id: str
+    document_type: str
+    document_number: str
+    customer_name: str
+    subtotal: int
+    discount_total: int
+    discount_reason: str | None
+    vat_total: int
+    total: int
+    currency: str
+    status: str
+    issue_date: str
+    atcud: str
+    lines: list[InvoiceLineResponse]
+
+
+class ReceiptResponse(BaseModel):
+    id: str
+    document_number: str
+    invoice_document_number: str | None
+    amount: int
+    currency: str
+    status: str
+    issue_date: str
+    payment_method_description: str | None
+    atcud: str
+
+
+@router.get("/invoices", response_model=list[InvoiceResponse])
+async def list_invoices(
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[InvoiceResponse]:
+    """Listar facturas do utilizador."""
+    from app.services.invoicing import list_user_invoices
+    invoices = await list_user_invoices(db, user.id, limit=limit, offset=offset)
+    return [
+        InvoiceResponse(
+            id=str(inv.id),
+            document_type=inv.document_type.value,
+            document_number=inv.document_number,
+            customer_name=inv.customer_name,
+            subtotal=inv.subtotal,
+            discount_total=inv.discount_total,
+            discount_reason=inv.discount_reason,
+            vat_total=inv.vat_total,
+            total=inv.total,
+            currency=inv.currency.value if hasattr(inv.currency, "value") else str(inv.currency),
+            status=inv.status.value if hasattr(inv.status, "value") else str(inv.status),
+            issue_date=inv.issue_date.isoformat(),
+            atcud=inv.atcud,
+            lines=[
+                InvoiceLineResponse(
+                    description=l.description,
+                    quantity=l.quantity,
+                    unit_price=l.unit_price,
+                    discount_amount=l.discount_amount,
+                    vat_rate=l.vat_rate,
+                    vat_amount=l.vat_amount,
+                    line_total=l.line_total,
+                )
+                for l in (inv.lines or [])
+            ],
+        )
+        for inv in invoices
+    ]
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+async def download_invoice_pdf(
+    invoice_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> "Response":
+    """Descarregar PDF de factura."""
+    from fastapi.responses import Response as FastAPIResponse
+    from app.models.invoice import Invoice as InvoiceModel
+    inv = await db.get(InvoiceModel, invoice_id)
+    if not inv or inv.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Factura nao encontrada")
+
+    from app.services.pdf_generator import generate_invoice_pdf
+    pdf_bytes = generate_invoice_pdf(inv, inv.lines or [])
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{inv.document_number.replace("/", "-")}.pdf"'},
+    )
+
+
+@router.get("/receipts", response_model=list[ReceiptResponse])
+async def list_receipts(
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[ReceiptResponse]:
+    """Listar recibos do utilizador."""
+    from app.services.invoicing import list_user_receipts
+    receipts = await list_user_receipts(db, user.id, limit=limit, offset=offset)
+
+    result = []
+    for r in receipts:
+        inv_number = None
+        if r.invoice_id:
+            from app.models.invoice import Invoice as InvModel
+            inv = await db.get(InvModel, r.invoice_id)
+            if inv:
+                inv_number = inv.document_number
+        result.append(ReceiptResponse(
+            id=str(r.id),
+            document_number=r.document_number,
+            invoice_document_number=inv_number,
+            amount=r.amount,
+            currency=r.currency.value if hasattr(r.currency, "value") else str(r.currency),
+            status=r.status.value if hasattr(r.status, "value") else str(r.status),
+            issue_date=r.issue_date.isoformat(),
+            payment_method_description=r.payment_method_description,
+            atcud=r.atcud,
+        ))
+    return result
+
+
+@router.get("/receipts/{receipt_id}/pdf")
+async def download_receipt_pdf(
+    receipt_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> "Response":
+    """Descarregar PDF de recibo."""
+    from fastapi.responses import Response as FastAPIResponse
+    from app.models.invoice import Receipt as ReceiptModel, Invoice as InvModel
+    receipt = await db.get(ReceiptModel, receipt_id)
+    if not receipt or receipt.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Recibo nao encontrado")
+
+    inv = await db.get(InvModel, receipt.invoice_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="Factura associada nao encontrada")
+
+    from app.services.pdf_generator import generate_receipt_pdf
+    pdf_bytes = generate_receipt_pdf(receipt, inv)
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{receipt.document_number.replace("/", "-")}.pdf"'},
+    )
 
 
 # ---------------------------------------------------------------------------

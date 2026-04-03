@@ -256,3 +256,23 @@ class PaymentType(enum.StrEnum):
     SUBSCRIPTION = "subscription"
     ADDON = "addon"
     ONE_TIME = "one_time"
+    PRORATION = "proration"
+
+
+class DocumentType(enum.StrEnum):
+    INVOICE = "FT"
+    RECEIPT = "RC"
+    CREDIT_NOTE = "NC"
+
+
+class DocumentStatus(enum.StrEnum):
+    DRAFT = "draft"
+    ISSUED = "issued"
+    CANCELLED = "cancelled"
+
+
+class AGTSyncStatus(enum.StrEnum):
+    PENDING = "pending"
+    SYNCED = "synced"
+    FAILED = "failed"
+    NOT_REQUIRED = "not_required"

@@ -414,3 +414,105 @@ async def list_subscriptions(
     result = await db.execute(stmt)
     subs = result.scalars().all()
     return [_sub_to_response(s) for s in subs]
+
+
+# ---------------------------------------------------------------------------
+# Admin Invoicing
+# ---------------------------------------------------------------------------
+
+@router.get("/invoices")
+async def admin_list_invoices(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    doc_type: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[dict]:
+    """Listar todas as facturas (admin)."""
+    await require_admin_perm("admin_billing:subscriptions:read", db, user)
+    from app.services.invoicing import list_all_invoices
+    from app.models.enums import DocumentType as DT
+    dt = DT(doc_type) if doc_type else None
+    invoices = await list_all_invoices(db, doc_type=dt, limit=limit, offset=offset)
+    return [
+        {
+            "id": str(inv.id),
+            "document_type": inv.document_type.value,
+            "document_number": inv.document_number,
+            "customer_name": inv.customer_name,
+            "total": inv.total,
+            "discount_total": inv.discount_total,
+            "status": inv.status.value,
+            "issue_date": inv.issue_date.isoformat(),
+            "atcud": inv.atcud,
+            "agt_sync_status": inv.agt_sync_status.value,
+        }
+        for inv in invoices
+    ]
+
+
+@router.post("/invoices/{invoice_id}/credit-note")
+async def admin_create_credit_note(
+    invoice_id: uuid.UUID,
+    reason: str = "Reembolso",
+    amount: int | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Emitir nota de credito para uma factura (admin)."""
+    await require_admin_perm("admin_billing:subscriptions:create", db, user)
+    from app.services.invoicing import create_credit_note
+    cn = await create_credit_note(db, invoice_id, reason, amount)
+    await db.commit()
+    return {
+        "id": str(cn.id),
+        "document_number": cn.document_number,
+        "total": cn.total,
+        "status": cn.status.value,
+    }
+
+
+@router.get("/saft-export")
+async def admin_saft_export(
+    fiscal_year: int,
+    start_month: int = 1,
+    end_month: int = 12,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> "Response":
+    """Exportar ficheiro SAFT-T XML (admin)."""
+    await require_admin_perm("admin_billing:subscriptions:read", db, user)
+    from fastapi.responses import Response as FastAPIResponse
+    from app.services.saft_export import export_saft_xml
+    xml_bytes = await export_saft_xml(db, fiscal_year, start_month, end_month)
+    filename = f"SAFT-AO_{fiscal_year}_{start_month:02d}-{end_month:02d}.xml"
+    return FastAPIResponse(
+        content=xml_bytes,
+        media_type="application/xml",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/invoicing/stats")
+async def admin_invoicing_stats(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Estatisticas de facturacao (admin)."""
+    await require_admin_perm("admin_billing:subscriptions:read", db, user)
+    from app.models.invoice import Invoice
+    from app.models.enums import DocumentType as DT, AGTSyncStatus
+
+    total_invoices = await db.scalar(select(func.count()).select_from(Invoice).where(Invoice.document_type == DT.INVOICE))
+    total_credit_notes = await db.scalar(select(func.count()).select_from(Invoice).where(Invoice.document_type == DT.CREDIT_NOTE))
+    total_invoiced = await db.scalar(select(func.coalesce(func.sum(Invoice.total), 0)).where(Invoice.document_type == DT.INVOICE))
+    total_credited = await db.scalar(select(func.coalesce(func.sum(Invoice.total), 0)).where(Invoice.document_type == DT.CREDIT_NOTE))
+    pending_agt = await db.scalar(select(func.count()).select_from(Invoice).where(Invoice.agt_sync_status == AGTSyncStatus.PENDING))
+
+    return {
+        "total_invoices": total_invoices or 0,
+        "total_credit_notes": total_credit_notes or 0,
+        "total_invoiced_centavos": total_invoiced or 0,
+        "total_credited_centavos": total_credited or 0,
+        "pending_agt_sync": pending_agt or 0,
+    }

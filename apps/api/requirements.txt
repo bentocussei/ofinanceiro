@@ -70,3 +70,6 @@ yarl==1.23.0
 gunicorn==25.3.0
 stripe==15.0.0
 resend==2.27.0
+pillow==12.2.0
+qrcode==8.2
+reportlab==4.4.10

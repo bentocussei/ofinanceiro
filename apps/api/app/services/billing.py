@@ -238,97 +238,301 @@ async def get_active_subscription(
     return result.scalar_one_or_none()
 
 
+def calculate_proration_credit(
+    current_price: int,
+    billing_cycle: BillingCycle,
+    start_date: datetime,
+    now: datetime,
+) -> int:
+    """Calculate unused credit in centavos for remaining days in current period."""
+    total_days = 365 if billing_cycle == BillingCycle.ANNUAL else 30
+    elapsed = max(0, (now - start_date).days)
+    remaining = max(0, total_days - elapsed)
+    return (current_price * remaining) // total_days
+
+
+async def get_auto_apply_promotion_for_plan(
+    db: AsyncSession,
+    plan_type: str,
+) -> Promotion | None:
+    """Find active auto-apply promotion applicable to a target plan."""
+    now = datetime.now(timezone.utc)
+    stmt = (
+        select(Promotion)
+        .where(
+            Promotion.auto_apply_on_register.is_(True),
+            Promotion.is_active.is_(True),
+            Promotion.start_date <= now,
+        )
+        .order_by(Promotion.priority.asc())
+    )
+    result = await db.execute(stmt)
+    promos = result.scalars().all()
+
+    for promo in promos:
+        if promo.end_date and promo.end_date < now:
+            continue
+        if promo.max_beneficiaries is not None and promo.current_usage_count >= promo.max_beneficiaries:
+            continue
+        if not promo.apply_to_all and promo.applicable_plan_types:
+            if plan_type not in promo.applicable_plan_types:
+                continue
+        return promo
+    return None
+
+
+def _get_target_base_price(plan: Plan, cycle: BillingCycle) -> int:
+    """Get the base price for a plan at a given billing cycle."""
+    if cycle == BillingCycle.MONTHLY:
+        return plan.base_price_monthly
+    return plan.base_price_annual
+
+
+async def preview_plan_change(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    target_plan_id: str,
+    target_billing_cycle: BillingCycle | None = None,
+    extra_members: int = 0,
+) -> dict:
+    """Preview a plan/cycle change with proration details.
+
+    Returns dict with: is_immediate, proration_credit, amount_due_now,
+    new_price, effective_date, breakdown.
+    """
+    current = await get_active_subscription(db, user_id)
+    if not current:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nao tens uma subscricao activa.",
+        )
+
+    target_plan = await _get_plan_or_404(db, target_plan_id)
+    new_cycle = target_billing_cycle or current.billing_cycle
+    now = datetime.now(timezone.utc)
+
+    # Determine direction
+    current_monthly = current.plan_snapshot.get("base_price_monthly", current.base_price)
+    target_monthly = target_plan.base_price_monthly
+    is_plan_upgrade = target_monthly > current_monthly
+    is_cycle_upgrade = (current.billing_cycle == BillingCycle.MONTHLY and new_cycle == BillingCycle.ANNUAL)
+    is_immediate = is_plan_upgrade or is_cycle_upgrade
+
+    # Check for auto-apply promotion
+    plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
+    promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+
+    # Calculate new price
+    breakdown = await calculate_price(
+        db, target_plan, new_cycle, promotion=promotion, extra_members=extra_members
+    )
+
+    proration_credit = 0
+    amount_due_now = 0
+
+    if is_immediate:
+        # Calculate credit from unused portion of current plan
+        proration_credit = calculate_proration_credit(
+            current.final_price, current.billing_cycle, current.start_date, now
+        )
+        amount_due_now = max(0, breakdown.final_price - proration_credit)
+
+    effective_date = now if is_immediate else current.end_date
+
+    return {
+        "is_immediate": is_immediate,
+        "proration_credit": proration_credit,
+        "amount_due_now": amount_due_now,
+        "new_price": breakdown.final_price,
+        "new_cycle": new_cycle.value,
+        "effective_date": effective_date.isoformat(),
+        "target_plan_name": target_plan.name,
+        "target_plan_type": plan_type,
+        "promotion_applied": promotion.name if promotion else None,
+        "breakdown": breakdown,
+    }
+
+
+async def change_subscription(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    target_plan_id: str,
+    target_billing_cycle: BillingCycle | None = None,
+    extra_members: int = 0,
+) -> UserSubscription:
+    """Change plan and/or billing cycle. Detects direction automatically.
+
+    Upgrade (higher plan or monthly→annual): immediate, with proration credit.
+    Downgrade (lower plan or annual→monthly): scheduled for end of period.
+    Updates the existing subscription in place.
+    """
+    current = await get_active_subscription(db, user_id)
+    if not current:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nao tens uma subscricao activa.",
+        )
+
+    target_plan = await _get_plan_or_404(db, target_plan_id)
+    new_cycle = target_billing_cycle or current.billing_cycle
+    now = datetime.now(timezone.utc)
+
+    # Determine direction
+    current_monthly = current.plan_snapshot.get("base_price_monthly", current.base_price)
+    target_monthly = target_plan.base_price_monthly
+    is_plan_upgrade = target_monthly > current_monthly
+    is_cycle_upgrade = (current.billing_cycle == BillingCycle.MONTHLY and new_cycle == BillingCycle.ANNUAL)
+    is_immediate = is_plan_upgrade or is_cycle_upgrade
+
+    # Check for auto-apply promotion
+    plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
+    promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+
+    # Calculate new price
+    breakdown = await calculate_price(
+        db, target_plan, new_cycle, promotion=promotion, extra_members=extra_members
+    )
+
+    if is_immediate:
+        # --- IMMEDIATE: upgrade plan or monthly→annual ---
+        proration_credit = calculate_proration_credit(
+            current.final_price, current.billing_cycle, current.start_date, now
+        )
+
+        # Update subscription in place
+        current.plan_id = target_plan.id
+        current.plan_snapshot = create_plan_snapshot(target_plan)
+        current.billing_cycle = new_cycle
+        current.base_price = breakdown.base_price
+        current.discount_amount = breakdown.discount_amount
+        current.extra_members_count = breakdown.extra_members_count
+        current.extra_members_cost = breakdown.extra_members_cost
+        current.final_price = breakdown.final_price
+        current.proration_credit = proration_credit
+        current.start_date = now
+        current.end_date = _period_end(now, new_cycle)
+        current.status = SubscriptionStatus.ACTIVE
+        current.promotion_id = promotion.id if promotion else current.promotion_id
+
+        # Clear any pending change
+        current.pending_plan_id = None
+        current.pending_billing_cycle = None
+        current.pending_change_scheduled_at = None
+
+        # Sync permissions
+        from app.services.permission import sync_user_permissions_from_plan
+        await sync_user_permissions_from_plan(db, user_id, current.plan_snapshot)
+
+        # Record promotion usage if new
+        if promotion:
+            await record_promotion_usage(
+                db, promotion, user_id, current.id, breakdown.discount_amount
+            )
+    else:
+        # --- SCHEDULED: downgrade or annual→monthly ---
+        current.pending_plan_id = target_plan.id
+        current.pending_billing_cycle = new_cycle
+        current.pending_change_scheduled_at = now
+
+    await db.flush()
+    await db.refresh(current)
+    return current
+
+
+async def cancel_pending_change(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> UserSubscription:
+    """Cancel a scheduled plan/cycle change."""
+    sub = await get_active_subscription(db, user_id)
+    if not sub:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nao tens uma subscricao activa.",
+        )
+
+    if not sub.pending_plan_id and not sub.pending_billing_cycle:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao tens nenhuma mudanca de plano agendada.",
+        )
+
+    sub.pending_plan_id = None
+    sub.pending_billing_cycle = None
+    sub.pending_change_scheduled_at = None
+    await db.flush()
+    await db.refresh(sub)
+    return sub
+
+
+async def apply_pending_change(
+    db: AsyncSession,
+    sub: UserSubscription,
+) -> None:
+    """Apply a pending plan/cycle change. Called by auto-billing at renewal."""
+    if not sub.pending_plan_id:
+        return
+
+    target_plan = await db.get(Plan, sub.pending_plan_id)
+    if not target_plan or not target_plan.is_active:
+        # Plan no longer available, clear pending
+        sub.pending_plan_id = None
+        sub.pending_billing_cycle = None
+        sub.pending_change_scheduled_at = None
+        return
+
+    new_cycle = sub.pending_billing_cycle or sub.billing_cycle
+
+    # Check for promotion
+    plan_type = target_plan.type.value if hasattr(target_plan.type, "value") else str(target_plan.type)
+    promotion = await get_auto_apply_promotion_for_plan(db, plan_type)
+
+    breakdown = await calculate_price(db, target_plan, new_cycle, promotion=promotion)
+
+    sub.plan_id = target_plan.id
+    sub.plan_snapshot = create_plan_snapshot(target_plan)
+    sub.billing_cycle = new_cycle
+    sub.base_price = breakdown.base_price
+    sub.discount_amount = breakdown.discount_amount
+    sub.extra_members_count = breakdown.extra_members_count
+    sub.extra_members_cost = breakdown.extra_members_cost
+    sub.final_price = breakdown.final_price
+    sub.promotion_id = promotion.id if promotion else None
+    sub.proration_credit = 0
+
+    # Clear pending
+    sub.pending_plan_id = None
+    sub.pending_billing_cycle = None
+    sub.pending_change_scheduled_at = None
+
+    # Sync permissions
+    from app.services.permission import sync_user_permissions_from_plan
+    await sync_user_permissions_from_plan(db, sub.user_id, sub.plan_snapshot)
+
+
+# Legacy aliases for backward compatibility
 async def upgrade_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
     target_plan_id: str,
     extra_members: int = 0,
 ) -> UserSubscription:
-    """Upgrade an existing subscription to a higher plan.
-
-    Cancels current and creates a new one immediately.
-    """
-    current = await get_active_subscription(db, user_id)
-    if not current:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Não tens uma subscrição activa para fazer upgrade.",
-        )
-
-    target_plan = await _get_plan_or_404(db, target_plan_id)
-
-    # Ensure it's actually an upgrade (target is more expensive)
-    current_base = current.base_price
-    if current.billing_cycle == BillingCycle.MONTHLY:
-        target_base = target_plan.base_price_monthly
-    else:
-        target_base = target_plan.base_price_annual
-
-    if target_base < current_base:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="O plano alvo é inferior ao actual. Usa downgrade em vez disso.",
-        )
-
-    # Cancel current
-    current.status = SubscriptionStatus.CANCELLED
-    current.cancelled_at = datetime.now(timezone.utc)
-
-    # Calculate new price with extra members
-    breakdown = await calculate_price(
-        db, target_plan, current.billing_cycle, extra_members=extra_members
-    )
-
-    now = datetime.now(timezone.utc)
-    end = _period_end(now, current.billing_cycle)
-
-    new_sub = UserSubscription(
-        user_id=user_id,
-        plan_id=target_plan.id,
-        plan_snapshot=create_plan_snapshot(target_plan),
-        billing_cycle=current.billing_cycle,
-        status=SubscriptionStatus.ACTIVE,
-        base_price=breakdown.base_price,
-        discount_amount=breakdown.discount_amount,
-        extra_members_count=breakdown.extra_members_count,
-        extra_members_cost=breakdown.extra_members_cost,
-        module_addons_cost=breakdown.module_addons_cost,
-        final_price=breakdown.final_price,
-        start_date=now,
-        end_date=end,
-        auto_renew=True,
-    )
-    db.add(new_sub)
-    await db.flush()
-
-    # Sync plan permissions for the new plan
-    from app.services.permission import sync_user_permissions_from_plan
-    await sync_user_permissions_from_plan(db, user_id, new_sub.plan_snapshot)
-
-    await db.refresh(new_sub)
-    return new_sub
+    """Legacy: use change_subscription instead."""
+    return await change_subscription(db, user_id, target_plan_id, extra_members=extra_members)
 
 
 async def downgrade_subscription(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> UserSubscription:
-    """Mark a subscription to not renew (effective downgrade at period end).
-
-    The user keeps access until end_date, then falls back to free.
-    """
+    """Mark subscription to not renew (legacy). Use change_subscription for plan changes."""
     sub = await get_active_subscription(db, user_id)
     if not sub:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Não tens uma subscrição activa.",
+            detail="Nao tens uma subscricao activa.",
         )
-
     sub.auto_renew = False
-
-    # When downgrade takes effect at period end, permissions will be synced
-    # by the renewal job. For now, user keeps current plan permissions.
-
     await db.flush()
     await db.refresh(sub)
     return sub

@@ -100,6 +100,18 @@ class UserSubscription(BaseModel):
         PG_UUID(as_uuid=True), ForeignKey("payment_methods.id", ondelete="SET NULL")
     )
 
+    # Scheduled plan change (pending downgrade or cycle change)
+    pending_plan_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("plans.id", ondelete="SET NULL")
+    )
+    pending_billing_cycle: Mapped[BillingCycle | None] = mapped_column(
+        ENUM(BillingCycle, name="billing_cycle", create_type=False), nullable=True
+    )
+    pending_change_scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    proration_credit: Mapped[int] = mapped_column(Integer, default=0)  # centavos credited
+
     # Stripe (legacy — kept for backward compatibility, use payment_methods table)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(100))
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(100))

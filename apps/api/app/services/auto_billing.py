@@ -67,6 +67,12 @@ async def process_renewals(db: AsyncSession) -> dict:
             payment = await payment_service.charge_subscription(db, sub, pm)
 
             if payment.status.value == "completed":
+                # Apply pending plan change if scheduled
+                if sub.pending_plan_id:
+                    from app.services.billing import apply_pending_change
+                    await apply_pending_change(db, sub)
+                    logger.info("Subscricao %s: mudanca de plano aplicada", sub.id)
+
                 # Extend subscription period
                 if sub.billing_cycle.value == "annual":
                     sub.end_date = sub.end_date + timedelta(days=365)
@@ -74,6 +80,7 @@ async def process_renewals(db: AsyncSession) -> dict:
                     sub.end_date = sub.end_date + timedelta(days=30)
                 sub.start_date = now
                 sub.status = SubscriptionStatus.ACTIVE
+                sub.proration_credit = 0  # reset proration on renewal
                 stats["success"] += 1
                 logger.info("Subscricao %s renovada com sucesso", sub.id)
             else:

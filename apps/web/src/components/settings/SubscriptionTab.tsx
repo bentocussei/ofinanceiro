@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo, type PaymentMethodInfo, type PaymentInfo } from "@/lib/api/billing"
+import { billingApi, type PlanInfo, type SubscriptionInfo, type ModuleAddonInfo, type PaymentMethodInfo, type PaymentInfo, type InvoiceInfo, type ReceiptInfo } from "@/lib/api/billing"
 import { type UserProfile } from "@/lib/auth"
 import { formatKz } from "@/lib/format"
 
@@ -77,9 +77,13 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
   const handleUpgrade = async (planId: string) => {
     setChangingPlan(planId)
     try {
-      const result = await billingApi.upgrade({ plan_id: planId })
+      const result = await billingApi.changePlan({ target_plan_id: planId })
       setSubscription(result)
-      toast.success("Plano alterado com sucesso!")
+      if (result.pending_plan_name) {
+        toast.success(`Mudanca para ${result.pending_plan_name} agendada para o final do periodo`)
+      } else {
+        toast.success("Plano alterado com sucesso!")
+      }
     } catch {
       toast.error("Erro ao alterar plano. Tente novamente.")
     } finally {
@@ -208,6 +212,30 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
               </div>
             </div>
 
+            {/* Pending change banner */}
+            {subscription.pending_plan_name && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800 p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Mudanca agendada para {subscription.pending_plan_name}
+                    {subscription.pending_billing_cycle && ` (${subscription.pending_billing_cycle === "annual" ? "anual" : "mensal"})`}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Efectiva em {subscription.pending_change_date ? new Date(subscription.pending_change_date).toLocaleDateString("pt-AO") : "---"}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={async () => {
+                  try {
+                    const result = await billingApi.cancelPendingChange()
+                    setSubscription(result)
+                    toast.success("Mudanca agendada cancelada")
+                  } catch { toast.error("Erro ao cancelar mudanca") }
+                }}>
+                  Cancelar mudanca
+                </Button>
+              </div>
+            )}
+
             <div className="flex gap-2">
               {subscription.status === "cancelled" ? (
                 <Button size="sm" onClick={handleReactivate}>
@@ -314,6 +342,9 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
         const s = await billingApi.subscription().catch(() => null)
         setSubscription(s)
       }} />
+
+      {/* Invoices & Receipts */}
+      <InvoicesReceiptsSection />
 
       {/* Payment history */}
       <PaymentHistorySection />
@@ -808,6 +839,123 @@ function AddCardDialog({
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// Invoices & Receipts section
+// ---------------------------------------------------------------------------
+
+function InvoicesReceiptsSection() {
+  const [invoices, setInvoices] = useState<InvoiceInfo[]>([])
+  const [receipts, setReceipts] = useState<ReceiptInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<"invoices" | "receipts">("invoices")
+
+  useEffect(() => {
+    Promise.all([
+      billingApi.invoices(10).catch(() => []),
+      billingApi.receipts(10).catch(() => []),
+    ]).then(([inv, rec]) => {
+      setInvoices(inv)
+      setReceipts(rec)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading || (invoices.length === 0 && receipts.length === 0)) return null
+
+  const docTypeLabel = (t: string) => {
+    const map: Record<string, string> = { FT: "Factura", NC: "Nota de Credito", RC: "Recibo" }
+    return map[t] || t
+  }
+
+  return (
+    <section className="rounded-xl bg-card shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <Receipt className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-[15px] font-semibold">Documentos fiscais</h2>
+          <p className="text-xs text-muted-foreground">Facturas e recibos</p>
+        </div>
+      </div>
+
+      {/* Tab toggle */}
+      <div className="flex gap-1 mb-4 rounded-lg bg-muted p-1">
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${tab === "invoices" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          onClick={() => setTab("invoices")}
+        >
+          Facturas ({invoices.length})
+        </button>
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${tab === "receipts" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          onClick={() => setTab("receipts")}
+        >
+          Recibos ({receipts.length})
+        </button>
+      </div>
+
+      {tab === "invoices" ? (
+        <div className="space-y-2">
+          {invoices.map((inv) => (
+            <div key={inv.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">{inv.document_number}</p>
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
+                    {docTypeLabel(inv.document_type)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(inv.issue_date).toLocaleDateString("pt-AO")}
+                  {inv.discount_total > 0 && ` — Desconto: ${formatKz(inv.discount_total)}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="font-mono text-sm font-semibold">{formatKz(inv.total)}</p>
+                <a
+                  href={billingApi.invoicePdfUrl(inv.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  PDF
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {receipts.map((r) => (
+            <div key={r.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">{r.document_number}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(r.issue_date).toLocaleDateString("pt-AO")}
+                  {r.invoice_document_number && ` — Ref: ${r.invoice_document_number}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="font-mono text-sm font-semibold">{formatKz(r.amount)}</p>
+                <a
+                  href={billingApi.receiptPdfUrl(r.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  PDF
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
