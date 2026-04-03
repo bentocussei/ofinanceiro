@@ -516,3 +516,107 @@ async def admin_invoicing_stats(
         "total_credited_centavos": total_credited or 0,
         "pending_agt_sync": pending_agt or 0,
     }
+
+
+# ---------------------------------------------------------------------------
+# Company Settings
+# ---------------------------------------------------------------------------
+
+from pydantic import BaseModel as PydanticModel, Field
+
+
+class CompanySettingsResponse(PydanticModel):
+    id: str
+    name: str
+    trade_name: str | None
+    nif: str
+    address: str | None
+    city: str
+    province: str | None
+    postal_code: str | None
+    country: str
+    phone: str | None
+    email: str
+    website: str | None
+    vat_rate: int
+    vat_exempt_reason: str
+    tax_regime: str
+    agt_certificate_number: str
+    agt_software_number: str | None
+
+
+class CompanySettingsUpdate(PydanticModel):
+    name: str | None = None
+    trade_name: str | None = None
+    nif: str | None = Field(None, min_length=9, max_length=14)
+    address: str | None = None
+    city: str | None = None
+    province: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    vat_rate: int | None = Field(None, ge=0, le=100)
+    vat_exempt_reason: str | None = None
+    tax_regime: str | None = None
+    agt_certificate_number: str | None = None
+    agt_software_number: str | None = None
+
+
+def _company_to_response(cs: "CompanySettings") -> CompanySettingsResponse:
+    return CompanySettingsResponse(
+        id=str(cs.id),
+        name=cs.name,
+        trade_name=cs.trade_name,
+        nif=cs.nif,
+        address=cs.address,
+        city=cs.city,
+        province=cs.province,
+        postal_code=cs.postal_code,
+        country=cs.country,
+        phone=cs.phone,
+        email=cs.email,
+        website=cs.website,
+        vat_rate=cs.vat_rate,
+        vat_exempt_reason=cs.vat_exempt_reason,
+        tax_regime=cs.tax_regime,
+        agt_certificate_number=cs.agt_certificate_number,
+        agt_software_number=cs.agt_software_number,
+    )
+
+
+@router.get("/company-settings", response_model=CompanySettingsResponse)
+async def get_company_settings(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> CompanySettingsResponse:
+    """Obter dados da empresa (admin)."""
+    await require_admin_perm("admin_billing:plans:read", db, user)
+    from app.models.company_settings import CompanySettings
+    cs = await db.scalar(select(CompanySettings).limit(1))
+    if not cs:
+        raise HTTPException(status_code=404, detail="Dados da empresa nao configurados")
+    return _company_to_response(cs)
+
+
+@router.put("/company-settings", response_model=CompanySettingsResponse)
+async def update_company_settings(
+    data: CompanySettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> CompanySettingsResponse:
+    """Actualizar dados da empresa (admin)."""
+    await require_admin_perm("admin_billing:plans:update", db, user)
+    from app.models.company_settings import CompanySettings
+    cs = await db.scalar(select(CompanySettings).limit(1))
+    if not cs:
+        raise HTTPException(status_code=404, detail="Dados da empresa nao configurados")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(cs, field, value)
+
+    await db.commit()
+    await db.refresh(cs)
+    return _company_to_response(cs)
