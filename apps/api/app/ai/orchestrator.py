@@ -251,6 +251,7 @@ class ChatOrchestrator:
             financial_context = "Erro ao carregar dados financeiros."
 
         # 2b. Search semantic memory for relevant past context
+        # Use separate try/rollback to prevent corrupting the main DB session
         try:
             similar_memories = await search_similar(db, user_id, message, limit=3, threshold=0.65)
             if similar_memories:
@@ -259,6 +260,10 @@ class ChatOrchestrator:
                     memory_lines.append(f"  - {mem['content']}")
                 financial_context += "\n\n" + "\n".join(memory_lines)
         except Exception:
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             logger.debug("Semantic memory search skipped")
 
         # 3. Load session history from Redis
@@ -330,7 +335,6 @@ class ChatOrchestrator:
             logger.debug("Fact extraction skipped for message")
 
         # 11. Store conversation insight as embedding (non-blocking)
-        # Only store if there were tool calls (meaningful interaction)
         if response.tool_calls_made:
             try:
                 insight = f"Utilizador: {message}\nAssistente ({response.agent_name}): "
@@ -343,6 +347,10 @@ class ChatOrchestrator:
                 )
                 await db.commit()
             except Exception:
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
                 logger.debug("Semantic memory storage skipped")
 
         return response

@@ -39,8 +39,12 @@ async def send_message(
     _perm: None = PlanPermission("ai:chat:create"),
 ) -> ChatMessageResponse:
     """Send a message to the AI assistant."""
+    # Capture user fields early (ORM object may expire after DB operations)
+    user_id = user.id
+    user_plan = user.plan
+
     # Check quota
-    can_continue = await check_quota(user.id, user.plan)
+    can_continue = await check_quota(user_id, user_plan)
     if not can_continue:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -60,7 +64,7 @@ async def send_message(
     )
 
     # Check L1 cache for exact match
-    cached = await get_cached_response(str(user.id), data.message)
+    cached = await get_cached_response(str(user_id), data.message)
     if cached:
         return ChatMessageResponse(
             content=cached,
@@ -72,7 +76,7 @@ async def send_message(
 
     try:
         response = await orchestrator.process_message(
-            user_id=user.id,
+            user_id=user_id,
             session_id=session_id,
             message=data.message,
             db=db,
@@ -86,12 +90,12 @@ async def send_message(
             session_id=session_id,
         )
 
-    # Record token usage
-    await record_token_usage(user.id, response.tokens_input, response.tokens_output)
+    # Record token usage (use captured user_id, not user.id which may be expired)
+    await record_token_usage(user_id, response.tokens_input, response.tokens_output)
 
     # Cache the response (L1)
     if response.content and not response.needs_confirmation:
-        await set_cached_response(str(user.id), data.message, response.content)
+        await set_cached_response(str(user_id), data.message, response.content)
 
     return ChatMessageResponse(
         content=response.content,
