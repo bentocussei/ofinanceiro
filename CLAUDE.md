@@ -41,9 +41,9 @@ See `diagramas/01_arquitectura_sistema.mermaid` for full diagram.
 | Backend | FastAPI 0.135+ (Python 3.13) |
 | Database | PostgreSQL 17 + pgvector |
 | Cache | Redis 8 |
-| AI | Claude (Anthropic) + GPT-4o (OpenAI) + Gemini (Google) |
+| AI | OpenAI (GPT-4o-mini + GPT-4o + GPT-5.4) — single provider strategy |
 | Embeddings | text-embedding-3-small (OpenAI) |
-| Speech | Whisper API |
+| Speech | GPT-4o-mini transcription (replaces Whisper) |
 | Auth | Supabase Auth or Auth.js (OTP via SMS) |
 | Storage | Supabase Storage or S3-compatible |
 | Hosting | Railway (backend + web) + EAS Build (mobile) |
@@ -155,17 +155,30 @@ See `diagramas/02_fluxo_multi_agente.mermaid` for full flow.
 
 See `diagramas/03_sistema_memoria.mermaid` for details.
 
-### LLM Strategy (Cost Optimization)
+### LLM Strategy — Single Provider (OpenAI)
+
+**Launch phase (months 1-4):**
+
+| Task | Model | Cost/1M tokens | Reason |
+|------|-------|---------------|--------|
+| Routing/Classification | gpt-4o-mini | $0.15 / $0.60 | Fast, cheap |
+| Chat (daily conversations) | gpt-4o-mini | $0.15 / $0.60 | 90% of conversations |
+| Complex Analysis (budgets, debts, investments) | gpt-4o | $2.50 / $10.00 | Reasoning needed |
+| Receipt OCR | gpt-4o-mini (vision) | $0.15 + image | Works well for receipts |
+| Voice → Text | gpt-4o-mini-transcribe | $0.006/min | Replaces Whisper |
+| Embeddings | text-embedding-3-small | $0.02 | Semantic memory |
+| Batch Insights | gpt-4o-mini | $0.15 / $0.60 | Low cost |
+
+**Post-launch phase (months 4-10):**
 
 | Task | Model | Reason |
 |------|-------|--------|
-| Routing/Classification | Haiku / GPT-4o-mini | Fast, cheap |
-| Conversation | Sonnet / GPT-4o | Quality/cost balance |
-| Complex Analysis | Sonnet | Reasoning |
-| Receipt OCR | GPT-4o / Sonnet | Multimodal |
-| Batch Insights | Haiku | Low cost |
+| All conversation + analysis | gpt-5.4 | Unified, higher quality |
+| OCR | gpt-5.4 (vision) | Better accuracy |
+| Voice → Text | gpt-4o-mini-transcribe | Still best for audio |
+| Embeddings | text-embedding-3-small | No need to change |
 
-Target: $0.15-$0.50 per active user/month.
+Target: $0.15-$0.50 per active user/month (launch), scaling down with volume discounts.
 
 ---
 
