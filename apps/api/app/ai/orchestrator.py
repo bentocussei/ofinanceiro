@@ -100,10 +100,6 @@ async def _load_user_financial_context(
             pass
 
     # --- Accounts with balances ---
-    acct_query = select(Account).where(
-        Account.user_id == user_id,
-        Account.is_archived.is_(False),
-    )
     if is_family and family_id_str:
         try:
             acct_query = select(Account).where(
@@ -111,7 +107,17 @@ async def _load_user_financial_context(
                 Account.is_archived.is_(False),
             )
         except (ValueError, Exception):
-            pass
+            acct_query = select(Account).where(
+                Account.user_id == user_id,
+                Account.is_archived.is_(False),
+            )
+    else:
+        # Personal context: only personal accounts (no family_id)
+        acct_query = select(Account).where(
+            Account.user_id == user_id,
+            Account.family_id.is_(None),
+            Account.is_archived.is_(False),
+        )
 
     accts = await db.scalars(acct_query.order_by(Account.balance.desc()).limit(10))
     accounts = list(accts.all())

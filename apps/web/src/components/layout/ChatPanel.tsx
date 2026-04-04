@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -225,6 +226,7 @@ export function ChatPanel() {
                 >
                   {msg.role === "assistant" ? (
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
                         p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
                         ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5">{children}</ul>,
@@ -236,6 +238,12 @@ export function ChatPanel() {
                         h3: ({ children }) => <h4 className="font-semibold mb-1">{children}</h4>,
                         code: ({ children }) => <code className="bg-background/20 px-1 rounded text-xs">{children}</code>,
                         hr: () => <hr className="my-2 border-border/50" />,
+                        table: ({ children }) => <table className="w-full text-xs border-collapse my-1.5">{children}</table>,
+                        thead: ({ children }) => <thead className="border-b border-border/50">{children}</thead>,
+                        tbody: ({ children }) => <tbody>{children}</tbody>,
+                        tr: ({ children }) => <tr className="border-b border-border/30">{children}</tr>,
+                        th: ({ children }) => <th className="text-left py-1 px-1.5 font-semibold">{children}</th>,
+                        td: ({ children }) => <td className="py-1 px-1.5">{children}</td>,
                       }}
                     >
                       {msg.content}
