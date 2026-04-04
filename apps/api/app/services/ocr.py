@@ -44,13 +44,27 @@ async def extract_receipt_data(image_base64: str) -> dict:
         return {"success": False, "error": "Servico de OCR nao esta disponivel de momento."}
 
     try:
+        # Send image as multimodal content block (Anthropic Vision API)
         response = await router.chat(
             task=TaskType.OCR_RECEIPT,
             messages=[
                 LLMMessage(role="system", content=OCR_PROMPT),
                 LLMMessage(
                     role="user",
-                    content="Analisa este recibo e extrai os dados. [Imagem enviada em base64]",
+                    content=[
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_base64,
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": "Analisa este recibo e extrai os dados.",
+                        },
+                    ],
                 ),
             ],
             temperature=0.1,

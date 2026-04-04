@@ -15,10 +15,11 @@ TRACKER_PROMPT = """És o agente de tracking financeiro d'O Financeiro.
 
 REGRAS:
 1. Quando o utilizador diz que gastou/recebeu dinheiro, PRIMEIRO pergunta confirmação, SÓ DEPOIS chama add_transaction.
-2. Infere a categoria com base na descrição. Se ambíguo, pergunta.
-3. Se o utilizador não especificar a conta, usa a primeira conta disponível.
-4. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe: X Kz em [Categoria]?" — NÃO uses a tool antes da confirmação.
-5. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction.
+2. ANTES de registar, chama get_categories para obter a lista de categorias com IDs reais. Usa o category_id correcto no add_transaction.
+3. Infere a categoria com base na descrição e nas categorias disponíveis. Se ambíguo, pergunta.
+4. Se o utilizador não especificar a conta, usa a primeira conta disponível.
+5. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe: X Kz em [Categoria]?" — NÃO uses a tool antes da confirmação.
+6. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction com o category_id.
 6. Usa os factos conhecidos sobre o utilizador para contextualizar.
 7. Valores são sempre em Kwanzas (Kz). Converte se necessário.
 8. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
@@ -36,15 +37,21 @@ SKILLS:
 
 TRACKER_TOOLS = [
     ToolMeta(
+        name="get_categories",
+        description="Obter lista de categorias disponíveis para transacções — chamar ANTES de add_transaction para saber o category_id correcto",
+        parameters={"type": "object", "properties": {}},
+        agent="tracker", category="query", read_only=True,
+    ),
+    ToolMeta(
         name="add_transaction",
-        description="Registar uma nova transacção (gasto ou receita)",
+        description="Registar uma nova transacção (gasto ou receita). Usa o category_id obtido de get_categories.",
         parameters={
             "type": "object",
             "properties": {
                 "amount": {"type": "number", "description": "Valor em Kz (sem centavos)"},
                 "type": {"type": "string", "enum": ["expense", "income"], "description": "Tipo"},
                 "description": {"type": "string", "description": "Descrição da transacção"},
-                "category": {"type": "string", "description": "Categoria (ex: Alimentação, Transporte)"},
+                "category_id": {"type": "string", "description": "UUID da categoria (obtido de get_categories)"},
             },
             "required": ["amount", "type", "description"],
         },
@@ -94,6 +101,8 @@ class TrackerAgent(BaseAgent):
         return ToolRegistry.instance().get_tools_for_agent("tracker")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
+        if tool_name == "get_categories":
+            return await self._get_categories(context)
         if tool_name == "add_transaction":
             return await self._add_transaction(arguments, context)
         if tool_name == "get_balance":
@@ -104,8 +113,27 @@ class TrackerAgent(BaseAgent):
             return await self._search_transactions(arguments, context)
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
-    async def _add_transaction(self, args: dict, ctx: AgentContext) -> dict:
+    async def _get_categories(self, ctx: AgentContext) -> dict:
         from app.models.category import Category
+
+        result = await ctx.db.execute(
+            select(Category.id, Category.name, Category.type, Category.icon)
+            .where(Category.user_id == ctx.user_id)
+            .order_by(Category.name)
+        )
+        cats = result.all()
+        if not cats:
+            return {"categories": [], "message": "Nenhuma categoria criada."}
+
+        return {
+            "categories": [
+                {"id": str(c.id), "name": c.name, "type": c.type, "icon": c.icon}
+                for c in cats
+            ],
+        }
+
+    async def _add_transaction(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
 
         # Get default account
         result = await ctx.db.execute(
@@ -117,19 +145,14 @@ class TrackerAgent(BaseAgent):
         if not account:
             return {"error": "Nenhuma conta encontrada. Crie uma conta primeiro."}
 
-        # Match category by name (case-insensitive)
+        # Category ID: use directly if provided (from get_categories)
         category_id = None
-        category_name = args.get("category")
-        if category_name:
-            result = await ctx.db.execute(
-                select(Category).where(
-                    Category.user_id == ctx.user_id,
-                    Category.name.ilike(f"%{category_name}%"),
-                ).limit(1)
-            )
-            cat = result.scalar_one_or_none()
-            if cat:
-                category_id = cat.id
+        cat_id_str = args.get("category_id")
+        if cat_id_str:
+            try:
+                category_id = _uuid.UUID(cat_id_str)
+            except ValueError:
+                pass
 
         amount_kz = args.get("amount", 0)
         amount_centavos = int(amount_kz * 100)

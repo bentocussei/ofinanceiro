@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 @dataclass
 class LLMMessage:
     role: str  # "system", "user", "assistant", "tool"
-    content: str
+    content: str | list  # str for text, list for multimodal content blocks
     tool_call_id: str | None = None
     name: str | None = None  # tool name for tool results
     tool_calls: list[dict] | None = None  # for assistant messages with tool_use blocks
