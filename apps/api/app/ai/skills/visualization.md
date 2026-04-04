@@ -3,14 +3,17 @@ name: visualization
 description: Instruções para renderizar gráficos Chart.js e cartões KPI inline no chat
 agents: [tracker, budget, advisor, goals, family, report, debt, investment]
 priority: 5
-triggers: [chart, gráfico, grafico, visualiz, resumo, relatório, relatorio, comparar, evolução, evolucao, distribuição, distribuicao, saldo, quanto, gastos, orçamento, orcamento, metas, dívidas, dividas, investimentos]
-always: false
+always: true
 ---
 
 VISUALIZAÇÃO INLINE:
-Quando a tua resposta inclui dados numéricos significativos, DECIDE AUTONOMAMENTE se um gráfico
-ou cartões KPI ajudam a compreensão. Não esperes que o utilizador peça — se os dados beneficiam
-de visualização, inclui. Se a resposta é simples (ex: "Sim, podes comprar"), não incluas.
+Quando a tua resposta inclui dados numéricos significativos, USA SEMPRE os blocos ```chart e ```metrics
+abaixo para visualização. NUNCA uses ASCII art, tabelas de texto com ████, barras de caracteres,
+caixas ╔══╗, ou qualquer representação visual em texto. O frontend renderiza gráficos Chart.js
+reais a partir dos blocos JSON — usa-os.
+
+Se os dados beneficiam de visualização, inclui blocos ```chart e/ou ```metrics.
+Se a resposta é simples (ex: "Sim, podes comprar"), não incluas.
 
 QUANDO INCLUIR (decisão tua):
 - Saldos por conta → metrics com 2-4 valores
