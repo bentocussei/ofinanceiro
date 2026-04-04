@@ -27,8 +27,8 @@ TASK_MODEL_CONFIG: dict[TaskType, list[tuple[str, str]]] = {
     TaskType.CONVERSATION: [("anthropic", "sonnet"), ("openai", "gpt4o")],
     TaskType.ANALYSIS: [("anthropic", "sonnet"), ("openai", "gpt4o")],
     TaskType.REPORT_GENERATION: [("anthropic", "sonnet"), ("openai", "gpt4o")],
-    TaskType.OCR_RECEIPT: [("openai", "gpt4o"), ("anthropic", "sonnet")],
-    TaskType.OCR_STATEMENT: [("openai", "gpt4o"), ("anthropic", "sonnet")],
+    TaskType.OCR_RECEIPT: [("anthropic", "sonnet"), ("openai", "gpt4o")],
+    TaskType.OCR_STATEMENT: [("anthropic", "sonnet"), ("openai", "gpt4o")],
     TaskType.INSIGHT_BATCH: [("anthropic", "haiku"), ("openai", "gpt4o-mini")],
     TaskType.MEMORY_EXTRACTION: [("anthropic", "haiku"), ("openai", "gpt4o-mini")],
 }
