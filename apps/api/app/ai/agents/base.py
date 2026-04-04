@@ -183,9 +183,9 @@ class BaseAgent:
                 ],
             ))
 
-            # Separate safe (read-only) and unsafe (write) tools
-            safe_calls = []
-            unsafe_calls = []
+            # Execute ALL tool calls sequentially (shared DB session is not thread-safe)
+            # Abort cascade: if one write tool fails, cancel remaining
+            abort = False
             for tc in response.tool_calls:
                 tool_def = next((t for t in tools if t.name == tc.name), None)
                 if not tool_def:
@@ -197,34 +197,12 @@ class BaseAgent:
                         name=tc.name,
                     ))
                     continue
-                if self._is_safe_tool(tc.name):
-                    safe_calls.append(tc)
-                else:
-                    unsafe_calls.append(tc)
 
-            # Execute safe tools concurrently
-            if safe_calls:
-                results = await self._execute_concurrent(safe_calls, context)
-                for tc, result in zip(safe_calls, results):
-                    tool_calls_made.append({
-                        "name": tc.name, "arguments": tc.arguments, "result": result,
-                    })
-                    # Budget tool results: cap at 2000 chars
-                    result_str = json.dumps(result, ensure_ascii=False)
-                    if len(result_str) > 2000:
-                        result_str = result_str[:2000] + '..."}'
-                    messages.append(LLMMessage(
-                        role="tool", content=result_str,
-                        tool_call_id=tc.id, name=tc.name,
-                    ))
-
-            # Execute unsafe tools sequentially (abort on first failure)
-            abort = False
-            for tc in unsafe_calls:
-                if abort:
+                if abort and not self._is_safe_tool(tc.name):
+                    result = {"error": "Cancelado — operacao anterior falhou"}
                     messages.append(LLMMessage(
                         role="tool",
-                        content=json.dumps({"error": "Cancelado — tool anterior falhou"}, ensure_ascii=False),
+                        content=json.dumps(result, ensure_ascii=False),
                         tool_call_id=tc.id, name=tc.name,
                     ))
                     continue
@@ -233,12 +211,20 @@ class BaseAgent:
                     result = await self.execute_tool(tc.name, tc.arguments, context)
                 except Exception as e:
                     logger.exception("Tool %s failed", tc.name)
-                    result = {"error": f"Erro ao executar {tc.name}: {e!s}"}
-                    abort = True  # Abort cascade
+                    result = {"error": f"Erro ao executar {tc.name}"}
+                    # Rollback DB session to recover from failed transaction
+                    try:
+                        await context.db.rollback()
+                    except Exception:
+                        pass
+                    if not self._is_safe_tool(tc.name):
+                        abort = True
 
                 tool_calls_made.append({
                     "name": tc.name, "arguments": tc.arguments, "result": result,
                 })
+
+                # Budget tool results: cap at 2000 chars
                 result_str = json.dumps(result, ensure_ascii=False)
                 if len(result_str) > 2000:
                     result_str = result_str[:2000] + '..."}'

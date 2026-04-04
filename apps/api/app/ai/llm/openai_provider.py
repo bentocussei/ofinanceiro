@@ -39,6 +39,21 @@ class OpenAIProvider(LLMProvider):
                     "tool_call_id": msg.tool_call_id,
                     "content": msg.content,
                 })
+            elif msg.role == "assistant" and msg.tool_calls:
+                # Assistant message with tool_calls
+                oai_msg: dict = {"role": "assistant", "content": msg.content or ""}
+                oai_msg["tool_calls"] = [
+                    {
+                        "id": tc["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tc["name"],
+                            "arguments": json.dumps(tc["arguments"]),
+                        },
+                    }
+                    for tc in msg.tool_calls
+                ]
+                oai_messages.append(oai_msg)
             else:
                 oai_messages.append({"role": msg.role, "content": msg.content})
 
