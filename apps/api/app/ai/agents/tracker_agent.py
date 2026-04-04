@@ -17,9 +17,10 @@ REGRAS:
 1. Quando o utilizador diz que gastou/recebeu dinheiro, PRIMEIRO pergunta confirmação, SÓ DEPOIS chama add_transaction.
 2. ANTES de registar, chama get_categories para obter a lista de categorias com IDs reais. Usa o category_id correcto no add_transaction.
 3. Infere a categoria com base na descrição e nas categorias disponíveis. Se ambíguo, pergunta.
-4. Se o utilizador não especificar a conta, usa a primeira conta disponível.
+4. Quando o utilizador especificar a conta (Carteira, BFA, BAI), usa o account_id correspondente obtido de get_balance. Se não especificar, usa a primeira conta.
 5. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe: X Kz em [Categoria]?" — NÃO uses a tool antes da confirmação.
-6. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction com o category_id.
+6. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction com o category_id e account_id correctos.
+7. Se o utilizador na confirmação indicar uma conta diferente (ex: "sim, na carteira"), usa essa conta.
 6. Usa os factos conhecidos sobre o utilizador para contextualizar.
 7. Valores são sempre em Kwanzas (Kz). Converte se necessário.
 8. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
@@ -44,7 +45,7 @@ TRACKER_TOOLS = [
     ),
     ToolMeta(
         name="add_transaction",
-        description="Registar uma nova transacção (gasto ou receita). Usa o category_id obtido de get_categories.",
+        description="Registar uma nova transacção (gasto ou receita). Usa o account_id para seleccionar a conta correcta.",
         parameters={
             "type": "object",
             "properties": {
@@ -52,6 +53,7 @@ TRACKER_TOOLS = [
                 "type": {"type": "string", "enum": ["expense", "income"], "description": "Tipo"},
                 "description": {"type": "string", "description": "Descrição da transacção"},
                 "category_id": {"type": "string", "description": "UUID da categoria (obtido de get_categories)"},
+                "account_id": {"type": "string", "description": "UUID da conta onde registar (obtido de get_balance). Se não fornecido, usa a primeira conta."},
             },
             "required": ["amount", "type", "description"],
         },
@@ -143,13 +145,28 @@ class TrackerAgent(BaseAgent):
     async def _add_transaction(self, args: dict, ctx: AgentContext) -> dict:
         import uuid as _uuid
 
-        # Get default account
-        result = await ctx.db.execute(
-            select(Account).where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
-            .order_by(Account.sort_order)
-            .limit(1)
-        )
-        account = result.scalar_one_or_none()
+        # Select account: use account_id if provided, otherwise first account
+        account = None
+        account_id_str = args.get("account_id")
+        if account_id_str:
+            try:
+                acc_uuid = _uuid.UUID(account_id_str)
+                result = await ctx.db.execute(
+                    select(Account).where(Account.id == acc_uuid, Account.user_id == ctx.user_id)
+                )
+                account = result.scalar_one_or_none()
+            except ValueError:
+                pass
+
+        if not account:
+            # Fallback to first account
+            result = await ctx.db.execute(
+                select(Account).where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
+                .order_by(Account.sort_order)
+                .limit(1)
+            )
+            account = result.scalar_one_or_none()
+
         if not account:
             return {"error": "Nenhuma conta encontrada. Crie uma conta primeiro."}
 
@@ -186,14 +203,14 @@ class TrackerAgent(BaseAgent):
 
     async def _get_balance(self, ctx: AgentContext) -> dict:
         result = await ctx.db.execute(
-            select(Account.name, Account.type, Account.balance, Account.currency)
+            select(Account.id, Account.name, Account.type, Account.balance, Account.currency)
             .where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
         )
         accounts = result.all()
 
         total = sum(a.balance for a in accounts)
         account_list = [
-            {"name": a.name, "type": a.type, "balance_kz": a.balance / 100, "currency": a.currency}
+            {"id": str(a.id), "name": a.name, "type": a.type, "balance_kz": a.balance / 100, "currency": a.currency}
             for a in accounts
         ]
 
