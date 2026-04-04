@@ -60,6 +60,12 @@ ADVISOR_TOOLS = [
         parameters={"type": "object", "properties": {"amount": {"type": "number", "description": "Valor em Kz do que quer comprar"}, "description": {"type": "string", "description": "O que quer comprar"}}, "required": ["amount"]},
         agent="advisor", category="compute", read_only=True,
     ),
+    ToolMeta(
+        name="web_search",
+        description="Pesquisar na internet por preços, produtos, informação financeira — usar quando o utilizador pergunta sobre compras ou preços",
+        parameters={"type": "object", "properties": {"query": {"type": "string", "description": "Consulta de pesquisa (curta, 1-6 palavras)"}}, "required": ["query"]},
+        agent="advisor", category="query", read_only=True,
+    ),
 ]
 ToolRegistry.instance().register_many(ADVISOR_TOOLS)
 
@@ -82,6 +88,9 @@ class AdvisorAgent(BaseAgent):
             return await self._get_cashflow(arguments, context)
         if tool_name == "can_afford":
             return await self._can_afford(arguments, context)
+        if tool_name == "web_search":
+            from app.ai.tools.web import web_search
+            return await web_search(arguments.get("query", ""))
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _get_spending(self, args: dict, ctx: AgentContext) -> dict:
