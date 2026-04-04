@@ -59,13 +59,20 @@ async def send_message(
 
     orchestrator = get_orchestrator()
 
-    response = await orchestrator.process_message(
-        user_id=user.id,
-        session_id=session_id,
-        message=data.message,
-        db=db,
-        conversation_history=data.conversation_history,
-    )
+    try:
+        response = await orchestrator.process_message(
+            user_id=user.id,
+            session_id=session_id,
+            message=data.message,
+            db=db,
+            conversation_history=data.conversation_history,
+        )
+    except RuntimeError:
+        return ChatMessageResponse(
+            content="O assistente de IA nao esta disponivel de momento. Por favor, tente novamente mais tarde.",
+            agent="system",
+            session_id=session_id,
+        )
 
     # Record token usage
     await record_token_usage(user.id, response.tokens_input, response.tokens_output)

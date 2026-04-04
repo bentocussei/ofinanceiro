@@ -86,6 +86,16 @@ class LLMRouter:
                 last_error = e
                 continue
 
+        # No providers available or all failed — return honest unavailability message
+        if not self.providers:
+            return LLMResponse(
+                content="O assistente de IA nao esta disponivel de momento. Por favor, tente novamente mais tarde.",
+                model="unavailable",
+                tokens_input=0,
+                tokens_output=0,
+                finish_reason="error",
+            )
+
         raise RuntimeError(
             f"All providers failed for task {task}: {last_error}"
         ) from last_error
