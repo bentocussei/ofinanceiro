@@ -15,16 +15,16 @@ TRACKER_PROMPT = """És o agente de tracking financeiro d'O Financeiro.
 
 REGRAS:
 1. Quando o utilizador diz que gastou/recebeu dinheiro, PRIMEIRO pergunta confirmação, SÓ DEPOIS chama add_transaction.
-2. ANTES de registar, chama get_categories para obter a lista de categorias com IDs reais. Usa o category_id correcto no add_transaction.
-3. Infere a categoria com base na descrição e nas categorias disponíveis. Se ambíguo, pergunta.
-4. Quando o utilizador especificar a conta (Carteira, BFA, BAI), usa o account_id correspondente obtido de get_balance. Se não especificar, usa a primeira conta.
-5. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe: X Kz em [Categoria]?" — NÃO uses a tool antes da confirmação.
-6. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction com o category_id e account_id correctos.
-7. Se o utilizador na confirmação indicar uma conta diferente (ex: "sim, na carteira"), usa essa conta.
-6. Usa os factos conhecidos sobre o utilizador para contextualizar.
-7. Valores são sempre em Kwanzas (Kz). Converte se necessário.
-8. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
-9. NUNCA inventes valores — usa apenas o que o utilizador diz.
+2. As categorias e contas com IDs estão nos DADOS FINANCEIROS. Usa o category_id e account_id correctos ao chamar add_transaction.
+3. Infere a categoria com base na descrição e nas categorias disponíveis nos dados. Se ambíguo, pergunta.
+4. Quando o utilizador especificar a conta (Carteira, BFA, BAI), usa o account_id dos DADOS FINANCEIROS. Se não especificar, usa a primeira conta.
+5. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe?" — NÃO chames a tool antes da confirmação.
+6. Quando o utilizador confirmar (sim, ok, correcto), chama add_transaction com TODOS os dados correctos.
+7. CORRECÇÃO NA CONFIRMAÇÃO: Se o utilizador corrigir algo na confirmação (ex: "sim, mas é quarta parcela" ou "sim, na carteira"), usa os dados CORRIGIDOS na chamada da tool — NÃO uses os dados originais.
+8. Para editar transacções existentes, usa update_transaction. Para eliminar, usa delete_transaction.
+9. Valores são sempre em Kwanzas (Kz). Converte se necessário.
+10. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
+11. NUNCA inventes valores — usa apenas o que o utilizador diz.
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -89,6 +89,33 @@ TRACKER_TOOLS = [
         },
         agent="tracker", category="query", read_only=True,
     ),
+    ToolMeta(
+        name="update_transaction",
+        description="Editar uma transacção existente (descrição, valor, categoria, conta)",
+        parameters={
+            "type": "object",
+            "properties": {
+                "transaction_id": {"type": "string", "description": "UUID da transacção a editar (obtido de get_transactions ou search_transactions)"},
+                "description": {"type": "string", "description": "Nova descrição"},
+                "amount": {"type": "number", "description": "Novo valor em Kz"},
+                "category_id": {"type": "string", "description": "Novo category_id"},
+            },
+            "required": ["transaction_id"],
+        },
+        agent="tracker", category="action", read_only=False,
+    ),
+    ToolMeta(
+        name="delete_transaction",
+        description="Eliminar uma transacção existente",
+        parameters={
+            "type": "object",
+            "properties": {
+                "transaction_id": {"type": "string", "description": "UUID da transacção a eliminar"},
+            },
+            "required": ["transaction_id"],
+        },
+        agent="tracker", category="action", read_only=False,
+    ),
 ]
 ToolRegistry.instance().register_many(TRACKER_TOOLS)
 
@@ -107,6 +134,10 @@ class TrackerAgent(BaseAgent):
             return await self._get_categories(context)
         if tool_name == "add_transaction":
             return await self._add_transaction(arguments, context)
+        if tool_name == "update_transaction":
+            return await self._update_transaction(arguments, context)
+        if tool_name == "delete_transaction":
+            return await self._delete_transaction(arguments, context)
         if tool_name == "get_balance":
             return await self._get_balance(context)
         if tool_name == "get_transactions":
@@ -233,6 +264,7 @@ class TrackerAgent(BaseAgent):
             "count": len(txns),
             "transactions": [
                 {
+                    "id": str(t.id),
                     "date": str(t.transaction_date),
                     "amount_kz": t.amount / 100,
                     "type": t.type,
@@ -241,6 +273,60 @@ class TrackerAgent(BaseAgent):
                 for t in txns
             ],
         }
+
+    async def _update_transaction(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.models.transaction import Transaction
+
+        try:
+            txn_uuid = _uuid.UUID(args["transaction_id"])
+        except (ValueError, KeyError):
+            return {"error": "transaction_id inválido"}
+
+        result = await ctx.db.execute(
+            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        )
+        txn = result.scalar_one_or_none()
+        if not txn:
+            return {"error": "Transacção não encontrada"}
+
+        if "description" in args:
+            txn.description = args["description"]
+        if "amount" in args:
+            txn.amount = int(args["amount"] * 100)
+        if "category_id" in args:
+            try:
+                txn.category_id = _uuid.UUID(args["category_id"])
+            except ValueError:
+                pass
+
+        await ctx.db.commit()
+        return {
+            "success": True,
+            "transaction_id": str(txn.id),
+            "description": txn.description,
+            "amount_kz": txn.amount / 100,
+        }
+
+    async def _delete_transaction(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.models.transaction import Transaction
+
+        try:
+            txn_uuid = _uuid.UUID(args["transaction_id"])
+        except (ValueError, KeyError):
+            return {"error": "transaction_id inválido"}
+
+        result = await ctx.db.execute(
+            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        )
+        txn = result.scalar_one_or_none()
+        if not txn:
+            return {"error": "Transacção não encontrada"}
+
+        await ctx.db.delete(txn)
+        await ctx.db.commit()
+        return {"success": True, "deleted": str(txn.id), "description": txn.description}
 
     async def _search_transactions(self, args: dict, ctx: AgentContext) -> dict:
         from app.schemas.transaction import TransactionFilter
@@ -254,6 +340,7 @@ class TrackerAgent(BaseAgent):
             "count": len(txns),
             "transactions": [
                 {
+                    "id": str(t.id),
                     "date": str(t.transaction_date),
                     "amount_kz": t.amount / 100,
                     "type": t.type,
