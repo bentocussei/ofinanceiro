@@ -28,12 +28,21 @@ DADOS FINANCEIROS REAIS:
 
 
 DEBT_TOOLS = [
-    ToolMeta(name="list_debts", description="Listar dividas activas com saldo, taxa e pagamento mensal",
+    ToolMeta(name="list_debts", description="Listar dívidas activas com saldo, taxa e pagamento mensal",
              parameters={"type": "object", "properties": {}},
              agent="debt", category="query", read_only=True),
-    ToolMeta(name="simulate_payoff", description="Simular aceleracao de pagamento — mostra tempo e juros poupados com pagamento extra",
-             parameters={"type": "object", "properties": {"debt_name": {"type": "string", "description": "Nome da divida para simular"}, "extra_monthly": {"type": "number", "description": "Valor extra mensal em centavos"}}, "required": ["extra_monthly"]},
+    ToolMeta(name="simulate_payoff", description="Simular aceleração de pagamento — mostra tempo e juros poupados com pagamento extra",
+             parameters={"type": "object", "properties": {"debt_name": {"type": "string", "description": "Nome da dívida para simular"}, "extra_monthly": {"type": "number", "description": "Valor extra mensal em Kz"}}, "required": ["extra_monthly"]},
              agent="debt", category="compute", read_only=True),
+    ToolMeta(name="create_debt", description="Registar uma nova dívida",
+             parameters={"type": "object", "properties": {"name": {"type": "string", "description": "Nome da dívida"}, "creditor": {"type": "string", "description": "Credor"}, "original_amount": {"type": "number", "description": "Valor original em Kz"}, "current_balance": {"type": "number", "description": "Saldo actual em Kz"}, "interest_rate": {"type": "number", "description": "Taxa anual em % (ex: 15 para 15%)"}, "monthly_payment": {"type": "number", "description": "Pagamento mensal em Kz"}, "payment_day": {"type": "integer", "description": "Dia do pagamento (1-31)"}}, "required": ["name", "original_amount", "current_balance"]},
+             agent="debt", category="action", read_only=False),
+    ToolMeta(name="update_debt", description="Editar uma dívida existente (saldo, pagamento, notas)",
+             parameters={"type": "object", "properties": {"debt_id": {"type": "string", "description": "UUID da dívida"}, "current_balance": {"type": "number", "description": "Novo saldo em Kz"}, "monthly_payment": {"type": "number", "description": "Novo pagamento mensal em Kz"}, "notes": {"type": "string", "description": "Notas"}}, "required": ["debt_id"]},
+             agent="debt", category="action", read_only=False),
+    ToolMeta(name="delete_debt", description="Eliminar uma dívida",
+             parameters={"type": "object", "properties": {"debt_id": {"type": "string", "description": "UUID da dívida a eliminar"}}, "required": ["debt_id"]},
+             agent="debt", category="action", read_only=False),
 ]
 ToolRegistry.instance().register_many(DEBT_TOOLS)
 
@@ -49,15 +58,11 @@ class DebtAgent(BaseAgent):
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "list_debts":
-            from sqlalchemy import select
-            from app.models.debt import Debt
+            from app.services.debt import list_debts
 
-            result = await context.db.execute(
-                select(Debt).where(Debt.user_id == context.user_id, Debt.is_active.is_(True))
-            )
-            debts = result.scalars().all()
+            debts = await list_debts(context.db, context.user_id)
             if not debts:
-                return {"debts": [], "message": "Nenhuma divida activa registada"}
+                return {"debts": [], "message": "Nenhuma dívida activa registada"}
 
             total = sum(d.current_balance for d in debts)
             return {
@@ -65,6 +70,7 @@ class DebtAgent(BaseAgent):
                 "quantidade": len(debts),
                 "debts": [
                     {
+                        "id": str(d.id),
                         "name": d.name,
                         "balance_kz": d.current_balance / 100,
                         "monthly_payment_kz": (d.monthly_payment or 0) / 100,
@@ -75,6 +81,68 @@ class DebtAgent(BaseAgent):
                     for d in debts
                 ],
             }
+
+        if tool_name == "create_debt":
+            from app.schemas.debt import DebtCreate
+            from app.services.debt import create_debt
+
+            data = DebtCreate(
+                name=arguments["name"],
+                creditor=arguments.get("creditor"),
+                original_amount=int(arguments["original_amount"] * 100),
+                current_balance=int(arguments["current_balance"] * 100),
+                interest_rate=int(arguments["interest_rate"] * 100) if arguments.get("interest_rate") else None,
+                monthly_payment=int(arguments["monthly_payment"] * 100) if arguments.get("monthly_payment") else None,
+                payment_day=arguments.get("payment_day"),
+            )
+            debt = await create_debt(context.db, context.user_id, data)
+            await context.db.commit()
+            return {"success": True, "debt_id": str(debt.id), "name": debt.name}
+
+        if tool_name == "update_debt":
+            import uuid as _uuid
+            from app.schemas.debt import DebtUpdate
+            from app.services.debt import get_debt, update_debt
+
+            try:
+                debt_id = _uuid.UUID(arguments["debt_id"])
+            except (ValueError, KeyError):
+                return {"error": "debt_id inválido"}
+
+            debt = await get_debt(context.db, debt_id, context.user_id)
+            if not debt:
+                return {"error": "Dívida não encontrada"}
+
+            update_data: dict = {}
+            if "current_balance" in arguments:
+                update_data["current_balance"] = int(arguments["current_balance"] * 100)
+            if "monthly_payment" in arguments:
+                update_data["monthly_payment"] = int(arguments["monthly_payment"] * 100)
+            if "notes" in arguments:
+                update_data["notes"] = arguments["notes"]
+
+            data = DebtUpdate(**update_data)
+            debt = await update_debt(context.db, debt, data)
+            await context.db.commit()
+            return {"success": True, "debt_id": str(debt.id), "name": debt.name, "balance_kz": debt.current_balance / 100}
+
+        if tool_name == "delete_debt":
+            import uuid as _uuid
+            from app.services.debt import get_debt, delete_debt
+
+            try:
+                debt_id = _uuid.UUID(arguments["debt_id"])
+            except (ValueError, KeyError):
+                return {"error": "debt_id inválido"}
+
+            debt = await get_debt(context.db, debt_id, context.user_id)
+            if not debt:
+                return {"error": "Dívida não encontrada"}
+
+            name = debt.name
+            await delete_debt(context.db, debt)
+            await context.db.commit()
+            return {"success": True, "deleted": name}
 
         if tool_name == "simulate_payoff":
             from sqlalchemy import select

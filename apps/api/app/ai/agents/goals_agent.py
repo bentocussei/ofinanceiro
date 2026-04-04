@@ -33,6 +33,15 @@ GOALS_TOOLS = [
     ToolMeta(name="simulate_goal", description="Simular quanto tempo demora a atingir uma meta com um valor mensal",
              parameters={"type": "object", "properties": {"target_amount": {"type": "number", "description": "Valor alvo em Kz"}, "monthly_amount": {"type": "number", "description": "Poupança mensal em Kz"}}, "required": ["target_amount", "monthly_amount"]},
              agent="goals", category="compute", read_only=True),
+    ToolMeta(name="update_goal", description="Editar uma meta existente (nome, valor alvo, contribuição)",
+             parameters={"type": "object", "properties": {"goal_id": {"type": "string", "description": "UUID da meta"}, "name": {"type": "string"}, "target_amount": {"type": "number", "description": "Novo valor alvo em Kz"}, "contribution_amount": {"type": "number", "description": "Nova contribuição em Kz"}}, "required": ["goal_id"]},
+             agent="goals", category="action", read_only=False),
+    ToolMeta(name="delete_goal", description="Eliminar uma meta de poupança",
+             parameters={"type": "object", "properties": {"goal_id": {"type": "string", "description": "UUID da meta a eliminar"}}, "required": ["goal_id"]},
+             agent="goals", category="action", read_only=False),
+    ToolMeta(name="contribute_to_goal", description="Adicionar contribuição a uma meta (debita da conta e credita na meta)",
+             parameters={"type": "object", "properties": {"goal_id": {"type": "string", "description": "UUID da meta"}, "amount": {"type": "number", "description": "Valor da contribuição em Kz"}, "account_id": {"type": "string", "description": "UUID da conta a debitar"}}, "required": ["goal_id", "amount"]},
+             agent="goals", category="action", read_only=False),
 ]
 ToolRegistry.instance().register_many(GOALS_TOOLS)
 
@@ -53,6 +62,12 @@ class GoalsAgent(BaseAgent):
             return await self._get_progress(context)
         if tool_name == "simulate_goal":
             return await self._simulate(arguments)
+        if tool_name == "update_goal":
+            return await self._update_goal(arguments, context)
+        if tool_name == "delete_goal":
+            return await self._delete_goal(arguments, context)
+        if tool_name == "contribute_to_goal":
+            return await self._contribute(arguments, context)
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _create_goal(self, args: dict, ctx: AgentContext) -> dict:
@@ -118,4 +133,84 @@ class GoalsAgent(BaseAgent):
             "months_needed": months,
             "time_description": time_str,
             "total_saved": monthly * months,
+        }
+
+    async def _update_goal(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.schemas.goal import GoalUpdate
+        from app.services.goal import get_goal, update_goal
+
+        try:
+            goal_id = _uuid.UUID(args["goal_id"])
+        except (ValueError, KeyError):
+            return {"error": "goal_id inválido"}
+
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        if not goal:
+            return {"error": "Meta não encontrada"}
+
+        update_data: dict = {}
+        if "name" in args:
+            update_data["name"] = args["name"]
+        if "target_amount" in args:
+            update_data["target_amount"] = int(args["target_amount"] * 100)
+        if "contribution_amount" in args:
+            update_data["contribution_amount"] = int(args["contribution_amount"] * 100)
+
+        data = GoalUpdate(**update_data)
+        goal = await update_goal(ctx.db, goal, data)
+        await ctx.db.commit()
+        return {"success": True, "goal_id": str(goal.id), "name": goal.name}
+
+    async def _delete_goal(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.services.goal import get_goal, delete_goal
+
+        try:
+            goal_id = _uuid.UUID(args["goal_id"])
+        except (ValueError, KeyError):
+            return {"error": "goal_id inválido"}
+
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        if not goal:
+            return {"error": "Meta não encontrada"}
+
+        name = goal.name
+        await delete_goal(ctx.db, goal)
+        await ctx.db.commit()
+        return {"success": True, "deleted": name}
+
+    async def _contribute(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.schemas.goal import GoalContributionCreate
+        from app.services.goal import get_goal, contribute
+
+        try:
+            goal_id = _uuid.UUID(args["goal_id"])
+        except (ValueError, KeyError):
+            return {"error": "goal_id inválido"}
+
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        if not goal:
+            return {"error": "Meta não encontrada"}
+
+        account_id = None
+        if args.get("account_id"):
+            try:
+                account_id = _uuid.UUID(args["account_id"])
+            except ValueError:
+                pass
+
+        data = GoalContributionCreate(
+            amount=int(args["amount"] * 100),
+            from_account_id=account_id,
+        )
+        contribution = await contribute(ctx.db, ctx.user_id, goal, data)
+        await ctx.db.commit()
+        return {
+            "success": True,
+            "goal": goal.name,
+            "contributed_kz": args["amount"],
+            "new_total_kz": goal.current_amount / 100,
+            "percentage": round(goal.current_amount / goal.target_amount * 100, 1) if goal.target_amount > 0 else 0,
         }

@@ -57,6 +57,33 @@ BUDGET_TOOLS = [
         },
         agent="budget", category="action", read_only=False,
     ),
+    ToolMeta(
+        name="update_budget",
+        description="Editar um orçamento existente (nome, limite, estado)",
+        parameters={
+            "type": "object",
+            "properties": {
+                "budget_id": {"type": "string", "description": "UUID do orçamento"},
+                "name": {"type": "string", "description": "Novo nome"},
+                "total_limit": {"type": "number", "description": "Novo limite total em Kz"},
+                "is_active": {"type": "boolean", "description": "Activar ou desactivar"},
+            },
+            "required": ["budget_id"],
+        },
+        agent="budget", category="action", read_only=False,
+    ),
+    ToolMeta(
+        name="delete_budget",
+        description="Eliminar um orçamento",
+        parameters={
+            "type": "object",
+            "properties": {
+                "budget_id": {"type": "string", "description": "UUID do orçamento a eliminar"},
+            },
+            "required": ["budget_id"],
+        },
+        agent="budget", category="action", read_only=False,
+    ),
 ]
 ToolRegistry.instance().register_many(BUDGET_TOOLS)
 
@@ -77,6 +104,10 @@ class BudgetAgent(BaseAgent):
             return await self._suggest_budget(context)
         if tool_name == "create_budget":
             return await self._create_budget(arguments, context)
+        if tool_name == "update_budget":
+            return await self._update_budget(arguments, context)
+        if tool_name == "delete_budget":
+            return await self._delete_budget(arguments, context)
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _check_budget(self, ctx: AgentContext) -> dict:
@@ -169,3 +200,48 @@ class BudgetAgent(BaseAgent):
         )
         budget = await create_budget(ctx.db, ctx.user_id, data)
         return {"success": True, "budget_id": str(budget.id), "name": budget.name}
+
+    async def _update_budget(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.schemas.budget import BudgetUpdate
+        from app.services.budget import get_budget, update_budget
+
+        try:
+            budget_id = _uuid.UUID(args["budget_id"])
+        except (ValueError, KeyError):
+            return {"error": "budget_id inválido"}
+
+        budget = await get_budget(ctx.db, budget_id, ctx.user_id)
+        if not budget:
+            return {"error": "Orçamento não encontrado"}
+
+        update_data: dict = {}
+        if "name" in args:
+            update_data["name"] = args["name"]
+        if "total_limit" in args:
+            update_data["total_limit"] = int(args["total_limit"] * 100)
+        if "is_active" in args:
+            update_data["is_active"] = args["is_active"]
+
+        data = BudgetUpdate(**update_data)
+        budget = await update_budget(ctx.db, budget, data)
+        await ctx.db.commit()
+        return {"success": True, "budget_id": str(budget.id), "name": budget.name}
+
+    async def _delete_budget(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.services.budget import get_budget, delete_budget
+
+        try:
+            budget_id = _uuid.UUID(args["budget_id"])
+        except (ValueError, KeyError):
+            return {"error": "budget_id inválido"}
+
+        budget = await get_budget(ctx.db, budget_id, ctx.user_id)
+        if not budget:
+            return {"error": "Orçamento não encontrado"}
+
+        name = budget.name
+        await delete_budget(ctx.db, budget)
+        await ctx.db.commit()
+        return {"success": True, "deleted": name}
