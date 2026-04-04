@@ -1,0 +1,82 @@
+%% O Financeiro — Fluxo Completo de uma Mensagem (v2.0)
+%% Actualizado: 2026-04-07
+
+sequenceDiagram
+    actor U as Utilizador
+    participant FE as Frontend<br/>(AssistantChat)
+    participant API as POST /chat/stream<br/>(SSE)
+    participant ORCH as ChatOrchestrator
+    participant R as RouterAgent<br/>(Haiku)
+    participant SR as SkillResolver
+    participant A as Agente Especializado
+    participant SVC as Service Layer
+    participant DB as PostgreSQL
+    participant LLM as Claude Sonnet
+    participant MEM as Memory<br/>(Redis + pgvector)
+
+    U->>FE: "Gastei 8500 no Kero"
+    FE->>API: fetch(/chat/stream, SSE)
+
+    Note over API: Verificar quota (msg/dia)
+
+    API->>ORCH: process_message_stream()
+    ORCH->>MEM: Carregar facts + sessão + embeddings
+    MEM-->>ORCH: {facts, history, similar}
+
+    ORCH->>DB: Carregar contexto financeiro<br/>(contas+IDs, categorias+IDs,<br/>transacções, orçamentos, metas, dívidas)
+    DB-->>ORCH: financial_context
+
+    ORCH-->>FE: SSE: {"type":"progress","content":"A identificar o teu pedido..."}
+
+    ORCH->>R: classify_intent("Gastei 8500 no Kero")
+    R->>LLM: [Router prompt + mensagem]
+    LLM-->>R: "TRACKER"
+
+    ORCH->>SR: resolve("tracker", "Gastei 8500 no Kero")
+    SR-->>ORCH: Skills: angolan_finance + visualization
+
+    Note over ORCH: Construir AgentContext:<br/>user_facts + financial_context<br/>+ loaded_skills + history
+
+    ORCH->>A: TrackerAgent.process_stream()
+
+    Note over A: build_system_prompt()<br/>= template + facts + context<br/>+ categorias com IDs<br/>+ contas com IDs<br/>+ skills injectadas
+
+    A->>LLM: [System + History + "Gastei 8500 no Kero"]
+    LLM-->>A: Texto: "Queres que registe 8.500 Kz<br/>Alimentação, Conta BAI?"
+
+    A-->>FE: SSE: {"type":"progress","content":"A preparar resposta..."}
+    A-->>ORCH: AgentResponse(content, agent="tracker")
+
+    ORCH->>MEM: Guardar em sessão + extrair facts
+    ORCH-->>FE: SSE: {"type":"result","content":"Queres que registe...","agent":"tracker"}
+
+    FE-->>U: Mostra resposta com label "FINANCEIRO"
+
+    U->>FE: "sim, na carteira"
+    FE->>API: fetch(/chat/stream, SSE)<br/>history inclui agent="tracker"
+
+    ORCH->>ORCH: Detectar confirmação "sim"<br/>last_agent="tracker" → TRACKER
+
+    ORCH-->>FE: SSE: {"type":"progress","content":"A registar transacção..."}
+
+    A->>LLM: [System + History + "sim, na carteira"]
+    LLM-->>A: tool_call: add_transaction<br/>(amount=8500, type=expense,<br/>account_id=UUID_CARTEIRA,<br/>category_id=UUID_ALIMENTACAO)
+
+    A-->>FE: SSE: {"type":"progress","content":"A registar transacção..."}
+
+    A->>SVC: create_transaction(db, user_id, data)
+    SVC->>DB: INSERT transaction + UPDATE account balance
+    DB-->>SVC: {txn_id, success}
+    SVC-->>A: Transaction object
+
+    A->>LLM: [tool_result: success]
+    LLM-->>A: "Registado com sucesso. 8.500 Kz<br/>na Carteira, categoria Alimentação."
+
+    A-->>ORCH: AgentResponse(content, tool_calls_made)
+
+    ORCH->>MEM: Guardar sessão + embedding
+    ORCH->>MEM: record_token_usage + track_cost
+
+    ORCH-->>FE: SSE: {"type":"result","content":"Registado com sucesso..."}
+
+    FE-->>U: Mostra resposta + Sonner toast "Operação realizada"

@@ -1,0 +1,129 @@
+%% O Financeiro — Arquitectura do Agentic System (v2.0)
+%% Actualizado: 2026-04-07
+
+graph TB
+    subgraph FRONTEND["Frontend (Next.js 16)"]
+        UI[AssistantChat Component]
+        SSE[SSE Stream Client]
+        CHARTS[InlineChart / MetricCards]
+        UI --> SSE
+        SSE --> CHARTS
+    end
+
+    subgraph API["FastAPI Backend"]
+        STREAM["/chat/stream (SSE)"]
+        MSG["/chat/message"]
+        UPLOAD["/chat/upload"]
+        TOOLS_EP["/api/v1/tools"]
+    end
+
+    subgraph ORCHESTRATOR["ChatOrchestrator"]
+        CTX[Context Loader]
+        ROUTER[RouterAgent<br/>Intent Classification<br/>Haiku]
+        SKILL_R[SkillResolver<br/>Dynamic Knowledge]
+        AGENT_SEL[Agent Selection]
+
+        CTX --> ROUTER
+        ROUTER --> AGENT_SEL
+        AGENT_SEL --> SKILL_R
+    end
+
+    subgraph AGENTS["9 Specialist Agents"]
+        TRACKER[TrackerAgent<br/>Transacções]
+        BUDGET[BudgetAgent<br/>Orçamentos]
+        ADVISOR[AdvisorAgent<br/>Conselhos]
+        GOALS[GoalsAgent<br/>Metas]
+        FAMILY[FamilyAgent<br/>Família]
+        REPORT[ReportAgent<br/>Relatórios]
+        DEBT[DebtAgent<br/>Dívidas]
+        INVEST[InvestmentAgent<br/>Investimentos]
+        NEWS[NewsAgent<br/>Notícias + Web]
+    end
+
+    subgraph TOOL_EXEC["Tool Execution (process_stream)"]
+        LOOP[Tool Loop<br/>max 10 iterations]
+        PROGRESS[Progress Events<br/>SSE yield]
+        EXEC[execute_tool<br/>→ Service Layer]
+    end
+
+    subgraph SERVICES["Service Layer (Business Rules)"]
+        TXN_SVC[transaction service<br/>create / update / delete<br/>balance reversal]
+        BUD_SVC[budget service<br/>create / check status]
+        GOAL_SVC[goal service<br/>create / progress]
+        FAM_SVC[family service<br/>members / spending]
+        CAT_SVC[categorize service<br/>keyword rules]
+        OCR_SVC[OCR service<br/>multimodal vision]
+    end
+
+    subgraph SKILLS["8 Skills (Markdown on disk)"]
+        S_VIZ[visualization.md<br/>Chart.js inline]
+        S_ANG[angolan_finance.md<br/>Kz, BNA, categorias]
+        S_TXN[transaction_analysis.md<br/>padrões, inferência]
+        S_BUD[budget_optimization.md<br/>50/30/20, alertas]
+        S_RPT[report_formatting.md<br/>estrutura relatórios]
+        S_FAM[family_finance.md<br/>privacidade, membros]
+        S_DEB[debt_strategy.md<br/>avalanche, snowball]
+        S_GOL[goal_planning.md<br/>marcos, simulações]
+    end
+
+    subgraph REGISTRY["ToolRegistry (Singleton)"]
+        TMETA[27 ToolMeta<br/>name, agent, category<br/>read_only, version]
+    end
+
+    subgraph LLM_LAYER["LLM Providers"]
+        ANTHROPIC[Anthropic Claude<br/>Haiku / Sonnet]
+        OPENAI[OpenAI<br/>Embeddings / Voice]
+        RETRY[Retry + Fallback<br/>Exponential backoff]
+        ANTHROPIC --> RETRY
+        OPENAI --> RETRY
+    end
+
+    subgraph MEMORY["Three-Layer Memory"]
+        SESSION[Redis Session<br/>24h TTL, 20 msgs]
+        FACTS[PostgreSQL Facts<br/>salary, habits]
+        SEMANTIC[pgvector Embeddings<br/>cosine similarity]
+    end
+
+    subgraph DATA["PostgreSQL + Redis"]
+        PG[(PostgreSQL 17<br/>+ pgvector)]
+        RD[(Redis 8<br/>sessions, cache)]
+    end
+
+    subgraph WEB_TOOLS["Web Tools"]
+        SEARCH[web_search<br/>Anthropic API<br/>web_search_20250305]
+        FETCH[web_fetch<br/>httpx + markdownify]
+    end
+
+    %% Flow
+    UI -->|POST /chat/stream| STREAM
+    STREAM --> ORCHESTRATOR
+    ORCHESTRATOR --> AGENTS
+    AGENTS --> TOOL_EXEC
+    TOOL_EXEC -->|yield progress| SSE
+    TOOL_EXEC --> SERVICES
+    TOOL_EXEC --> WEB_TOOLS
+    SERVICES --> PG
+    SKILL_R --> SKILLS
+    AGENT_SEL --> REGISTRY
+    TOOL_EXEC --> LLM_LAYER
+    ORCHESTRATOR --> MEMORY
+    MEMORY --> PG
+    MEMORY --> RD
+    TOOLS_EP --> REGISTRY
+
+    %% Styles
+    classDef frontend fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+    classDef backend fill:#E6F1FB,stroke:#185FA5,color:#042C53
+    classDef agent fill:#EEEDFE,stroke:#534AB7,color:#26215C
+    classDef service fill:#FAEEDA,stroke:#854F0B,color:#412402
+    classDef data fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+    classDef skill fill:#FBEAF0,stroke:#993556,color:#4B1528
+    classDef llm fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+
+    class UI,SSE,CHARTS frontend
+    class STREAM,MSG,UPLOAD,TOOLS_EP backend
+    class TRACKER,BUDGET,ADVISOR,GOALS,FAMILY,REPORT,DEBT,INVEST,NEWS agent
+    class TXN_SVC,BUD_SVC,GOAL_SVC,FAM_SVC,CAT_SVC,OCR_SVC service
+    class PG,RD data
+    class S_VIZ,S_ANG,S_TXN,S_BUD,S_RPT,S_FAM,S_DEB,S_GOL skill
+    class ANTHROPIC,OPENAI,RETRY llm
