@@ -1,4 +1,4 @@
-"""Investments router: CRUD + performance + compound interest simulation + portfolio analytics."""
+"""Investments router: CRUD + performance + simulation + portfolio analytics."""
 
 import uuid
 from datetime import date, timedelta
@@ -11,11 +11,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
-from app.models.account import Account
-from app.models.enums import TransactionType
 from app.models.investment import Investment
-from app.models.transaction import Transaction
 from app.models.user import User
+from app.schemas.investment import InvestmentCreate, InvestmentUpdate
+from app.services.investment import (
+    create_investment,
+    delete_investment,
+    get_investment,
+    list_investments,
+    update_investment,
+)
 
 router = APIRouter(prefix="/api/v1/investments", tags=["investments"])
 
@@ -30,46 +35,6 @@ TYPE_LABELS: dict[str, str] = {
     "savings": "Poupança",
     "other": "Outros",
 }
-
-
-class InvestmentCreate(BaseModel):
-    name: str = Field(max_length=100)
-    type: str = Field(max_length=50)
-    institution: str | None = None
-    invested_amount: int = Field(gt=0)
-    current_value: int = Field(gt=0)
-    interest_rate: int | None = None  # basis points (kept for backward compat)
-    annual_return_rate: float | None = None  # percentage e.g. 12.5 means 12.5%
-    start_date: str | None = None
-    maturity_date: str | None = None
-    notes: str | None = None
-    from_account_id: uuid.UUID | None = None
-
-    def get_interest_rate_bp(self) -> int | None:
-        """Return interest rate in basis points, preferring annual_return_rate if provided."""
-        if self.annual_return_rate is not None:
-            return int(self.annual_return_rate * 100)
-        return self.interest_rate
-
-
-class InvestmentUpdate(BaseModel):
-    name: str | None = Field(None, max_length=100)
-    type: str | None = Field(None, max_length=50)
-    institution: str | None = None
-    invested_amount: int | None = Field(None, gt=0)
-    current_value: int | None = Field(None, gt=0)
-    interest_rate: int | None = None
-    annual_return_rate: float | None = None  # percentage
-    start_date: str | None = None
-    maturity_date: str | None = None
-    notes: str | None = None
-    is_active: bool | None = None
-
-    def get_interest_rate_bp(self) -> int | None:
-        """Return interest rate in basis points, preferring annual_return_rate if provided."""
-        if self.annual_return_rate is not None:
-            return int(self.annual_return_rate * 100)
-        return self.interest_rate
 
 
 class AskRequest(BaseModel):
@@ -100,34 +65,27 @@ def _serialize_investment(i: Investment) -> dict:
 
 
 @router.get("/")
-async def list_investments(
+async def list_investments_endpoint(
     limit: int = Query(50, ge=1, le=100),
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    if ctx.is_family:
-        stmt = select(Investment).where(Investment.family_id == ctx.family_id)
-    else:
-        stmt = select(Investment).where(Investment.user_id == user.id, Investment.family_id.is_(None))
+    investments = await list_investments(db, user.id, active_only=False, family_id=ctx.family_id)
+
     if cursor:
         cursor_uuid = uuid.UUID(cursor)
-        stmt = stmt.where(Investment.id < cursor_uuid)
-    stmt = stmt.order_by(Investment.created_at.desc(), Investment.id.desc())
-    stmt = stmt.limit(limit + 1)
-    result = await db.execute(stmt)
-    investments = list(result.scalars().all())
+        investments = [i for i in investments if i.id < cursor_uuid]
+    investments = investments[:limit + 1]
 
     next_cursor = None
     if len(investments) > limit:
         investments = investments[:limit]
         next_cursor = str(investments[-1].id)
 
-    items = [_serialize_investment(i) for i in investments]
-
     return {
-        "items": items,
+        "items": [_serialize_investment(i) for i in investments],
         "cursor": next_cursor,
         "has_more": next_cursor is not None,
     }
@@ -160,7 +118,7 @@ async def get_performance(
 
 
 @router.post("/", status_code=201)
-async def create_investment(
+async def create_investment_endpoint(
     data: InvestmentCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -168,23 +126,12 @@ async def create_investment(
     _perm: None = PlanPermission("investments:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    inv = Investment(
-        user_id=user.id, family_id=ctx.family_id,
-        name=data.name, type=data.type, institution=data.institution,
-        invested_amount=data.invested_amount, current_value=data.current_value,
-        interest_rate=data.get_interest_rate_bp(), start_date=data.start_date,
-        maturity_date=data.maturity_date, notes=data.notes,
-    )
-    db.add(inv)
-    # Investimentos são registos retroactivos — o utilizador já investiu o dinheiro.
-    # O débito deve ser feito via transacção manual se necessário.
-
-    await db.flush()
+    inv = await create_investment(db, user.id, data, family_id=ctx.family_id)
     return {"id": str(inv.id), "name": inv.name}
 
 
 @router.put("/{investment_id}")
-async def update_investment(
+async def update_investment_endpoint(
     investment_id: uuid.UUID,
     data: InvestmentUpdate,
     db: AsyncSession = Depends(get_db),
@@ -192,16 +139,10 @@ async def update_investment(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    inv = await _get_investment_or_404(db, investment_id, user.id, ctx)
-
-    update_data = data.model_dump(exclude_unset=True)
-    # Convert annual_return_rate to basis points if provided
-    if "annual_return_rate" in update_data:
-        update_data["interest_rate"] = data.get_interest_rate_bp()
-        del update_data["annual_return_rate"]
-    for field, value in update_data.items():
-        setattr(inv, field, value)
-    await db.flush()
+    inv = await get_investment(db, investment_id, user.id, family_id=ctx.family_id)
+    if not inv:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Investimento não encontrado")
+    inv = await update_investment(db, inv, data)
     return _serialize_investment(inv)
 
 
@@ -209,7 +150,7 @@ async def update_investment(
 async def simulate_compound_interest(
     principal: int,
     monthly_contribution: int = 0,
-    annual_rate: int = 1200,  # basis points (12%)
+    annual_rate: int = 1200,
     months: int = 60,
 ) -> dict:
     """Simulate compound interest growth."""
@@ -241,23 +182,13 @@ async def get_allocation(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     """Portfolio allocation breakdown by investment type."""
-    alloc_stmt = select(Investment).where(Investment.is_active.is_(True))
-    if ctx.is_family:
-        alloc_stmt = alloc_stmt.where(Investment.family_id == ctx.family_id)
-    else:
-        alloc_stmt = alloc_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
-    result = await db.execute(alloc_stmt)
-    investments = list(result.scalars().all())
+    investments = await list_investments(db, user.id, family_id=ctx.family_id)
 
-    total_invested = sum(i.invested_amount for i in investments)
-    total_current = sum(i.current_value for i in investments)
+    total_value = sum(i.current_value for i in investments)
 
-    # Group by type
     by_type: dict[str, dict] = {}
     for inv in investments:
-        entry = by_type.setdefault(
-            inv.type, {"invested": 0, "current_value": 0, "count": 0}
-        )
+        entry = by_type.setdefault(inv.type, {"invested": 0, "current_value": 0, "count": 0})
         entry["invested"] += inv.invested_amount
         entry["current_value"] += inv.current_value
         entry["count"] += 1
@@ -265,22 +196,19 @@ async def get_allocation(
     allocation = []
     concentration_warning: str | None = None
     for inv_type, data in sorted(by_type.items(), key=lambda x: -x[1]["current_value"]):
-        pct = round(data["current_value"] / total_current * 100, 1) if total_current > 0 else 0
+        pct = round(data["current_value"] / total_value * 100, 1) if total_value > 0 else 0
         label = TYPE_LABELS.get(inv_type, inv_type.capitalize())
         allocation.append({
-            "type": inv_type,
-            "label": label,
-            "invested": data["invested"],
-            "current_value": data["current_value"],
-            "percentage": pct,
-            "count": data["count"],
+            "type": inv_type, "label": label,
+            "invested": data["invested"], "current_value": data["current_value"],
+            "percentage": pct, "count": data["count"],
         })
         if pct > 60:
             concentration_warning = f"Mais de 60% concentrado em {label}"
 
     return {
-        "total_invested": total_invested,
-        "total_current_value": total_current,
+        "total_invested": sum(i.invested_amount for i in investments),
+        "total_current_value": total_value,
         "allocation": allocation,
         "concentration_warning": concentration_warning,
     }
@@ -293,20 +221,12 @@ async def get_performance_history(
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    """Monthly performance snapshots (linear interpolation from start_date to now)."""
-    hist_stmt = select(Investment).where(Investment.is_active.is_(True))
-    if ctx.is_family:
-        hist_stmt = hist_stmt.where(Investment.family_id == ctx.family_id)
-    else:
-        hist_stmt = hist_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
-    result = await db.execute(hist_stmt)
-    investments = list(result.scalars().all())
+    """Monthly performance snapshots."""
+    investments = await list_investments(db, user.id, family_id=ctx.family_id)
     today = date.today()
 
-    # Build monthly buckets
     month_data: dict[str, dict] = {}
     for m in range(months - 1, -1, -1):
-        # Go back m months
         y = today.year
         mo = today.month - m
         while mo <= 0:
@@ -319,11 +239,9 @@ async def get_performance_history(
 
     for inv in investments:
         start = inv.start_date or today
-        # Days from start to today
         total_days = max((today - start).days, 1)
 
         for period in periods:
-            # Parse period into date (last day of month)
             p_year, p_month = int(period[:4]), int(period[5:])
             if p_month == 12:
                 period_end = date(p_year + 1, 1, 1) - timedelta(days=1)
@@ -331,10 +249,8 @@ async def get_performance_history(
                 period_end = date(p_year, p_month + 1, 1) - timedelta(days=1)
 
             if period_end < start:
-                # Investment didn't exist yet
                 continue
 
-            # Linear interpolation of value growth
             elapsed = min((period_end - start).days, total_days)
             fraction = elapsed / total_days
             interpolated_value = int(
@@ -349,15 +265,9 @@ async def get_performance_history(
         d = month_data[period]
         return_pct = (
             round((d["value"] - d["invested"]) / d["invested"] * 100, 1)
-            if d["invested"] > 0
-            else 0
+            if d["invested"] > 0 else 0
         )
-        result_months.append({
-            "period": period,
-            "invested": d["invested"],
-            "value": d["value"],
-            "return_pct": return_pct,
-        })
+        result_months.append({"period": period, "invested": d["invested"], "value": d["value"], "return_pct": return_pct})
 
     return {"months": result_months}
 
@@ -368,21 +278,14 @@ async def get_insights(
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    """AI-ready investment insights. Currently rule-based, later enhanced by AI agent."""
-    ins_stmt = select(Investment).where(Investment.is_active.is_(True))
-    if ctx.is_family:
-        ins_stmt = ins_stmt.where(Investment.family_id == ctx.family_id)
-    else:
-        ins_stmt = ins_stmt.where(Investment.user_id == user.id, Investment.family_id.is_(None))
-    result = await db.execute(ins_stmt)
-    investments = list(result.scalars().all())
+    """Investment insights (rule-based)."""
+    investments = await list_investments(db, user.id, family_id=ctx.family_id)
     today = date.today()
 
     insights: list[dict] = []
     total_value = sum(i.current_value for i in investments)
     total_invested = sum(i.invested_amount for i in investments)
 
-    # --- Concentration analysis ---
     by_type: dict[str, int] = {}
     for inv in investments:
         by_type[inv.type] = by_type.get(inv.type, 0) + inv.current_value
@@ -397,80 +300,42 @@ async def get_insights(
 
     if max_pct > 60 and len(by_type) > 1:
         label = TYPE_LABELS.get(max_type, max_type.capitalize())
-        insights.append({
-            "type": "diversification",
-            "severity": "warning",
-            "title": "Concentração elevada",
-            "description": f"Mais de {int(max_pct)}% do portfolio está em {label.lower()}. Considere diversificar.",
-            "recommendation": "Explore outros tipos de investimento para reduzir risco.",
-        })
-    elif len(by_type) == 1 and len(investments) > 0:
+        insights.append({"type": "diversification", "severity": "warning", "title": "Concentração elevada",
+                         "description": f"Mais de {int(max_pct)}% do portfolio está em {label.lower()}.", "recommendation": "Explore outros tipos de investimento."})
+    elif len(by_type) == 1 and investments:
         label = TYPE_LABELS.get(max_type, max_type.capitalize())
-        insights.append({
-            "type": "diversification",
-            "severity": "critical",
-            "title": "Sem diversificação",
-            "description": f"Todo o portfolio está em {label.lower()}.",
-            "recommendation": "Diversifique entre depósitos a prazo, obrigações e outros instrumentos.",
-        })
+        insights.append({"type": "diversification", "severity": "critical", "title": "Sem diversificação",
+                         "description": f"Todo o portfolio está em {label.lower()}.", "recommendation": "Diversifique entre depósitos, obrigações e outros."})
 
-    # --- Maturity alerts ---
     for inv in investments:
         if inv.maturity_date:
-            days_to_maturity = (inv.maturity_date - today).days
-            if 0 < days_to_maturity <= 30:
-                insights.append({
-                    "type": "maturity",
-                    "severity": "info",
-                    "title": "Investimento a vencer",
-                    "description": f"{inv.name} vence em {days_to_maturity} dias.",
-                    "recommendation": "Avalie se quer renovar ou realocar o capital.",
-                })
-            elif days_to_maturity <= 0:
-                insights.append({
-                    "type": "maturity",
-                    "severity": "warning",
-                    "title": "Investimento vencido",
-                    "description": f"{inv.name} já venceu.",
-                    "recommendation": "Verifique com a instituição o estado do investimento.",
-                })
+            days = (inv.maturity_date - today).days
+            if 0 < days <= 30:
+                insights.append({"type": "maturity", "severity": "info", "title": "Investimento a vencer",
+                                 "description": f"{inv.name} vence em {days} dias.", "recommendation": "Avalie renovação ou realocação."})
+            elif days <= 0:
+                insights.append({"type": "maturity", "severity": "warning", "title": "Investimento vencido",
+                                 "description": f"{inv.name} já venceu.", "recommendation": "Verifique com a instituição."})
 
-    # --- Negative return alert ---
     if total_invested > 0 and total_value < total_invested:
         loss_pct = round((total_invested - total_value) / total_invested * 100, 1)
-        insights.append({
-            "type": "performance",
-            "severity": "warning",
-            "title": "Retorno negativo",
-            "description": f"O portfolio está com uma perda de {loss_pct}%.",
-            "recommendation": "Avalie os investimentos com pior desempenho.",
-        })
+        insights.append({"type": "performance", "severity": "warning", "title": "Retorno negativo",
+                         "description": f"Perda de {loss_pct}%.", "recommendation": "Avalie investimentos com pior desempenho."})
 
-    # --- Diversification score (0-100) ---
     num_types = len(by_type)
     if num_types == 0:
         diversification_score = 0
     else:
-        # Herfindahl-based: lower concentration = higher score
-        herfindahl = sum(
-            (v / total_value * 100) ** 2 for v in by_type.values()
-        ) if total_value > 0 else 10000
-        # Perfect concentration = 10000, perfect spread among N types = 10000/N
-        # Normalize: score = 100 * (1 - (H - H_min) / (H_max - H_min))
-        h_max = 10000  # single type
+        herfindahl = sum((v / total_value * 100) ** 2 for v in by_type.values()) if total_value > 0 else 10000
+        h_max = 10000
         h_min = 10000 / max(num_types, 1)
-        if h_max > h_min:
-            diversification_score = int(100 * (1 - (herfindahl - h_min) / (h_max - h_min)))
-        else:
-            diversification_score = 100 if num_types >= 1 else 0
+        diversification_score = int(100 * (1 - (herfindahl - h_min) / (h_max - h_min))) if h_max > h_min else 100
         diversification_score = max(0, min(100, diversification_score))
 
-    # --- Risk profile ---
     risky_types = {"stock", "crypto"}
     conservative_types = {"deposit", "savings", "bond"}
     risky_pct = sum(by_type.get(t, 0) for t in risky_types) / total_value * 100 if total_value > 0 else 0
     conservative_pct = sum(by_type.get(t, 0) for t in conservative_types) / total_value * 100 if total_value > 0 else 100
-
     if risky_pct > 50:
         risk_profile = "agressivo"
     elif conservative_pct > 70:
@@ -478,49 +343,23 @@ async def get_insights(
     else:
         risk_profile = "moderado"
 
-    return {
-        "insights": insights,
-        "ai_generated": False,
-        "risk_profile": risk_profile,
-        "diversification_score": diversification_score,
-    }
+    return {"insights": insights, "ai_generated": False, "risk_profile": risk_profile, "diversification_score": diversification_score}
 
 
 @router.post("/ask")
-async def ask_investment_question(
-    data: AskRequest,
-    user: User = Depends(get_current_user),
-) -> dict:
-    """AI chatbot for investment questions. Placeholder for AI integration."""
-    return {
-        "answer": "Esta funcionalidade estará disponível em breve com integração IA.",
-        "ai_generated": False,
-    }
+async def ask_investment_question(data: AskRequest, user: User = Depends(get_current_user)) -> dict:
+    return {"answer": "Esta funcionalidade estará disponível em breve com integração IA.", "ai_generated": False}
 
 
 @router.delete("/{investment_id}", status_code=204)
-async def delete_investment(
+async def delete_investment_endpoint(
     investment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    inv = await _get_investment_or_404(db, investment_id, user.id, ctx)
-    await db.delete(inv)
-    await db.flush()
-
-
-async def _get_investment_or_404(
-    db: AsyncSession, investment_id: uuid.UUID, user_id: uuid.UUID, ctx: FinanceContext,
-) -> Investment:
-    """Fetch an investment by ID with context-aware filtering."""
-    if ctx.is_family:
-        stmt = select(Investment).where(Investment.id == investment_id, Investment.family_id == ctx.family_id)
-    else:
-        stmt = select(Investment).where(Investment.id == investment_id, Investment.user_id == user_id, Investment.family_id.is_(None))
-    result = await db.execute(stmt)
-    inv = result.scalar_one_or_none()
+    inv = await get_investment(db, investment_id, user.id, family_id=ctx.family_id)
     if not inv:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Investimento não encontrado")
-    return inv
+    await delete_investment(db, inv)

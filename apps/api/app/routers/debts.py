@@ -1,126 +1,80 @@
-"""Debts router: CRUD + payments + amortization + simulation."""
+"""Debts router: CRUD + payments + simulation."""
 
 import uuid
-from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
-from app.models.account import Account
-from app.models.debt import Debt, DebtPayment
-from app.models.enums import TransactionType
-from app.models.transaction import Transaction
 from app.models.user import User
+from app.schemas.debt import DebtCreate, DebtUpdate, PaymentCreate
+from app.services.debt import (
+    create_debt,
+    delete_debt,
+    get_debt,
+    list_debts,
+    register_payment,
+    update_debt,
+)
 
 router = APIRouter(prefix="/api/v1/debts", tags=["debts"])
 
 
-class DebtCreate(BaseModel):
-    name: str = Field(max_length=100)
-    type: str
-    creditor: str | None = None
-    original_amount: int = Field(gt=0)
-    current_balance: int | None = None
-    interest_rate: int | None = None  # basis points
-    monthly_payment: int | None = None
-    payment_day: int | None = Field(None, ge=1, le=31)
-    start_date: str | None = None
-    expected_end_date: str | None = None
-    notes: str | None = None
-    nature: str | None = None
-    creditor_type: str | None = None
-    creditor_name: str | None = None
-    linked_account_id: uuid.UUID | None = None
-    auto_pay_enabled: bool | None = None
-
-
-class DebtUpdate(BaseModel):
-    name: str | None = Field(None, max_length=100)
-    type: str | None = None
-    creditor: str | None = None
-    original_amount: int | None = Field(None, gt=0)
-    current_balance: int | None = Field(None, gt=0)
-    interest_rate: int | None = None
-    monthly_payment: int | None = None
-    payment_day: int | None = Field(None, ge=1, le=31)
-    start_date: str | None = None
-    expected_end_date: str | None = None
-    notes: str | None = None
-    nature: str | None = None
-    creditor_type: str | None = None
-    linked_account_id: uuid.UUID | None = None
-    auto_pay_enabled: bool | None = None
-
-
-class PaymentCreate(BaseModel):
-    amount: int = Field(gt=0)
-    payment_date: date | None = None  # defaults to today in endpoint
-    from_account_id: uuid.UUID | None = None
+def _serialize_debt(d) -> dict:
+    return {
+        "id": str(d.id), "name": d.name, "type": d.type, "creditor": d.creditor,
+        "original_amount": d.original_amount,
+        "current_balance": d.current_balance,
+        "remaining_balance": d.current_balance,
+        "interest_rate": d.interest_rate,
+        "monthly_payment": d.monthly_payment,
+        "minimum_payment": d.monthly_payment or 0,
+        "payment_day": d.payment_day,
+        "due_day": d.payment_day,
+        "status": "paid_off" if getattr(d, 'is_paid_off', False) else "active",
+        "is_active": d.is_active,
+        "start_date": str(d.start_date) if d.start_date else None,
+        "expected_end_date": str(d.expected_end_date) if d.expected_end_date else None,
+        "notes": d.notes,
+        "nature": d.nature, "creditor_type": d.creditor_type,
+        "linked_account_id": str(d.linked_account_id) if d.linked_account_id else None,
+        "auto_pay_enabled": d.auto_pay_enabled,
+        "payments_count": len(d.payments) if hasattr(d, 'payments') and d.payments else 0,
+    }
 
 
 @router.get("/")
-async def list_debts(
+async def list_debts_endpoint(
     limit: int = Query(50, ge=1, le=100),
     cursor: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
-    if ctx.is_family:
-        stmt = select(Debt).where(Debt.family_id == ctx.family_id)
-    else:
-        stmt = select(Debt).where(Debt.user_id == user.id, Debt.family_id.is_(None))
+    debts = await list_debts(db, user.id, active_only=False, family_id=ctx.family_id)
+
+    # Apply cursor pagination
     if cursor:
         cursor_uuid = uuid.UUID(cursor)
-        stmt = stmt.where(Debt.id < cursor_uuid)
-    stmt = stmt.order_by(Debt.created_at.desc(), Debt.id.desc())
-    stmt = stmt.limit(limit + 1)
-    result = await db.execute(stmt)
-    debts = list(result.scalars().unique().all())
+        debts = [d for d in debts if d.id < cursor_uuid]
+    debts = debts[:limit + 1]
 
     next_cursor = None
     if len(debts) > limit:
         debts = debts[:limit]
         next_cursor = str(debts[-1].id)
 
-    items = [
-        {
-            "id": str(d.id), "name": d.name, "type": d.type, "creditor": d.creditor,
-            "original_amount": d.original_amount,
-            "current_balance": d.current_balance,
-            "remaining_balance": d.current_balance,  # alias for frontend compat
-            "interest_rate": d.interest_rate,
-            "monthly_payment": d.monthly_payment,
-            "minimum_payment": d.monthly_payment or 0,  # alias for frontend compat
-            "payment_day": d.payment_day,
-            "due_day": d.payment_day,  # alias for frontend compat
-            "status": "paid_off" if getattr(d, 'is_paid_off', False) else "active",
-            "is_active": d.is_active,
-            "start_date": str(d.start_date) if d.start_date else None,
-            "expected_end_date": str(d.expected_end_date) if d.expected_end_date else None,
-            "notes": d.notes,
-            "nature": d.nature, "creditor_type": d.creditor_type,
-            "linked_account_id": str(d.linked_account_id) if d.linked_account_id else None,
-            "auto_pay_enabled": d.auto_pay_enabled,
-            "payments_count": len(d.payments),
-        }
-        for d in debts
-    ]
-
     return {
-        "items": items,
+        "items": [_serialize_debt(d) for d in debts],
         "cursor": next_cursor,
         "has_more": next_cursor is not None,
     }
 
 
 @router.post("/", status_code=201)
-async def create_debt(
+async def create_debt_endpoint(
     data: DebtCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -128,30 +82,7 @@ async def create_debt(
     _perm: None = PlanPermission("debts:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    current_balance = data.current_balance if data.current_balance is not None else data.original_amount
-    kwargs = {
-        "user_id": user.id, "family_id": ctx.family_id,
-        "name": data.name, "type": data.type,
-        "creditor": data.creditor or data.creditor_name,
-        "original_amount": data.original_amount, "current_balance": current_balance,
-        "interest_rate": data.interest_rate, "monthly_payment": data.monthly_payment,
-        "payment_day": data.payment_day, "notes": data.notes,
-    }
-    if data.nature:
-        kwargs["nature"] = data.nature
-    if data.creditor_type:
-        kwargs["creditor_type"] = data.creditor_type
-    if data.start_date:
-        kwargs["start_date"] = data.start_date
-    if data.expected_end_date:
-        kwargs["expected_end_date"] = data.expected_end_date
-    if data.linked_account_id:
-        kwargs["linked_account_id"] = data.linked_account_id
-    if data.auto_pay_enabled is not None:
-        kwargs["auto_pay_enabled"] = data.auto_pay_enabled
-    debt = Debt(**kwargs)
-    db.add(debt)
-    await db.flush()
+    debt = await create_debt(db, user.id, data, family_id=ctx.family_id)
     return {
         "id": str(debt.id), "name": debt.name,
         "nature": debt.nature, "creditor_type": debt.creditor_type,
@@ -159,7 +90,7 @@ async def create_debt(
 
 
 @router.put("/{debt_id}")
-async def update_debt(
+async def update_debt_endpoint(
     debt_id: uuid.UUID,
     data: DebtUpdate,
     db: AsyncSession = Depends(get_db),
@@ -167,28 +98,15 @@ async def update_debt(
     ctx: FinanceContext = Depends(get_context),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
-
-    update_data = data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(debt, field, value)
-    await db.flush()
-    return {
-        "id": str(debt.id), "name": debt.name, "type": debt.type, "creditor": debt.creditor,
-        "original_amount": debt.original_amount, "current_balance": debt.current_balance,
-        "interest_rate": debt.interest_rate, "monthly_payment": debt.monthly_payment,
-        "payment_day": debt.payment_day, "is_active": debt.is_active,
-        "start_date": str(debt.start_date) if debt.start_date else None,
-        "expected_end_date": str(debt.expected_end_date) if debt.expected_end_date else None,
-        "notes": debt.notes,
-        "nature": debt.nature, "creditor_type": debt.creditor_type,
-        "linked_account_id": str(debt.linked_account_id) if debt.linked_account_id else None,
-        "auto_pay_enabled": debt.auto_pay_enabled,
-    }
+    debt = await get_debt(db, debt_id, user.id, family_id=ctx.family_id)
+    if not debt:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
+    debt = await update_debt(db, debt, data)
+    return _serialize_debt(debt)
 
 
 @router.post("/{debt_id}/payment", status_code=201)
-async def register_payment(
+async def register_payment_endpoint(
     debt_id: uuid.UUID,
     data: PaymentCreate,
     db: AsyncSession = Depends(get_db),
@@ -197,61 +115,28 @@ async def register_payment(
     _perm: None = PlanPermission("debts:payment:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
+    debt = await get_debt(db, debt_id, user.id, family_id=ctx.family_id)
+    if not debt:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
 
-    payment_date = data.payment_date or date.today()
-
-    # Verify from_account_id ownership if provided
+    # Verify account ownership if provided
     if data.from_account_id:
-        acct_result = await db.execute(
+        from sqlalchemy import select
+        from app.models.account import Account
+        result = await db.execute(
             select(Account).where(Account.id == data.from_account_id, Account.user_id == user.id)
         )
-        if not acct_result.scalar_one_or_none():
+        if not result.scalar_one_or_none():
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
-    # Determine source account: explicit param > debt's linked_account_id
-    account_id = data.from_account_id or debt.linked_account_id
-    transaction_id: uuid.UUID | None = None
-
-    if account_id:
-        account = await db.get(Account, account_id)
-        if account:
-            account.balance -= data.amount
-
-            txn = Transaction(
-                user_id=user.id,
-                account_id=account_id,
-                amount=data.amount,
-                type=TransactionType.EXPENSE,
-                description=f"Pagamento: {debt.name}",
-                transaction_date=payment_date,
-                source_type="debt_payment",
-                source_id=debt.id,
-            )
-            db.add(txn)
-            await db.flush()
-            transaction_id = txn.id
-
-    payment = DebtPayment(
-        debt_id=debt.id,
-        amount=data.amount,
-        payment_date=payment_date,
-        transaction_id=transaction_id,
-    )
-    db.add(payment)
-    debt.current_balance = max(0, debt.current_balance - data.amount)
-    if debt.current_balance == 0:
-        debt.is_active = False
-        debt.is_paid_off = True
-    await db.flush()
-    return {"success": True, "remaining_balance": debt.current_balance}
+    return await register_payment(db, user.id, debt, data)
 
 
 @router.get("/simulate")
 async def simulate_acceleration(
     current_balance: int,
     monthly_payment: int,
-    interest_rate: int = 0,  # basis points
+    interest_rate: int = 0,
     extra_payment: int = 0,
 ) -> dict:
     """Simulate debt payoff with optional extra monthly payment."""
@@ -261,7 +146,6 @@ async def simulate_acceleration(
     total_payment = monthly_payment + extra_payment
     monthly_rate = (interest_rate / 10000) / 12
 
-    # Without extra
     balance = current_balance
     months_normal = 0
     total_paid_normal = 0
@@ -274,7 +158,6 @@ async def simulate_acceleration(
         total_paid_normal += monthly_payment
         months_normal += 1
 
-    # With extra
     balance = current_balance
     months_extra = 0
     total_paid_extra = 0
@@ -287,40 +170,23 @@ async def simulate_acceleration(
         total_paid_extra += total_payment
         months_extra += 1
 
-    savings = total_paid_normal - total_paid_extra
-    months_saved = months_normal - months_extra
-
     return {
         "without_extra": {"months": months_normal, "total_paid": total_paid_normal},
         "with_extra": {"months": months_extra, "total_paid": total_paid_extra},
-        "savings": savings,
-        "months_saved": months_saved,
+        "savings": total_paid_normal - total_paid_extra,
+        "months_saved": months_normal - months_extra,
     }
 
 
 @router.delete("/{debt_id}", status_code=204)
-async def delete_debt(
+async def delete_debt_endpoint(
     debt_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    debt = await _get_debt_or_404(db, debt_id, user.id, ctx)
-    await db.delete(debt)
-    await db.flush()
-
-
-async def _get_debt_or_404(
-    db: AsyncSession, debt_id: uuid.UUID, user_id: uuid.UUID, ctx: FinanceContext,
-) -> Debt:
-    """Fetch a debt by ID with context-aware filtering."""
-    if ctx.is_family:
-        stmt = select(Debt).where(Debt.id == debt_id, Debt.family_id == ctx.family_id)
-    else:
-        stmt = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id, Debt.family_id.is_(None))
-    result = await db.execute(stmt)
-    debt = result.scalar_one_or_none()
+    debt = await get_debt(db, debt_id, user.id, family_id=ctx.family_id)
     if not debt:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
-    return debt
+    await delete_debt(db, debt)
