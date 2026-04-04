@@ -41,9 +41,9 @@ See `diagramas/01_arquitectura_sistema.mermaid` for full diagram.
 | Backend | FastAPI 0.135+ (Python 3.13) |
 | Database | PostgreSQL 17 + pgvector |
 | Cache | Redis 8 |
-| AI | OpenAI (GPT-4o-mini + GPT-4o + GPT-5.4) — single provider strategy |
+| AI | Anthropic (Claude Haiku/Sonnet/Opus) + OpenAI (embeddings, voz) |
 | Embeddings | text-embedding-3-small (OpenAI) |
-| Speech | GPT-4o-mini transcription (replaces Whisper) |
+| Speech | OpenAI transcription + Realtime API (futuro) |
 | Auth | Supabase Auth or Auth.js (OTP via SMS) |
 | Storage | Supabase Storage or S3-compatible |
 | Hosting | Railway (backend + web) + EAS Build (mobile) |
@@ -155,32 +155,32 @@ See `diagramas/02_fluxo_multi_agente.mermaid` for full flow.
 
 See `diagramas/03_sistema_memoria.mermaid` for details.
 
-### LLM Strategy — Single Provider (OpenAI)
+### LLM Strategy — Anthropic + OpenAI
 
-**Launch phase (months 1-4):**
+**Anthropic (Claude)** — chat, analise, OCR, routing (tudo que envolve linguagem e raciocinio)
+**OpenAI** — embeddings, voz, conversacao por voz (exclusivos)
 
-| Task | Model | Cost/1M tokens | Reason |
-|------|-------|---------------|--------|
-| Routing/Classification | gpt-4o-mini | $0.15 / $0.60 | Fast, cheap |
-| Chat (daily conversations) | gpt-4o-mini | $0.15 / $0.60 | 90% of conversations |
-| Complex Analysis (budgets, debts, investments) | gpt-4o | $2.50 / $10.00 | Reasoning needed |
-| Receipt OCR | gpt-4o-mini (vision) | $0.15 + image | Works well for receipts |
-| Voice → Text | gpt-4o-mini-transcribe | $0.006/min | Replaces Whisper |
-| Embeddings | text-embedding-3-small | $0.02 | Semantic memory |
-| Batch Insights | gpt-4o-mini | $0.15 / $0.60 | Low cost |
+**Launch phase:**
 
-**Post-launch phase (months 4-10) — OpenAI + Anthropic dual provider:**
+| Task | Model | Provider | Cost/1M tokens |
+|------|-------|----------|---------------|
+| Chat (daily conversations) | Claude Haiku 4.5 | Anthropic | $1 / $5 |
+| Complex Analysis (budgets, debts, investments) | Claude Sonnet 4.6 | Anthropic | $3 / $15 |
+| Routing/Classification | Claude Haiku 4.5 | Anthropic | $1 / $5 |
+| Receipt OCR (vision) | Claude Sonnet 4.6 | Anthropic | $3 / $15 + image |
+| Batch Insights | Claude Haiku 4.5 | Anthropic | $1 / $5 |
+| Embeddings | text-embedding-3-small | OpenAI | $0.02 |
+| Voice → Text (transcription) | gpt-4o-mini-transcribe | OpenAI | $0.006/min |
+
+**Post-launch phase (months 4-10):**
 
 | Task | Model | Provider | Reason |
 |------|-------|----------|--------|
-| Chat (daily conversations) | Claude latest (Sonnet/Opus) | Anthropic | Best conversational quality |
-| Complex Analysis | Claude latest (Opus) | Anthropic | Superior reasoning |
-| Routing/Classification | GPT-5 latest (mini) | OpenAI | Fast, cheap |
-| Receipt OCR | GPT-5 latest (vision) | OpenAI | Best multimodal |
-| Voice → Text (transcription) | gpt-4o-mini-transcribe | OpenAI | Best audio transcription |
-| Voice conversation (future) | Realtime API | OpenAI | Speech-to-speech, low latency |
-| Embeddings | text-embedding-3-small | OpenAI | Semantic memory |
-| Batch Insights | GPT-5 latest (mini) | OpenAI | Low cost |
+| Chat + Analysis | Claude Opus 4.6 | Anthropic | Highest quality |
+| OCR + Routing + Insights | Claude Sonnet/Haiku latest | Anthropic | Cost-effective |
+| Embeddings | text-embedding-3-small | OpenAI | Exclusive — semantic memory |
+| Voice → Text | OpenAI transcribe latest | OpenAI | Exclusive — best audio |
+| Voice conversation | Realtime API | OpenAI | Exclusive — speech-to-speech (see ADR-009) |
 
 Target: $0.15-$0.50 per active user/month (launch), scaling down with volume discounts.
 

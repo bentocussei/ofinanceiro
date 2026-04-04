@@ -1,7 +1,7 @@
 # O Financeiro — Estado Actual e Próximos Passos
 
 **Ultima actualizacao:** 2026-04-04
-**Estado:** Plataforma pronta para lancamento. Falta apenas OPENAI_API_KEY para IA funcional.
+**Estado:** Plataforma pronta para lancamento. Faltam ANTHROPIC_API_KEY + OPENAI_API_KEY para IA funcional.
 
 ---
 
@@ -113,12 +113,12 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 
 ### Configurar API keys no Railway
 
-| Variável | Serviço | Para quê |
-|----------|---------|---------|
-| `OPENAI_API_KEY` | OpenAI | Chat (gpt-4o-mini), analise (gpt-4o), OCR (vision), voz (transcribe), embeddings |
-| ~~`ANTHROPIC_API_KEY`~~ | ~~Anthropic~~ | Pos-lancamento (meses 4-10) — Claude para chat/analise |
-| ~~`STRIPE_SECRET_KEY`~~ | ~~Stripe~~ | Ja configurado (live mode) |
-| ~~`STRIPE_WEBHOOK_SECRET`~~ | ~~Stripe~~ | Ja configurado |
+| Variável | Serviço | Para quê | Prioridade |
+|----------|---------|---------|-----------|
+| `ANTHROPIC_API_KEY` | Anthropic | Chat, analise, OCR, routing (Claude Haiku/Sonnet/Opus) | **Lancamento** |
+| `OPENAI_API_KEY` | OpenAI | Embeddings, voz (transcricao), voz (conversacao futura) | **Lancamento** |
+| ~~`STRIPE_SECRET_KEY`~~ | ~~Stripe~~ | Ja configurado (live mode) | Feito |
+| ~~`STRIPE_WEBHOOK_SECRET`~~ | ~~Stripe~~ | Ja configurado | Feito |
 
 ### Criar contas externas
 
@@ -136,7 +136,7 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 | 1 | **Conversacao por voz (speech-to-speech)** | Alta | Falar com o assistente e ouvir resposta em audio. OpenAI Realtime API. Mobile first. Ver ADR-009 |
 | 2 | **Mobile app** | Alta | Estrutura Expo completa existe em apps/mobile/, precisa de implementacao |
 | 3 | **Painel admin** | Alta | Backend 100% pronto (roles, permissions, 21+ endpoints), frontend por criar |
-| 4 | **Migrar IA para OpenAI + Anthropic** | Media | Mes 4-10: Claude para chat/analise, OpenAI para OCR/voz/embeddings |
+| 4 | **Activar embeddings + voz** | Media | Quando OPENAI_API_KEY configurada — memoria semantica + input por voz |
 | 5 | **PWA** | Media | manifest.json, service worker para offline |
 | 6 | **Dominio .ao** | Media | Registar ofinanceiro.ao quando disponivel, configurar DNS |
 | 7 | **Integracao bancaria** | Baixa | Quando APIs bancarias angolanas estiverem disponiveis |
