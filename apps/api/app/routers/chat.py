@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.cache import get_cached_response, set_cached_response
 from app.ai.llm.factory import create_llm_router
 from app.ai.metering import check_quota, record_token_usage
 from app.ai.orchestrator import ChatOrchestrator
