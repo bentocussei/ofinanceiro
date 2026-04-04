@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Lock, Smartphone } from "lucide-react"
+import { getContext } from "@/lib/context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -46,7 +47,7 @@ export default function LoginPage() {
     setLoading(true)
     const success = await login(phone, password)
     if (success) {
-      router.push("/dashboard")
+      router.push(getContext() === "personal" ? "/dashboard" : "/family/dashboard")
     } else {
       setError("Número de telefone ou senha incorrectos.")
       setLoading(false)
@@ -78,7 +79,7 @@ export default function LoginPage() {
     setLoading(true)
     const success = await verifyOtp(phone, otp)
     if (success) {
-      router.push("/dashboard")
+      router.push(getContext() === "personal" ? "/dashboard" : "/family/dashboard")
     } else {
       setError("Código inválido ou expirado.")
       setLoading(false)

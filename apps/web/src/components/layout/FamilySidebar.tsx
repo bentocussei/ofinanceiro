@@ -167,29 +167,30 @@ export function FamilySidebar({ familyName }: { familyName: string }) {
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      {/* Header */}
-      <div className={`flex items-center h-14 px-3 ${collapsed ? "justify-center" : "justify-between"}`}>
-        {!collapsed && (
-          <h1 className="text-base font-bold tracking-tight text-sidebar-foreground pl-2">
-            {familyName}
-          </h1>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-          title={collapsed ? "Expandir menu" : "Recolher menu"}
-        >
-          {collapsed ? (
+      {/* Header — Context Switcher + collapse toggle */}
+      <div className={`flex items-center h-14 px-2 ${collapsed ? "justify-center" : "justify-between gap-1"}`}>
+        {collapsed ? (
+          <button
+            onClick={() => setCollapsed(false)}
+            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            title="Expandir menu"
+          >
             <PanelLeftOpen className="h-[18px] w-[18px]" />
-          ) : (
-            <PanelLeftClose className="h-[18px] w-[18px]" />
-          )}
-        </button>
-      </div>
-
-      {/* Context Switcher */}
-      <div className="px-2 pb-2">
-        <ContextSwitcher collapsed={collapsed} />
+          </button>
+        ) : (
+          <>
+            <div className="flex-1 min-w-0">
+              <ContextSwitcher collapsed={collapsed} />
+            </div>
+            <button
+              onClick={() => setCollapsed(true)}
+              className="flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+              title="Recolher menu"
+            >
+              <PanelLeftClose className="h-[18px] w-[18px]" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Navigation */}
