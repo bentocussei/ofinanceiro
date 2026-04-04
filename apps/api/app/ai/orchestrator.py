@@ -130,6 +130,20 @@ async def _load_user_financial_context(
             acct_lines.append(f"  - {a.name} ({a.type.value}): {a.balance / 100:,.0f} Kz [account_id: {a.id}]")
         sections.append("\n".join(acct_lines))
 
+    # --- Categories available (for correct assignment) ---
+    from app.models.category import Category
+    cat_query = select(Category).where(
+        Category.is_active.is_(True),
+        Category.is_system.is_(True),
+    ).order_by(Category.name).limit(50)
+    cats = await db.scalars(cat_query)
+    categories = list(cats.all())
+    if categories:
+        cat_lines = [f"CATEGORIAS DISPONÍVEIS ({len(categories)}) — usar o category_id ao registar transacções:"]
+        for c in categories:
+            cat_lines.append(f"  - {c.name} ({c.type.value}) [category_id: {c.id}]")
+        sections.append("\n".join(cat_lines))
+
     # --- Recent transactions (last 7 days) ---
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     txn_query = (
