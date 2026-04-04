@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.cache import get_cached_response, set_cached_response
@@ -30,6 +30,7 @@ def get_orchestrator() -> ChatOrchestrator:
 @router.post("/message", response_model=ChatMessageResponse)
 async def send_message(
     data: ChatMessageRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     _perm: None = PlanPermission("ai:chat:create"),
@@ -42,11 +43,18 @@ async def send_message(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "code": "QUOTA_EXCEEDED",
-                "message": "Atingiste o limite diário de perguntas. Actualiza o teu plano para mais.",
+                "message": "Atingiste o limite diario de perguntas. Actualiza o teu plano para mais.",
             },
         )
 
     session_id = data.session_id or str(uuid.uuid4())
+
+    # Get finance context from X-Finance-Context or X-Context header
+    finance_context = (
+        request.headers.get("X-Finance-Context")
+        or request.headers.get("X-Context")
+        or "personal"
+    )
 
     # Check L1 cache for exact match
     cached = await get_cached_response(str(user.id), data.message)
@@ -66,6 +74,7 @@ async def send_message(
             message=data.message,
             db=db,
             conversation_history=data.conversation_history,
+            finance_context=finance_context,
         )
     except RuntimeError:
         return ChatMessageResponse(

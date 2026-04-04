@@ -11,13 +11,18 @@ from app.ai.llm.router import LLMRouter, TaskType
 
 @dataclass
 class AgentContext:
-    """Context passed to every agent call."""
+    """Context passed to every agent call.
+
+    Includes real financial data — the agent knows the user's actual situation.
+    """
 
     user_id: uuid.UUID
     db: AsyncSession
     session_id: str
     user_facts: list[dict] = field(default_factory=list)
     conversation_history: list[LLMMessage] = field(default_factory=list)
+    financial_context: str = ""  # Real accounts, balances, transactions, etc.
+    finance_context_type: str = "personal"  # "personal" or "family:{uuid}"
 
 
 @dataclass
@@ -50,7 +55,11 @@ class BaseAgent:
         return []
 
     def build_system_prompt(self, context: AgentContext) -> str:
-        """Build the system prompt with user context injected."""
+        """Build the system prompt with real user context injected.
+
+        Injects: user facts, financial data (accounts, balances, transactions),
+        and the active context (personal or family).
+        """
         facts_text = ""
         if context.user_facts:
             facts_text = "\n".join(
@@ -60,6 +69,7 @@ class BaseAgent:
 
         return self.system_prompt_template.format(
             user_facts=facts_text or "Nenhum facto conhecido ainda.",
+            financial_context=context.financial_context or "Dados financeiros nao disponiveis.",
             loaded_skills="",
         )
 

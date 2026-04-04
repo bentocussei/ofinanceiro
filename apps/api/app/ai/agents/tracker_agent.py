@@ -25,6 +25,9 @@ REGRAS:
 FACTOS DO UTILIZADOR:
 {user_facts}
 
+DADOS FINANCEIROS REAIS:
+{financial_context}
+
 SKILLS:
 {loaded_skills}"""
 
