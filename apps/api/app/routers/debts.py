@@ -16,6 +16,7 @@ from app.services.debt import (
     get_debt,
     list_debts,
     register_payment,
+    simulate_payoff,
     update_debt,
 )
 
@@ -140,42 +141,7 @@ async def simulate_acceleration(
     extra_payment: int = 0,
 ) -> dict:
     """Simulate debt payoff with optional extra monthly payment."""
-    if monthly_payment <= 0:
-        return {"error": "Prestação deve ser positiva"}
-
-    total_payment = monthly_payment + extra_payment
-    monthly_rate = (interest_rate / 10000) / 12
-
-    balance = current_balance
-    months_normal = 0
-    total_paid_normal = 0
-    while balance > 0 and months_normal < 600:
-        interest = int(balance * monthly_rate)
-        principal = monthly_payment - interest
-        if principal <= 0:
-            return {"error": "Prestação não cobre os juros"}
-        balance = max(0, balance - principal)
-        total_paid_normal += monthly_payment
-        months_normal += 1
-
-    balance = current_balance
-    months_extra = 0
-    total_paid_extra = 0
-    while balance > 0 and months_extra < 600:
-        interest = int(balance * monthly_rate)
-        principal = total_payment - interest
-        if principal <= 0:
-            return {"error": "Pagamento não cobre os juros"}
-        balance = max(0, balance - principal)
-        total_paid_extra += total_payment
-        months_extra += 1
-
-    return {
-        "without_extra": {"months": months_normal, "total_paid": total_paid_normal},
-        "with_extra": {"months": months_extra, "total_paid": total_paid_extra},
-        "savings": total_paid_normal - total_paid_extra,
-        "months_saved": months_normal - months_extra,
-    }
+    return simulate_payoff(current_balance, monthly_payment, interest_rate, extra_payment)
 
 
 @router.delete("/{debt_id}", status_code=204)
