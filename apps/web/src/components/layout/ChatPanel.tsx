@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -178,7 +179,26 @@ export function ChatPanel() {
                       : "bg-muted rounded-bl-sm"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "assistant" ? (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5">{children}</ol>,
+                        li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        h1: ({ children }) => <h3 className="font-bold mb-1">{children}</h3>,
+                        h2: ({ children }) => <h3 className="font-bold mb-1">{children}</h3>,
+                        h3: ({ children }) => <h4 className="font-semibold mb-1">{children}</h4>,
+                        code: ({ children }) => <code className="bg-background/20 px-1 rounded text-xs">{children}</code>,
+                        hr: () => <hr className="my-2 border-border/50" />,
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))

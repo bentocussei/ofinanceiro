@@ -1,4 +1,5 @@
 import { apiFetch } from "./client"
+import { getContextHeader } from "@/lib/context"
 
 export interface ChatMessage {
   role: "user" | "assistant"
@@ -17,13 +18,13 @@ export interface SendMessageData {
   conversation_history?: ChatMessage[]
 }
 
-type H = { headers?: Record<string, string> }
-
 export const chatApi = {
-  send: (data: SendMessageData, opts?: H) =>
+  send: (data: SendMessageData) =>
     apiFetch<ChatResponse>("/api/v1/chat/message", {
       method: "POST",
       body: JSON.stringify(data),
-      ...opts,
+      headers: {
+        ...getContextHeader(),
+      },
     }),
 }
