@@ -127,7 +127,7 @@ async def _load_user_financial_context(
         total_balance = sum(a.balance for a in accounts)
         acct_lines = [f"CONTAS ({len(accounts)}) — Saldo total: {total_balance / 100:,.0f} Kz"]
         for a in accounts:
-            acct_lines.append(f"  - {a.name} ({a.type.value}): {a.balance / 100:,.0f} Kz")
+            acct_lines.append(f"  - {a.name} ({a.type.value}): {a.balance / 100:,.0f} Kz [account_id: {a.id}]")
         sections.append("\n".join(acct_lines))
 
     # --- Recent transactions (last 7 days) ---
