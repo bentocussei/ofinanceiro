@@ -134,7 +134,7 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> Token
             detail={"code": "ACCOUNT_DISABLED", "message": "Conta desactivada"},
         )
 
-    user.last_login_at = datetime.now(UTC)
+    user.last_login_at = datetime.utcnow()
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
@@ -187,7 +187,7 @@ async def otp_verify(
         except Exception:
             pass
 
-    user.last_login_at = datetime.now(UTC)
+    user.last_login_at = datetime.utcnow()
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
