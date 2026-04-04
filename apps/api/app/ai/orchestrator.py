@@ -273,7 +273,22 @@ class ChatOrchestrator:
             conversation_history = session_data.get("messages", [])
 
         # 4. Route to the correct agent
-        agent_name = await self.router_agent.classify_intent(message)
+        # If this is a short confirmation response ("sim", "ok", "nao"),
+        # continue with the last agent from the session instead of re-routing
+        last_agent = None
+        if conversation_history:
+            for msg in reversed(conversation_history):
+                if msg.get("role") == "assistant" and msg.get("agent"):
+                    last_agent = msg.get("agent")
+                    break
+
+        short_confirms = {"sim", "nao", "ok", "confirmo", "cancela", "correcto", "esta", "certo", "pode", "faz"}
+        is_confirmation = message.strip().lower().rstrip("!.,?") in short_confirms
+
+        if is_confirmation and last_agent and last_agent in self.agents:
+            agent_name = last_agent.upper()
+        else:
+            agent_name = await self.router_agent.classify_intent(message)
 
         # 5. Get the agent
         agent = self.agents.get(agent_name)

@@ -63,15 +63,7 @@ async def send_message(
         or "personal"
     )
 
-    # Check L1 cache for exact match
-    cached = await get_cached_response(str(user_id), data.message)
-    if cached:
-        return ChatMessageResponse(
-            content=cached,
-            agent="cache",
-            session_id=session_id,
-        )
-
+    # No cache for chat — every response must use fresh financial data
     orchestrator = get_orchestrator()
 
     try:
@@ -92,10 +84,6 @@ async def send_message(
 
     # Record token usage (use captured user_id, not user.id which may be expired)
     await record_token_usage(user_id, response.tokens_input, response.tokens_output)
-
-    # Cache the response (L1)
-    if response.content and not response.needs_confirmation:
-        await set_cached_response(str(user_id), data.message, response.content)
 
     return ChatMessageResponse(
         content=response.content,

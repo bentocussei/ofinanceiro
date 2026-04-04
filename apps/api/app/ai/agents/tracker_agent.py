@@ -19,7 +19,7 @@ REGRAS:
 4. Confirma sempre a transacção antes de registar: "Registei: X Kz em [Categoria]. Correcto?"
 5. Usa os factos conhecidos sobre o utilizador para contextualizar.
 6. Valores são sempre em Kwanzas (Kz). Converte se necessário.
-7. Responde sempre em Português (Angola).
+7. Responde sempre em Português (Angola). Nao uses emojis.
 8. NUNCA inventes valores — usa apenas o que o utilizador diz.
 
 FACTOS DO UTILIZADOR:
@@ -120,6 +120,7 @@ class TrackerAgent(BaseAgent):
         )
 
         txn = await create_transaction(ctx.db, ctx.user_id, data)
+        await ctx.db.commit()
         return {
             "success": True,
             "transaction_id": str(txn.id),
