@@ -33,6 +33,7 @@ from app.ai.memory.extractor import extract_facts_from_message
 from app.ai.memory.facts import get_user_facts
 from app.ai.memory.semantic import search_similar, store_embedding
 from app.ai.memory.session import add_message_to_session, get_session
+from app.ai.skills import SkillLoader, SkillResolver
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,11 @@ class ChatOrchestrator:
             "NEWS": NewsAgent(router),
         }
 
+        # Skills — loaded once at startup, resolved per request
+        self._skill_loader = SkillLoader()
+        self._skill_loader.load_all()
+        self._skill_resolver = SkillResolver(self._skill_loader)
+
     async def process_message(
         self,
         user_id: uuid.UUID,
@@ -285,10 +291,12 @@ class ChatOrchestrator:
         short_confirms = {"sim", "nao", "ok", "confirmo", "cancela", "correcto", "esta", "certo", "pode", "faz"}
         is_confirmation = message.strip().lower().rstrip("!.,?") in short_confirms
 
-        if is_confirmation and last_agent and last_agent in self.agents:
+        if is_confirmation and last_agent and last_agent.upper() in self.agents:
             agent_name = last_agent.upper()
+            logger.info("Confirmation '%s' → continuing with agent %s", message, agent_name)
         else:
             agent_name = await self.router_agent.classify_intent(message)
+            logger.info("Routed '%s' → agent %s (last_agent=%s, is_confirm=%s)", message[:50], agent_name, last_agent, is_confirmation)
 
         # 5. Get the agent
         agent = self.agents.get(agent_name)
@@ -296,18 +304,22 @@ class ChatOrchestrator:
             agent = BaseAgent(self.llm_router)
             agent.name = "general"
             agent.system_prompt_template = (
-                "Es o assistente financeiro d'O Financeiro. "
-                "Responde de forma util em Portugues (Angola). "
+                "És o assistente financeiro d'O Financeiro. "
+                "Responde de forma útil em Português (Angola) com acentuação correcta. "
+                "Não executes operações — apenas responde a perguntas gerais.\n\n"
                 "Factos do utilizador: {user_facts}\n\n{financial_context}\n{loaded_skills}"
             )
 
-        # 6. Build conversation history (last 20 messages)
+        # 6. Resolve skills for this agent + message
+        loaded_skills = self._skill_resolver.resolve(agent.name, message)
+
+        # 7. Build conversation history (last 20 messages)
         history: list[LLMMessage] = []
         if conversation_history:
             for msg in conversation_history[-20:]:
                 history.append(LLMMessage(role=msg["role"], content=msg["content"]))
 
-        # 7. Build context with real financial data
+        # 8. Build context with real financial data + skills
         context = AgentContext(
             user_id=user_id,
             db=db,
@@ -316,6 +328,7 @@ class ChatOrchestrator:
             conversation_history=history,
             financial_context=financial_context,
             finance_context_type=finance_context,
+            loaded_skills=loaded_skills,
         )
 
         # 8. Process through the specialist agent

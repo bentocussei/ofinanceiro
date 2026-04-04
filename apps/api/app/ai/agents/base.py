@@ -36,6 +36,7 @@ class AgentContext:
     conversation_history: list[LLMMessage] = field(default_factory=list)
     financial_context: str = ""
     finance_context_type: str = "personal"
+    loaded_skills: str = ""
 
 
 @dataclass
@@ -88,20 +89,21 @@ class BaseAgent:
                 for f in context.user_facts
             )
 
+        skills_text = context.loaded_skills or ""
+
         try:
             return self.system_prompt_template.format(
                 user_facts=facts_text or "Nenhum facto conhecido ainda.",
                 financial_context=context.financial_context or "Dados financeiros nao disponiveis.",
-                loaded_skills="",
+                loaded_skills=skills_text,
             )
         except KeyError:
-            # Fallback if template doesn't have all placeholders
             return self.system_prompt_template.replace(
                 "{user_facts}", facts_text or "Nenhum facto conhecido ainda."
             ).replace(
                 "{financial_context}", context.financial_context or ""
             ).replace(
-                "{loaded_skills}", ""
+                "{loaded_skills}", skills_text
             )
 
     async def process(self, message: str, context: AgentContext) -> AgentResponse:
@@ -239,20 +241,13 @@ class BaseAgent:
             tokens_output=total_output,
         )
 
-    # Read-only tools that are safe to run concurrently
-    SAFE_TOOLS = frozenset({
-        "get_balance", "get_transactions", "search_transactions",
-        "check_budget", "get_goal_progress",
-        "list_debts", "list_investments",
-        "get_news", "get_exchange_rates",
-        "get_family_summary", "get_child_spending", "get_member_contributions",
-        "get_spending", "get_cashflow", "can_afford",
-        "generate_report", "get_financial_score",
-    })
-
     def _is_safe_tool(self, tool_name: str) -> bool:
-        """Check if a tool is safe to run concurrently (read-only)."""
-        return tool_name in self.SAFE_TOOLS or tool_name.startswith("get_") or tool_name.startswith("list_")
+        """Check if a tool is read-only (safe for concurrent execution).
+
+        Delegates to the centralized ToolRegistry instead of a hardcoded set.
+        """
+        from app.ai.tools import ToolRegistry
+        return ToolRegistry.instance().is_read_only(tool_name)
 
     async def _execute_concurrent(
         self, tool_calls: list, context: AgentContext

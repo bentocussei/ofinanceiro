@@ -3,6 +3,17 @@
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
+
+INVESTMENT_TOOLS = [
+    ToolMeta(name="list_investments", description="Listar todos os investimentos com valor investido, valor actual e rendimento",
+             parameters={"type": "object", "properties": {}},
+             agent="investment", category="query", read_only=True),
+    ToolMeta(name="simulate_compound", description="Simular juros compostos — mostra projecao de crescimento do investimento",
+             parameters={"type": "object", "properties": {"principal": {"type": "number", "description": "Capital inicial em centavos"}, "monthly": {"type": "number", "description": "Contribuicao mensal em centavos"}, "rate": {"type": "number", "description": "Taxa anual em percentagem (ex: 12 para 12%)"}, "years": {"type": "integer", "description": "Periodo em anos"}}, "required": ["principal", "rate", "years"]},
+             agent="investment", category="compute", read_only=True),
+]
+ToolRegistry.instance().register_many(INVESTMENT_TOOLS)
 
 INVESTMENT_PROMPT = """Es o agente de investimentos d'O Financeiro.
 
@@ -10,7 +21,7 @@ REGRAS:
 1. Mostra rendimentos e projeccoes dos investimentos do utilizador.
 2. Nunca des conselhos de investimento especificos — sugere consultar um profissional.
 3. Conhece o contexto angolano: OTs do BNA, certificados de aforro, depositos a prazo.
-4. Valores em Kz. Responde em Portugues (Angola). Nao uses emojis.
+4. Valores em Kz. Responde em Portugues (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 5. Usa os DADOS FINANCEIROS REAIS para dar informacao personalizada.
 6. Quando o utilizador perguntar sobre investimentos, usa list_investments.
 
@@ -30,27 +41,7 @@ class InvestmentAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return [
-            ToolDefinition(
-                name="list_investments",
-                description="Listar todos os investimentos com valor investido, valor actual e rendimento",
-                parameters={"type": "object", "properties": {}},
-            ),
-            ToolDefinition(
-                name="simulate_compound",
-                description="Simular juros compostos — mostra projecao de crescimento do investimento",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "principal": {"type": "number", "description": "Capital inicial em centavos"},
-                        "monthly": {"type": "number", "description": "Contribuicao mensal em centavos"},
-                        "rate": {"type": "number", "description": "Taxa anual em percentagem (ex: 12 para 12%)"},
-                        "years": {"type": "integer", "description": "Periodo em anos"},
-                    },
-                    "required": ["principal", "rate", "years"],
-                },
-            ),
-        ]
+        return ToolRegistry.instance().get_tools_for_agent("investment")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "list_investments":

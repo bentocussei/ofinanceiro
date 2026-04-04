@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.account import Account
 from app.models.category import Category
 from app.models.enums import TransactionType
@@ -20,7 +21,7 @@ REGRAS:
 3. Inclui números específicos, percentagens, e comparações.
 4. Destaca pontos positivos E áreas de melhoria.
 5. Tom: informativo e encorajador.
-6. Valores em Kz. Responde em Português (Angola). Nao uses emojis.
+6. Valores em Kz. Responde em Português (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -31,23 +32,14 @@ DADOS FINANCEIROS REAIS:
 {loaded_skills}"""
 
 REPORT_TOOLS = [
-    ToolDefinition(
-        name="generate_report",
-        description="Gerar relatório mensal com resumo financeiro em linguagem natural",
-        parameters={
-            "type": "object",
-            "properties": {
-                "month": {"type": "integer", "description": "Mês (1-12, default: actual)"},
-                "year": {"type": "integer", "description": "Ano (default: actual)"},
-            },
-        },
-    ),
-    ToolDefinition(
-        name="get_financial_score",
-        description="Calcular score financeiro do utilizador (0-100)",
-        parameters={"type": "object", "properties": {}},
-    ),
+    ToolMeta(name="generate_report", description="Gerar relatório mensal com resumo financeiro em linguagem natural",
+             parameters={"type": "object", "properties": {"month": {"type": "integer", "description": "Mês (1-12, default: actual)"}, "year": {"type": "integer", "description": "Ano (default: actual)"}}},
+             agent="report", category="query", read_only=True),
+    ToolMeta(name="get_financial_score", description="Calcular score financeiro do utilizador (0-100)",
+             parameters={"type": "object", "properties": {}},
+             agent="report", category="compute", read_only=True),
 ]
+ToolRegistry.instance().register_many(REPORT_TOOLS)
 
 
 class ReportAgent(BaseAgent):
@@ -57,7 +49,7 @@ class ReportAgent(BaseAgent):
     task_type = TaskType.REPORT_GENERATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return REPORT_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("report")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "generate_report":

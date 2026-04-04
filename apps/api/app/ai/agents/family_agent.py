@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.enums import TransactionType
 from app.models.family import FamilyMember
 from app.models.transaction import Transaction
@@ -19,7 +20,7 @@ REGRAS:
 1. Ajuda a gerir finanças do agregado familiar.
 2. Usa dados reais — chama as tools antes de responder.
 3. Respeita a privacidade — não mostres transacções privadas.
-4. Valores em Kz. Responde em Português (Angola). Nao uses emojis.
+4. Valores em Kz. Responde em Português (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -30,32 +31,17 @@ DADOS FINANCEIROS REAIS:
 {loaded_skills}"""
 
 FAMILY_TOOLS = [
-    ToolDefinition(
-        name="get_family_summary",
-        description="Resumo financeiro da família (membros, gastos totais por membro)",
-        parameters={
-            "type": "object",
-            "properties": {
-                "days": {"type": "integer", "description": "Período em dias (default: 30)"},
-            },
-        },
-    ),
-    ToolDefinition(
-        name="get_child_spending",
-        description="Gastos de um dependente/filho específico",
-        parameters={
-            "type": "object",
-            "properties": {
-                "child_name": {"type": "string", "description": "Nome do dependente"},
-            },
-        },
-    ),
-    ToolDefinition(
-        name="get_member_contributions",
-        description="Contribuições de cada membro para as despesas partilhadas",
-        parameters={"type": "object", "properties": {}},
-    ),
+    ToolMeta(name="get_family_summary", description="Resumo financeiro da família (membros, gastos totais por membro)",
+             parameters={"type": "object", "properties": {"days": {"type": "integer", "description": "Período em dias (default: 30)"}}},
+             agent="family", category="query", read_only=True),
+    ToolMeta(name="get_child_spending", description="Gastos de um dependente/filho específico",
+             parameters={"type": "object", "properties": {"child_name": {"type": "string", "description": "Nome do dependente"}}},
+             agent="family", category="query", read_only=True),
+    ToolMeta(name="get_member_contributions", description="Contribuições de cada membro para as despesas partilhadas",
+             parameters={"type": "object", "properties": {}},
+             agent="family", category="query", read_only=True),
 ]
+ToolRegistry.instance().register_many(FAMILY_TOOLS)
 
 
 class FamilyAgent(BaseAgent):
@@ -65,7 +51,7 @@ class FamilyAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return FAMILY_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("family")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "get_family_summary":

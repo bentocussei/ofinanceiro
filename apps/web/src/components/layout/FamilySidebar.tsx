@@ -18,6 +18,7 @@ import {
   Receipt,
   Repeat,
   Settings,
+  Sparkles,
   Sun,
   Target,
   TrendingUp,
@@ -54,6 +55,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/family/dashboard", label: "Dashboard", icon: Home },
       { href: "/family/accounts", label: "Contas partilhadas", icon: Wallet },
       { href: "/family/transactions", label: "Transacções", icon: ArrowLeftRight },
+      { href: "/family/assistant", label: "Assistente", icon: Sparkles },
     ],
   },
   {
@@ -120,6 +122,7 @@ function applyTheme(t: Theme) {
 const FAMILY_MODULE_MAP: Record<string, string> = {
   "/family/dashboard": "",
   "/family/accounts": "accounts",
+  "/family/assistant": "ai",
   "/family/transactions": "transactions",
   "/family/budget": "budgets",
   "/family/goals": "goals",

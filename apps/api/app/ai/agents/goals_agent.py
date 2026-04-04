@@ -3,6 +3,7 @@
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 
 GOALS_PROMPT = """És o agente de metas de poupança d'O Financeiro.
 
@@ -12,7 +13,7 @@ REGRAS:
 3. Motiva o utilizador a poupar.
 4. Quando pede simulação, calcula quanto tempo falta com diferentes valores.
 5. Celebra marcos (25%, 50%, 75%, 100%).
-6. Valores em Kz. Responde em Português (Angola). Nao uses emojis.
+6. Valores em Kz. Responde em Português (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -23,38 +24,17 @@ DADOS FINANCEIROS REAIS:
 {loaded_skills}"""
 
 GOALS_TOOLS = [
-    ToolDefinition(
-        name="create_goal",
-        description="Criar uma nova meta de poupança",
-        parameters={
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "description": "Nome da meta"},
-                "target_amount": {"type": "number", "description": "Valor alvo em Kz"},
-                "contribution_amount": {"type": "number", "description": "Contribuição em Kz"},
-            },
-            "required": ["name", "target_amount"],
-        },
-        # Confirmation handled by LLM prompt
-    ),
-    ToolDefinition(
-        name="get_goal_progress",
-        description="Ver progresso de todas as metas activas",
-        parameters={"type": "object", "properties": {}},
-    ),
-    ToolDefinition(
-        name="simulate_goal",
-        description="Simular quanto tempo demora a atingir uma meta com um valor mensal",
-        parameters={
-            "type": "object",
-            "properties": {
-                "target_amount": {"type": "number", "description": "Valor alvo em Kz"},
-                "monthly_amount": {"type": "number", "description": "Poupança mensal em Kz"},
-            },
-            "required": ["target_amount", "monthly_amount"],
-        },
-    ),
+    ToolMeta(name="create_goal", description="Criar uma nova meta de poupança",
+             parameters={"type": "object", "properties": {"name": {"type": "string", "description": "Nome da meta"}, "target_amount": {"type": "number", "description": "Valor alvo em Kz"}, "contribution_amount": {"type": "number", "description": "Contribuição em Kz"}}, "required": ["name", "target_amount"]},
+             agent="goals", category="action", read_only=False),
+    ToolMeta(name="get_goal_progress", description="Ver progresso de todas as metas activas",
+             parameters={"type": "object", "properties": {}},
+             agent="goals", category="query", read_only=True),
+    ToolMeta(name="simulate_goal", description="Simular quanto tempo demora a atingir uma meta com um valor mensal",
+             parameters={"type": "object", "properties": {"target_amount": {"type": "number", "description": "Valor alvo em Kz"}, "monthly_amount": {"type": "number", "description": "Poupança mensal em Kz"}}, "required": ["target_amount", "monthly_amount"]},
+             agent="goals", category="compute", read_only=True),
 ]
+ToolRegistry.instance().register_many(GOALS_TOOLS)
 
 
 class GoalsAgent(BaseAgent):
@@ -64,7 +44,7 @@ class GoalsAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return GOALS_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("goals")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "create_goal":

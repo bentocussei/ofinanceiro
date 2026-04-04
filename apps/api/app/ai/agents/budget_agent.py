@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.enums import TransactionType
@@ -21,7 +22,7 @@ REGRAS:
 3. Quando o utilizador pede para criar orçamento, pergunta categorias e limites.
 4. Se o utilizador pede sugestão, analisa os últimos 3 meses de gastos.
 5. Alerta quando categorias estão acima de 70%, 90% ou 100%.
-6. Valores em Kz. Responde em Português (Angola). Nao uses emojis.
+6. Valores em Kz. Responde em Português (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -32,17 +33,19 @@ DADOS FINANCEIROS REAIS:
 {loaded_skills}"""
 
 BUDGET_TOOLS = [
-    ToolDefinition(
+    ToolMeta(
         name="check_budget",
         description="Ver estado actual do orçamento (quanto gastou vs limite por categoria)",
         parameters={"type": "object", "properties": {}},
+        agent="budget", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="suggest_budget",
         description="Sugerir limites de orçamento com base nos gastos dos últimos 3 meses",
         parameters={"type": "object", "properties": {}},
+        agent="budget", category="compute", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="create_budget",
         description="Criar um novo orçamento mensal",
         parameters={
@@ -52,9 +55,10 @@ BUDGET_TOOLS = [
                 "total_limit": {"type": "number", "description": "Limite total em Kz"},
             },
         },
-        # Confirmation handled by LLM prompt
+        agent="budget", category="action", read_only=False,
     ),
 ]
+ToolRegistry.instance().register_many(BUDGET_TOOLS)
 
 
 class BudgetAgent(BaseAgent):
@@ -64,7 +68,7 @@ class BudgetAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return BUDGET_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("budget")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "check_budget":

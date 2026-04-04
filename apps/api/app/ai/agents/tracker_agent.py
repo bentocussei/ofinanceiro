@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.account import Account
 from app.schemas.transaction import TransactionCreate
 from app.services.transaction import create_transaction, list_transactions
@@ -13,14 +14,15 @@ from app.services.transaction import create_transaction, list_transactions
 TRACKER_PROMPT = """És o agente de tracking financeiro d'O Financeiro.
 
 REGRAS:
-1. Quando o utilizador diz que gastou/recebeu dinheiro, usa a tool add_transaction.
+1. Quando o utilizador diz que gastou/recebeu dinheiro, PRIMEIRO pergunta confirmação, SÓ DEPOIS chama add_transaction.
 2. Infere a categoria com base na descrição. Se ambíguo, pergunta.
 3. Se o utilizador não especificar a conta, usa a primeira conta disponível.
-4. Confirma sempre a transacção antes de registar: "Registei: X Kz em [Categoria]. Correcto?"
-5. Usa os factos conhecidos sobre o utilizador para contextualizar.
-6. Valores são sempre em Kwanzas (Kz). Converte se necessário.
-7. Responde sempre em Português (Angola). Nao uses emojis.
-8. NUNCA inventes valores — usa apenas o que o utilizador diz.
+4. FLUXO DE REGISTO: Mostra os dados ao utilizador e pergunta "Queres que registe: X Kz em [Categoria]?" — NÃO uses a tool antes da confirmação.
+5. Quando o utilizador confirmar (sim, ok, correcto), AÍ SIM chama add_transaction.
+6. Usa os factos conhecidos sobre o utilizador para contextualizar.
+7. Valores são sempre em Kwanzas (Kz). Converte se necessário.
+8. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
+9. NUNCA inventes valores — usa apenas o que o utilizador diz.
 
 FACTOS DO UTILIZADOR:
 {user_facts}
@@ -33,7 +35,7 @@ SKILLS:
 
 
 TRACKER_TOOLS = [
-    ToolDefinition(
+    ToolMeta(
         name="add_transaction",
         description="Registar uma nova transacção (gasto ou receita)",
         parameters={
@@ -46,14 +48,15 @@ TRACKER_TOOLS = [
             },
             "required": ["amount", "type", "description"],
         },
-        # Confirmation handled by LLM prompt
+        agent="tracker", category="action", read_only=False,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="get_balance",
         description="Obter saldo total e saldo por conta",
         parameters={"type": "object", "properties": {}},
+        agent="tracker", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="get_transactions",
         description="Consultar transacções recentes com filtros opcionais",
         parameters={
@@ -63,8 +66,9 @@ TRACKER_TOOLS = [
                 "type": {"type": "string", "enum": ["expense", "income", "transfer"]},
             },
         },
+        agent="tracker", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="search_transactions",
         description="Pesquisar transacções por texto (descrição, comerciante)",
         parameters={
@@ -74,8 +78,10 @@ TRACKER_TOOLS = [
             },
             "required": ["query"],
         },
+        agent="tracker", category="query", read_only=True,
     ),
 ]
+ToolRegistry.instance().register_many(TRACKER_TOOLS)
 
 
 class TrackerAgent(BaseAgent):
@@ -85,7 +91,7 @@ class TrackerAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return TRACKER_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("tracker")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "add_transaction":

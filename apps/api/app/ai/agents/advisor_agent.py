@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.account import Account
 from app.models.category import Category
 from app.models.enums import TransactionType
@@ -22,7 +23,7 @@ REGRAS:
 5. Conhece o contexto angolano: custos de vida em Luanda, taxas de câmbio, inflação.
 6. Nunca dês conselhos de investimento específicos — sugere que consulte um profissional.
 7. Tom: directo e honesto, sem ser condescendente.
-8. Responde sempre em Português (Angola). Nao uses emojis.
+8. Responde sempre em Português (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 9. Valores sempre em Kz com formatação: "150.000 Kz".
 
 FACTOS DO UTILIZADOR:
@@ -35,44 +36,32 @@ SKILLS:
 {loaded_skills}"""
 
 ADVISOR_TOOLS = [
-    ToolDefinition(
+    ToolMeta(
         name="get_spending",
         description="Obter gastos por categoria num período (default: último mês)",
-        parameters={
-            "type": "object",
-            "properties": {
-                "days": {"type": "integer", "description": "Número de dias para analisar (default: 30)"},
-            },
-        },
+        parameters={"type": "object", "properties": {"days": {"type": "integer", "description": "Número de dias para analisar (default: 30)"}}},
+        agent="advisor", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="get_balance",
         description="Obter saldo total e por conta",
         parameters={"type": "object", "properties": {}},
+        agent="advisor", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="get_cashflow",
         description="Obter fluxo de caixa (receitas vs despesas) num período",
-        parameters={
-            "type": "object",
-            "properties": {
-                "days": {"type": "integer", "description": "Número de dias (default: 30)"},
-            },
-        },
+        parameters={"type": "object", "properties": {"days": {"type": "integer", "description": "Número de dias (default: 30)"}}},
+        agent="advisor", category="query", read_only=True,
     ),
-    ToolDefinition(
+    ToolMeta(
         name="can_afford",
         description="Calcular se o utilizador pode comprar algo com base no saldo e gastos médios",
-        parameters={
-            "type": "object",
-            "properties": {
-                "amount": {"type": "number", "description": "Valor em Kz do que quer comprar"},
-                "description": {"type": "string", "description": "O que quer comprar"},
-            },
-            "required": ["amount"],
-        },
+        parameters={"type": "object", "properties": {"amount": {"type": "number", "description": "Valor em Kz do que quer comprar"}, "description": {"type": "string", "description": "O que quer comprar"}}, "required": ["amount"]},
+        agent="advisor", category="compute", read_only=True,
     ),
 ]
+ToolRegistry.instance().register_many(ADVISOR_TOOLS)
 
 
 class AdvisorAgent(BaseAgent):
@@ -82,7 +71,7 @@ class AdvisorAgent(BaseAgent):
     task_type = TaskType.ANALYSIS
 
     def get_tools(self) -> list[ToolDefinition]:
-        return ADVISOR_TOOLS
+        return ToolRegistry.instance().get_tools_for_agent("advisor")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "get_spending":

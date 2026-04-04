@@ -43,6 +43,7 @@ from app.routers import (
     score,
     snapshots,
     tags,
+    tools,
     transactions,
     users,
     voice,
@@ -210,5 +211,6 @@ app.include_router(finance_settings.router)
 app.include_router(snapshots.router)
 app.include_router(expense_splits.router)
 app.include_router(tags.router)
+app.include_router(tools.router)
 app.include_router(permissions_router.router)
 app.include_router(webhooks.router)

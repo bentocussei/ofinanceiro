@@ -19,6 +19,7 @@ import {
   Receipt,
   Repeat,
   Settings,
+  Sparkles,
   Sun,
   Target,
   TrendingUp,
@@ -55,6 +56,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard", label: "Dashboard", icon: Home },
       { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
       { href: "/accounts", label: "Contas", icon: Wallet },
+      { href: "/assistant", label: "Assistente", icon: Sparkles },
     ],
   },
   {
@@ -122,6 +124,7 @@ const MODULE_MAP: Record<string, string> = {
   "/dashboard": "",
   "/transactions": "transactions",
   "/accounts": "accounts",
+  "/assistant": "ai",
   "/budget": "budgets",
   "/goals": "goals",
   "/debts": "debts",

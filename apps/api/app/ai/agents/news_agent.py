@@ -7,6 +7,14 @@ Currently provides exchange rate context and general financial guidance.
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
+
+NEWS_TOOLS = [
+    ToolMeta(name="get_exchange_rates", description="Obter taxas de cambio indicativas (USD/AOA, EUR/AOA)",
+             parameters={"type": "object", "properties": {}},
+             agent="news", category="query", read_only=True),
+]
+ToolRegistry.instance().register_many(NEWS_TOOLS)
 
 NEWS_PROMPT = """Es o agente de noticias financeiras d'O Financeiro.
 
@@ -15,7 +23,7 @@ REGRAS:
 2. Explica como eventos economicos afectam as financas pessoais do utilizador.
 3. Se nao tiveres informacao actual, diz honestamente que as noticias em tempo real
    estarao disponiveis em breve e oferece conselhos gerais baseados no contexto financeiro.
-4. Responde em Portugues (Angola). Nao uses emojis.
+4. Responde em Portugues (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 5. Usa os DADOS FINANCEIROS REAIS para contextualizar o impacto.
 
 FACTOS DO UTILIZADOR:
@@ -34,13 +42,7 @@ class NewsAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return [
-            ToolDefinition(
-                name="get_exchange_rates",
-                description="Obter taxas de cambio indicativas (USD/AOA, EUR/AOA)",
-                parameters={"type": "object", "properties": {}},
-            ),
-        ]
+        return ToolRegistry.instance().get_tools_for_agent("news")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "get_exchange_rates":

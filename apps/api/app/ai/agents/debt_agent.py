@@ -5,6 +5,7 @@ import math
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
+from app.ai.tools import ToolMeta, ToolRegistry
 
 DEBT_PROMPT = """Es o agente de gestao de dividas d'O Financeiro.
 
@@ -12,7 +13,7 @@ REGRAS:
 1. Ajuda a gerir e pagar dividas mais rapidamente.
 2. Sugere estrategias: avalanche (maior taxa primeiro) ou snowball (menor saldo primeiro).
 3. Nunca julga — se encorajador e motivador.
-4. Valores em Kz. Responde em Portugues (Angola). Nao uses emojis.
+4. Valores em Kz. Responde em Portugues (Angola). Não uses emojis. Usa sempre acentuação correcta (Março, família, orçamento).
 5. Usa os DADOS FINANCEIROS REAIS para dar conselhos personalizados.
 6. Quando o utilizador perguntar sobre as suas dividas, usa a tool list_debts.
 7. Quando pedir simulacao, usa simulate_payoff com os dados reais.
@@ -26,6 +27,17 @@ DADOS FINANCEIROS REAIS:
 {loaded_skills}"""
 
 
+DEBT_TOOLS = [
+    ToolMeta(name="list_debts", description="Listar dividas activas com saldo, taxa e pagamento mensal",
+             parameters={"type": "object", "properties": {}},
+             agent="debt", category="query", read_only=True),
+    ToolMeta(name="simulate_payoff", description="Simular aceleracao de pagamento — mostra tempo e juros poupados com pagamento extra",
+             parameters={"type": "object", "properties": {"debt_name": {"type": "string", "description": "Nome da divida para simular"}, "extra_monthly": {"type": "number", "description": "Valor extra mensal em centavos"}}, "required": ["extra_monthly"]},
+             agent="debt", category="compute", read_only=True),
+]
+ToolRegistry.instance().register_many(DEBT_TOOLS)
+
+
 class DebtAgent(BaseAgent):
     name = "debt"
     description = "Gestao de dividas"
@@ -33,25 +45,7 @@ class DebtAgent(BaseAgent):
     task_type = TaskType.CONVERSATION
 
     def get_tools(self) -> list[ToolDefinition]:
-        return [
-            ToolDefinition(
-                name="list_debts",
-                description="Listar dividas activas com saldo, taxa e pagamento mensal",
-                parameters={"type": "object", "properties": {}},
-            ),
-            ToolDefinition(
-                name="simulate_payoff",
-                description="Simular aceleracao de pagamento — mostra tempo e juros poupados com pagamento extra",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "debt_name": {"type": "string", "description": "Nome da divida para simular"},
-                        "extra_monthly": {"type": "number", "description": "Valor extra mensal em centavos"},
-                    },
-                    "required": ["extra_monthly"],
-                },
-            ),
-        ]
+        return ToolRegistry.instance().get_tools_for_agent("debt")
 
     async def execute_tool(self, tool_name: str, arguments: dict, context: AgentContext) -> dict:
         if tool_name == "list_debts":
