@@ -73,6 +73,7 @@ from app.models.subscription import Subscription, SubscriptionAddon, UserSubscri
 from app.models.tag import Tag
 from app.models.transaction import Transaction
 from app.models.user import User
+from app.models.user_embedding import UserEmbedding
 
 __all__ = [
     "Base",
@@ -158,6 +159,7 @@ __all__ = [
     "Tag",
     "Transaction",
     "User",
+    "UserEmbedding",
     "UserPermission",
     "UserSubscription",
 ]

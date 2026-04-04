@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
@@ -64,8 +65,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     try:
         async with engine.begin() as conn:
+            # Ensure pgvector extension exists (required for semantic memory)
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             await conn.run_sync(Base.metadata.create_all, checkfirst=True)
-        logger.info("Database tables verified/created")
+        logger.info("Database tables verified/created (pgvector enabled)")
     except Exception as e:
         logger.warning("Table creation warning: %s", e)
 

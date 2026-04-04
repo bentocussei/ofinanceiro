@@ -210,13 +210,8 @@ class BaseAgent:
                 try:
                     result = await self.execute_tool(tc.name, tc.arguments, context)
                 except Exception as e:
-                    logger.exception("Tool %s failed", tc.name)
+                    logger.exception("Tool %s execution error", tc.name)
                     result = {"error": f"Erro ao executar {tc.name}"}
-                    # Rollback DB session to recover from failed transaction
-                    try:
-                        await context.db.rollback()
-                    except Exception:
-                        pass
                     if not self._is_safe_tool(tc.name):
                         abort = True
 
