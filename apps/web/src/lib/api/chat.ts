@@ -30,6 +30,69 @@ export const chatApi = {
       },
     }),
 
+  sendStream: async (
+    data: SendMessageData,
+    onProgress: (msg: string) => void,
+    onResult: (response: ChatResponse) => void,
+    onError: (error: string) => void,
+  ): Promise<void> => {
+    const token = localStorage.getItem("access_token")
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...getContextHeader(),
+    }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    const res = await fetch(`${API_URL}/api/v1/chat/stream`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: { message: "Erro ao processar" } }))
+      if (res.status === 429) {
+        onError(err.detail?.message || "Limite diário atingido.")
+      } else {
+        onError(err.detail?.message || "Erro ao processar mensagem")
+      }
+      return
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) { onError("Stream não disponível"); return }
+
+    const decoder = new TextDecoder()
+    let buffer = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split("\n")
+      buffer = lines.pop() || ""
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue
+        try {
+          const event = JSON.parse(line.slice(6))
+          if (event.type === "progress") {
+            onProgress(event.content)
+          } else if (event.type === "result") {
+            onResult({
+              content: event.content,
+              agent: event.agent,
+              session_id: event.session_id,
+            })
+          } else if (event.type === "error") {
+            onError(event.content)
+          }
+        } catch { /* skip malformed lines */ }
+      }
+    }
+  },
+
   sendFile: async (file: File, message?: string, sessionId?: string): Promise<ChatResponse> => {
     const token = localStorage.getItem("access_token")
     const formData = new FormData()

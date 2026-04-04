@@ -106,6 +106,143 @@ class BaseAgent:
                 "{loaded_skills}", skills_text
             )
 
+    # Tool activity descriptions for real-time progress feedback
+    TOOL_ACTIVITY: dict[str, str] = {
+        "get_balance": "A consultar saldos das contas",
+        "get_transactions": "A consultar transacções recentes",
+        "search_transactions": "A pesquisar transacções",
+        "add_transaction": "A registar transacção",
+        "get_categories": "A consultar categorias disponíveis",
+        "check_budget": "A verificar estado do orçamento",
+        "suggest_budget": "A analisar gastos para sugerir orçamento",
+        "create_budget": "A criar orçamento",
+        "get_spending": "A analisar gastos por categoria",
+        "get_cashflow": "A calcular fluxo de caixa",
+        "can_afford": "A avaliar capacidade financeira",
+        "get_goal_progress": "A consultar progresso das metas",
+        "create_goal": "A criar meta de poupança",
+        "simulate_goal": "A simular cenários de poupança",
+        "list_debts": "A consultar dívidas activas",
+        "simulate_payoff": "A simular plano de pagamento",
+        "get_family_summary": "A consultar finanças familiares",
+        "get_child_spending": "A consultar gastos dos dependentes",
+        "get_member_contributions": "A consultar contribuições dos membros",
+        "list_investments": "A consultar investimentos",
+        "simulate_compound": "A simular juros compostos",
+        "get_exchange_rates": "A consultar taxas de câmbio",
+        "web_search": "A pesquisar na internet",
+        "web_fetch": "A ler página web",
+        "generate_report": "A gerar relatório financeiro",
+        "get_financial_score": "A calcular score financeiro",
+    }
+
+    def _get_tool_activity(self, tool_name: str) -> str:
+        return self.TOOL_ACTIVITY.get(tool_name, f"A executar {tool_name}")
+
+    async def process_stream(self, message: str, context: AgentContext):
+        """Process a message with real-time progress events via AsyncGenerator.
+
+        Yields dicts with:
+          {"type": "progress", "content": "A consultar saldos..."}
+          {"type": "text", "content": "chunk of response text"}
+          {"type": "done", "response": AgentResponse}
+        """
+        system_prompt = self.build_system_prompt(context)
+        tools = self.get_tools()
+
+        messages: list[LLMMessage] = [
+            LLMMessage(role="system", content=system_prompt),
+            *context.conversation_history,
+            LLMMessage(role="user", content=message),
+        ]
+
+        total_input = 0
+        total_output = 0
+        tool_calls_made: list[dict] = []
+        max_iterations = 10
+
+        yield {"type": "progress", "content": "A analisar o teu pedido..."}
+
+        for iteration in range(max_iterations):
+            if iteration > 0 and needs_compaction(messages):
+                messages = await compact_messages(self.router, messages)
+
+            try:
+                response = await self.router.chat(
+                    task=self.task_type,
+                    messages=messages,
+                    tools=tools if tools else None,
+                    temperature=0.3 if iteration == 0 else 0.1,
+                )
+            except RuntimeError:
+                if tool_calls_made:
+                    yield {"type": "done", "response": AgentResponse(
+                        content="Completei algumas acções mas houve um erro.",
+                        agent_name=self.name, tool_calls_made=tool_calls_made,
+                        tokens_input=total_input, tokens_output=total_output,
+                    )}
+                    return
+                raise
+
+            total_input += response.tokens_input
+            total_output += response.tokens_output
+
+            if response.model == "unavailable":
+                yield {"type": "done", "response": AgentResponse(
+                    content=response.content, agent_name="system",
+                )}
+                return
+
+            if not response.tool_calls:
+                yield {"type": "done", "response": AgentResponse(
+                    content=response.content, agent_name=self.name,
+                    tool_calls_made=tool_calls_made,
+                    tokens_input=total_input, tokens_output=total_output,
+                    model=response.model,
+                )}
+                return
+
+            messages.append(LLMMessage(
+                role="assistant", content=response.content or "",
+                tool_calls=[{"id": tc.id, "name": tc.name, "arguments": tc.arguments} for tc in response.tool_calls],
+            ))
+
+            abort = False
+            for tc in response.tool_calls:
+                tool_def = next((t for t in tools if t.name == tc.name), None)
+                if not tool_def:
+                    messages.append(LLMMessage(role="tool", content=json.dumps({"error": f"Tool '{tc.name}' não existe"}, ensure_ascii=False), tool_call_id=tc.id, name=tc.name))
+                    continue
+
+                if abort and not self._is_safe_tool(tc.name):
+                    messages.append(LLMMessage(role="tool", content=json.dumps({"error": "Cancelado"}, ensure_ascii=False), tool_call_id=tc.id, name=tc.name))
+                    continue
+
+                # Emit real progress
+                yield {"type": "progress", "content": self._get_tool_activity(tc.name)}
+
+                try:
+                    result = await self.execute_tool(tc.name, tc.arguments, context)
+                except Exception as e:
+                    logger.exception("Tool %s execution error", tc.name)
+                    result = {"error": f"Erro ao executar {tc.name}"}
+                    if not self._is_safe_tool(tc.name):
+                        abort = True
+
+                tool_calls_made.append({"name": tc.name, "arguments": tc.arguments, "result": result})
+                result_str = json.dumps(result, ensure_ascii=False)
+                if len(result_str) > 2000:
+                    result_str = result_str[:2000] + '..."}'
+                messages.append(LLMMessage(role="tool", content=result_str, tool_call_id=tc.id, name=tc.name))
+
+            yield {"type": "progress", "content": "A preparar resposta..."}
+
+        yield {"type": "done", "response": AgentResponse(
+            content="Não consegui completar o pedido. Tente novamente.",
+            agent_name=self.name, tool_calls_made=tool_calls_made,
+            tokens_input=total_input, tokens_output=total_output,
+        )}
+
     async def process(self, message: str, context: AgentContext) -> AgentResponse:
         """Process a user message through the tool execution loop.
 

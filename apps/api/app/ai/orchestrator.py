@@ -33,6 +33,7 @@ from app.ai.memory.extractor import extract_facts_from_message
 from app.ai.memory.facts import get_user_facts
 from app.ai.memory.semantic import search_similar, store_embedding
 from app.ai.memory.session import add_message_to_session, get_session
+from app.ai.metering import record_token_usage
 from app.ai.skills import SkillLoader, SkillResolver
 
 logger = logging.getLogger(__name__)
@@ -379,3 +380,131 @@ class ChatOrchestrator:
                 logger.debug("Semantic memory storage unavailable")
 
         return response
+
+    async def process_message_stream(
+        self,
+        user_id: uuid.UUID,
+        session_id: str,
+        message: str,
+        db: AsyncSession,
+        conversation_history: list[dict] | None = None,
+        finance_context: str = "personal",
+    ):
+        """Process a message with real-time progress via AsyncGenerator.
+
+        Yields SSE-ready dicts:
+          {"type": "progress", "content": "A consultar saldos..."}
+          {"type": "result", "content": "...", "agent": "...", "session_id": "..."}
+        """
+        # Steps 1-8 same as process_message
+        user_facts = await get_user_facts(db, user_id)
+        financial_context = await _load_user_financial_context(db, user_id, finance_context)
+
+        try:
+            similar = await search_similar(db, user_id, message, limit=3)
+            if similar:
+                financial_context += "\n\nCONTEXTO DE CONVERSAS ANTERIORES:\n"
+                for s in similar:
+                    financial_context += f"- {s.get('content', '')[:200]}\n"
+        except Exception:
+            pass
+
+        if not conversation_history:
+            session_data = await get_session(user_id, session_id)
+            conversation_history = session_data.get("messages", [])
+
+        last_agent = None
+        if conversation_history:
+            for msg in reversed(conversation_history):
+                if msg.get("role") == "assistant" and msg.get("agent"):
+                    last_agent = msg.get("agent")
+                    break
+
+        short_confirms = {"sim", "nao", "ok", "confirmo", "cancela", "correcto", "esta", "certo", "pode", "faz"}
+        is_confirmation = message.strip().lower().rstrip("!.,?") in short_confirms
+
+        if is_confirmation and last_agent and last_agent.upper() in self.agents:
+            agent_name = last_agent.upper()
+        else:
+            yield {"type": "progress", "content": "A identificar o teu pedido..."}
+            agent_name = await self.router_agent.classify_intent(message)
+
+        agent = self.agents.get(agent_name)
+        if not agent:
+            agent = BaseAgent(self.llm_router)
+            agent.name = "general"
+            agent.system_prompt_template = (
+                "És o assistente financeiro d'O Financeiro. "
+                "Responde de forma útil em Português (Angola) com acentuação correcta. "
+                "Não executes operações — apenas responde a perguntas gerais.\n\n"
+                "Factos do utilizador: {user_facts}\n\n{financial_context}\n{loaded_skills}"
+            )
+
+        loaded_skills = self._skill_resolver.resolve(agent.name, message)
+
+        history: list[LLMMessage] = []
+        if conversation_history:
+            for msg in conversation_history[-20:]:
+                history.append(LLMMessage(role=msg["role"], content=msg["content"]))
+
+        context = AgentContext(
+            user_id=user_id, db=db, session_id=session_id,
+            user_facts=user_facts, conversation_history=history,
+            financial_context=financial_context,
+            finance_context_type=finance_context,
+            loaded_skills=loaded_skills,
+        )
+
+        # Stream through agent with real progress
+        response = None
+        try:
+            async for event in agent.process_stream(message, context):
+                if event["type"] == "progress":
+                    yield event
+                elif event["type"] == "done":
+                    response = event["response"]
+        except RuntimeError:
+            yield {"type": "result", "content": "O assistente não está disponível de momento.", "agent": "system", "session_id": session_id}
+            return
+
+        if not response:
+            yield {"type": "result", "content": "Erro ao processar pedido.", "agent": "system", "session_id": session_id}
+            return
+
+        # Post-processing (memory, facts, embeddings)
+        await add_message_to_session(user_id, session_id, "user", message)
+        await add_message_to_session(user_id, session_id, "assistant", response.content, response.agent_name)
+
+        if response.model and response.model != "unavailable":
+            try:
+                await track_agent_cost(user_id, response.agent_name, response.model, response.tokens_input, response.tokens_output)
+            except Exception:
+                pass
+
+        try:
+            await extract_facts_from_message(db, user_id, message)
+        except Exception:
+            pass
+
+        if response.tool_calls_made:
+            try:
+                insight = f"Utilizador: {message}\nAssistente ({response.agent_name}): "
+                for tc in response.tool_calls_made[:3]:
+                    insight += f"[{tc['name']}] "
+                insight += response.content[:200]
+                await store_embedding(db, user_id, insight, metadata={"agent": response.agent_name, "session": session_id})
+                await db.commit()
+            except Exception:
+                pass
+
+        await record_token_usage(user_id, response.tokens_input, response.tokens_output)
+
+        yield {
+            "type": "result",
+            "content": response.content,
+            "agent": response.agent_name,
+            "session_id": session_id,
+            "tokens_input": response.tokens_input,
+            "tokens_output": response.tokens_output,
+            "model": response.model or "",
+        }

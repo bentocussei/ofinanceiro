@@ -208,62 +208,40 @@ async def stream_message(
     user: User = Depends(get_current_user),
     _perm: None = PlanPermission("ai:chat:create"),
 ):
-    """Stream a response from the AI assistant via Server-Sent Events.
+    """Stream a response with real-time progress via Server-Sent Events.
 
-    Returns text/event-stream with chunks as they arrive from the LLM.
-    Frontend reads with EventSource or fetch + ReadableStream.
+    Uses the full orchestrator pipeline (routing, tools, skills, memory)
+    and emits progress events as tools execute:
+      data: {"type": "progress", "content": "A consultar saldos..."}
+      data: {"type": "result", "content": "...", "agent": "...", "session_id": "..."}
+      data: {"type": "error", "content": "..."}
     """
-    can_continue = await check_quota(user.id, user.plan)
+    user_id = user.id
+    user_plan = user.plan
+
+    can_continue = await check_quota(user_id, user_plan)
     if not can_continue:
-        raise HTTPException(status_code=429, detail={"code": "QUOTA_EXCEEDED", "message": "Limite diario atingido."})
+        raise HTTPException(status_code=429, detail={"code": "QUOTA_EXCEEDED", "message": "Limite diário atingido."})
 
     session_id = data.session_id or str(uuid.uuid4())
     finance_context = request.headers.get("X-Finance-Context") or request.headers.get("X-Context") or "personal"
 
     async def event_stream():
-        """Generate SSE events."""
+        """Generate SSE events with real progress from the orchestrator."""
         try:
-            from app.ai.llm.factory import create_llm_router
-            from app.ai.llm.base import LLMMessage
-            from app.ai.memory.facts import get_user_facts
-            from app.ai.orchestrator import _load_user_financial_context
+            orchestrator = get_orchestrator()
 
-            # Load context
-            user_facts = await get_user_facts(db, user.id)
-            financial_ctx = await _load_user_financial_context(db, user.id, finance_context)
+            async for event in orchestrator.process_message_stream(
+                user_id=user_id,
+                session_id=session_id,
+                message=data.message,
+                db=db,
+                conversation_history=data.conversation_history,
+                finance_context=finance_context,
+            ):
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
-            facts_text = "\n".join(f"- {f.get('fact_key', '')}: {f.get('fact_value', '')}" for f in user_facts)
-
-            system_prompt = (
-                "Es o assistente financeiro d'O Financeiro. "
-                "Responde de forma util em Portugues (Angola). "
-                "Nao uses emojis.\n\n"
-                f"FACTOS: {facts_text or 'Nenhum'}\n\n"
-                f"DADOS FINANCEIROS:\n{financial_ctx}"
-            )
-
-            messages = [
-                LLMMessage(role="system", content=system_prompt),
-                LLMMessage(role="user", content=data.message),
-            ]
-
-            # Stream from Anthropic
-            router = create_llm_router()
-            provider = router.providers.get("anthropic")
-            if provider and hasattr(provider, "chat_stream"):
-                async for chunk in provider.chat_stream(messages=messages, model="sonnet"):
-                    yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
-            else:
-                # Fallback: non-streaming response
-                response = await router.chat(
-                    task="conversation",
-                    messages=messages,
-                )
-                yield f"data: {json.dumps({'type': 'text', 'content': response.content})}\n\n"
-
-            yield f"data: {json.dumps({'type': 'done', 'session_id': session_id})}\n\n"
-
-        except Exception as e:
+        except Exception:
             yield f"data: {json.dumps({'type': 'error', 'content': 'Erro ao processar mensagem.'})}\n\n"
 
     return StreamingResponse(

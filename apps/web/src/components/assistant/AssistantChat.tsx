@@ -54,62 +54,6 @@ const FAMILY_QUICK_ACTIONS = [
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Loading status — contextual feedback while waiting for response
-// Inspired by Claude Code's getActivityDescription pattern
-// ---------------------------------------------------------------------------
-
-function LoadingStatus({ message }: { message: string }) {
-  const [step, setStep] = useState(0)
-  const lower = message.toLowerCase()
-
-  // Determine activity steps based on message content
-  const steps = useMemo(() => {
-    if (lower.includes("notícia") || lower.includes("noticia") || lower.includes("news"))
-      return ["A pesquisar notícias financeiras...", "A ler fontes angolanas...", "A preparar resumo..."]
-    if (lower.includes("câmbio") || lower.includes("cambio") || lower.includes("dólar") || lower.includes("dolar") || lower.includes("euro"))
-      return ["A consultar taxas de câmbio...", "A verificar fontes do BNA...", "A preparar resposta..."]
-    if (lower.includes("gast") || lower.includes("despesa"))
-      return ["A consultar as tuas transacções...", "A analisar gastos por categoria...", "A preparar resumo..."]
-    if (lower.includes("saldo") || lower.includes("conta") || lower.includes("quanto tenho"))
-      return ["A consultar as tuas contas...", "A calcular saldos...", "A preparar resposta..."]
-    if (lower.includes("orçamento") || lower.includes("orcamento"))
-      return ["A verificar o teu orçamento...", "A comparar gastos com limites...", "A preparar análise..."]
-    if (lower.includes("meta") || lower.includes("poupar") || lower.includes("poupança"))
-      return ["A consultar as tuas metas...", "A calcular progresso...", "A preparar resposta..."]
-    if (lower.includes("dívida") || lower.includes("divida") || lower.includes("empréstimo"))
-      return ["A consultar as tuas dívidas...", "A calcular simulações...", "A preparar análise..."]
-    if (lower.includes("investimento"))
-      return ["A consultar investimentos...", "A calcular rendimentos...", "A preparar resumo..."]
-    if (lower.includes("relatório") || lower.includes("relatorio") || lower.includes("resumo"))
-      return ["A recolher dados financeiros...", "A gerar relatório...", "A preparar visualizações..."]
-    if (lower.includes("registar") || lower.includes("registei") || lower.includes("gastei") || lower.includes("recebi"))
-      return ["A processar transacção...", "A verificar categorias...", "A registar..."]
-    if (lower === "sim" || lower === "ok" || lower === "confirmo")
-      return ["A executar operação...", "A gravar na base de dados..."]
-    if (lower.includes("família") || lower.includes("familia"))
-      return ["A consultar dados familiares...", "A preparar resumo..."]
-    if (lower.includes("[ficheiro") || lower.includes("foto") || lower.includes("recibo") || lower.includes("factura"))
-      return ["A analisar o documento...", "A extrair dados...", "A preparar resposta..."]
-    return ["A processar...", "A consultar dados...", "A preparar resposta..."]
-  }, [lower])
-
-  useEffect(() => {
-    if (step >= steps.length - 1) return
-    const timer = setTimeout(() => setStep((s) => Math.min(s + 1, steps.length - 1)), 3000)
-    return () => clearTimeout(timer)
-  }, [step, steps.length])
-
-  // Reset when message changes
-  useEffect(() => { setStep(0) }, [message])
-
-  return (
-    <span className="text-xs text-muted-foreground italic animate-pulse">
-      {steps[step]}
-    </span>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Parse chart/metrics JSON safely
 // ---------------------------------------------------------------------------
 
@@ -198,6 +142,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [progressMsg, setProgressMsg] = useState("")
   const [sessionId, setSessionId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -228,59 +173,67 @@ export function AssistantChat({ context }: AssistantChatProps) {
       setMessages((prev) => [...prev, userMsg])
       setInput("")
       setIsLoading(true)
+      setProgressMsg("")
 
-      try {
-        const history = messages.slice(-20).map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-          ...(m.agent ? { agent: m.agent } : {}),
-        }))
+      const history = messages.slice(-20).map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        ...(m.agent ? { agent: m.agent } : {}),
+      }))
 
-        const response = await chatApi.send({
+      await chatApi.sendStream(
+        {
           message: text,
           session_id: sessionId ?? undefined,
           conversation_history: history,
-        })
-
-        const assistantMsg: ChatMessage = {
-          id: `msg-${++messageCounter.current}`,
-          role: "assistant",
-          content: response.content,
-          agent: response.agent,
-          timestamp: Date.now(),
-        }
-
-        setMessages((prev) => [...prev, assistantMsg])
-        setSessionId(response.session_id)
-
-        // Sonner for operations (detect both masculine and feminine forms)
-        if (
-          response.content.includes("registad") ||
-          response.content.includes("criad") ||
-          response.content.includes("Registei") ||
-          response.content.includes("com sucesso")
-        ) {
-          toast.success("Operação realizada com sucesso")
-        }
-        if (response.content.includes("eliminad") || response.content.includes("removid") || response.content.includes("cancelad")) {
-          toast.info("Operação concluída")
-        }
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Erro ao processar mensagem"
-        setMessages((prev) => [
-          ...prev,
-          {
+        },
+        // onProgress — real-time feedback from backend
+        (msg) => setProgressMsg(msg),
+        // onResult — final response
+        (response) => {
+          const assistantMsg: ChatMessage = {
             id: `msg-${++messageCounter.current}`,
             role: "assistant",
-            content: errorMessage,
-            agent: "system",
+            content: response.content,
+            agent: response.agent,
             timestamp: Date.now(),
-          },
-        ])
-      } finally {
-        setIsLoading(false)
-        inputRef.current?.focus()
-      }
+          }
+          setMessages((prev) => [...prev, assistantMsg])
+          setSessionId(response.session_id)
+          setIsLoading(false)
+          setProgressMsg("")
+          inputRef.current?.focus()
+
+          // Sonner for operations
+          if (
+            response.content.includes("registad") ||
+            response.content.includes("criad") ||
+            response.content.includes("Registei") ||
+            response.content.includes("com sucesso")
+          ) {
+            toast.success("Operação realizada com sucesso")
+          }
+          if (response.content.includes("eliminad") || response.content.includes("removid") || response.content.includes("cancelad")) {
+            toast.info("Operação concluída")
+          }
+        },
+        // onError
+        (errorMessage) => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `msg-${++messageCounter.current}`,
+              role: "assistant",
+              content: errorMessage,
+              agent: "system",
+              timestamp: Date.now(),
+            },
+          ])
+          setIsLoading(false)
+          setProgressMsg("")
+          inputRef.current?.focus()
+        },
+      )
     },
     [messages, sessionId, isLoading],
   )
@@ -417,7 +370,11 @@ export function AssistantChat({ context }: AssistantChatProps) {
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex flex-col gap-1 py-2">
-                  <LoadingStatus message={messages[messages.length - 1]?.content || ""} />
+                  {progressMsg && (
+                    <span className="text-xs text-muted-foreground italic">
+                      {progressMsg}
+                    </span>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "0ms" }} />
                     <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms" }} />
