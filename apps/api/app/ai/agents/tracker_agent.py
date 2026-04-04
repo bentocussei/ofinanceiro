@@ -105,6 +105,8 @@ class TrackerAgent(BaseAgent):
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _add_transaction(self, args: dict, ctx: AgentContext) -> dict:
+        from app.models.category import Category
+
         # Get default account
         result = await ctx.db.execute(
             select(Account).where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
@@ -115,11 +117,26 @@ class TrackerAgent(BaseAgent):
         if not account:
             return {"error": "Nenhuma conta encontrada. Crie uma conta primeiro."}
 
+        # Match category by name (case-insensitive)
+        category_id = None
+        category_name = args.get("category")
+        if category_name:
+            result = await ctx.db.execute(
+                select(Category).where(
+                    Category.user_id == ctx.user_id,
+                    Category.name.ilike(f"%{category_name}%"),
+                ).limit(1)
+            )
+            cat = result.scalar_one_or_none()
+            if cat:
+                category_id = cat.id
+
         amount_kz = args.get("amount", 0)
         amount_centavos = int(amount_kz * 100)
 
         data = TransactionCreate(
             account_id=account.id,
+            category_id=category_id,
             amount=amount_centavos,
             type=args.get("type", "expense"),
             description=args.get("description"),

@@ -69,6 +69,13 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`
       res = await fetch(`${API_URL}${path}`, { ...options, headers })
+    } else {
+      // Refresh failed — session expired, redirect to login
+      clearTokens()
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login'
+      }
+      throw new Error('Sessão expirada')
     }
   }
 

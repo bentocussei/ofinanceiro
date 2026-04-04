@@ -10,7 +10,6 @@ import {
   Bot,
   MessageSquarePlus,
   Paperclip,
-  Sparkles,
 } from "lucide-react"
 import { chatApi } from "@/lib/api/chat"
 import { InlineChart, type ChartConfig } from "@/components/assistant/InlineChart"
@@ -193,12 +192,17 @@ export function AssistantChat({ context }: AssistantChatProps) {
         setMessages((prev) => [...prev, assistantMsg])
         setSessionId(response.session_id)
 
-        // Sonner for operations
-        if (response.content.includes("registada") || response.content.includes("criada") || response.content.includes("Registei")) {
-          toast.success("Operacao realizada com sucesso")
+        // Sonner for operations (detect both masculine and feminine forms)
+        if (
+          response.content.includes("registad") ||
+          response.content.includes("criad") ||
+          response.content.includes("Registei") ||
+          response.content.includes("com sucesso")
+        ) {
+          toast.success("Operação realizada com sucesso")
         }
         if (response.content.includes("eliminad") || response.content.includes("removid") || response.content.includes("cancelad")) {
-          toast.info("Operacao concluida")
+          toast.info("Operação concluída")
         }
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "Erro ao processar mensagem"
@@ -285,7 +289,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
           /* Empty state */
           <div className="flex flex-col items-center justify-center h-full px-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-              <Sparkles className="h-6 w-6 text-primary" />
+              <Bot className="h-6 w-6 text-primary" />
             </div>
             <h1 className="text-xl font-semibold mb-1">
               {context === "family" ? "Assistente Familiar" : "Assistente Financeiro"}
