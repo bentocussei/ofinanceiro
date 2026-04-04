@@ -92,7 +92,7 @@
 - [x] Theme toggle na landing page
 
 ### Documentação
-- [x] 9 ADRs (context split, API services, permissions, billing, AI, Railway, members, assets, voice conversation)
+- [x] 10 ADRs (context split, API services, permissions, billing, AI, Railway, members, assets, voice conversation, news engine)
 - [x] RAILWAY_DEPLOY_GUIDE.md (passo a passo completo)
 - [x] RAILWAY_DB_RESET.md (limpar BD + seed)
 - [x] PRICING_STRATEGY.md
@@ -136,7 +136,8 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 | 1 | **Conversacao por voz (speech-to-speech)** | Alta | Falar com o assistente e ouvir resposta em audio. OpenAI Realtime API. Mobile first. Ver ADR-009 |
 | 2 | **Mobile app** | Alta | Estrutura Expo completa existe em apps/mobile/, precisa de implementacao |
 | 3 | **Painel admin** | Alta | Backend 100% pronto (roles, permissions, 21+ endpoints), frontend por criar |
-| 4 | **Activar embeddings + voz** | Media | Quando OPENAI_API_KEY configurada — memoria semantica + input por voz |
+| 4 | **News Engine** | Alta | Noticias financeiras em tempo real — RSS, crawler BNA, traducao, sentimento, RAG. Ver ADR-010 |
+| 5 | **Activar embeddings + voz** | Media | Quando OPENAI_API_KEY configurada — memoria semantica + input por voz |
 | 5 | **PWA** | Media | manifest.json, service worker para offline |
 | 6 | **Dominio .ao** | Media | Registar ofinanceiro.ao quando disponivel, configurar DNS |
 | 7 | **Integracao bancaria** | Baixa | Quando APIs bancarias angolanas estiverem disponiveis |
