@@ -60,6 +60,11 @@ async def _load_user_financial_context(
 
     sections: list[str] = []
 
+    # --- Current date (LLM does not know the real date) ---
+    from datetime import date as _date
+    today = _date.today()
+    sections.append(f"DATA ACTUAL: {today.strftime('%d/%m/%Y')} ({today.strftime('%A, %d de %B de %Y')})")
+
     # --- User profile ---
     user = await db.get(User, user_id)
     if user:
