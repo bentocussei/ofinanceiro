@@ -1,7 +1,7 @@
 # O Financeiro — Estado Actual e Próximos Passos
 
-**Última actualização:** 2026-04-02
-**Estado:** Plataforma pronta para lançamento. Faltam apenas credenciais de serviços externos.
+**Ultima actualizacao:** 2026-04-04
+**Estado:** Plataforma pronta para lancamento. Falta apenas OPENAI_API_KEY para IA funcional.
 
 ---
 
@@ -92,7 +92,7 @@
 - [x] Theme toggle na landing page
 
 ### Documentação
-- [x] 8 ADRs (context split, API services, permissions, billing, AI, Railway, members, assets)
+- [x] 9 ADRs (context split, API services, permissions, billing, AI, Railway, members, assets, voice conversation)
 - [x] RAILWAY_DEPLOY_GUIDE.md (passo a passo completo)
 - [x] RAILWAY_DB_RESET.md (limpar BD + seed)
 - [x] PRICING_STRATEGY.md
@@ -115,10 +115,10 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 
 | Variável | Serviço | Para quê |
 |----------|---------|---------|
-| `ANTHROPIC_API_KEY` | Anthropic | Assistente IA, chat, análise, OCR |
-| `OPENAI_API_KEY` | OpenAI | Whisper (voz→texto), embeddings |
-| `STRIPE_SECRET_KEY` | Stripe | Pagamentos reais após trial |
-| `STRIPE_WEBHOOK_SECRET` | Stripe | Validação de webhooks |
+| `OPENAI_API_KEY` | OpenAI | Chat (gpt-4o-mini), analise (gpt-4o), OCR (vision), voz (transcribe), embeddings |
+| ~~`ANTHROPIC_API_KEY`~~ | ~~Anthropic~~ | Pos-lancamento (meses 4-10) — Claude para chat/analise |
+| ~~`STRIPE_SECRET_KEY`~~ | ~~Stripe~~ | Ja configurado (live mode) |
+| ~~`STRIPE_WEBHOOK_SECRET`~~ | ~~Stripe~~ | Ja configurado |
 
 ### Criar contas externas
 
@@ -131,15 +131,17 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 
 ## FUTURO — Não bloqueia lançamento
 
-| # | Item | Notas |
-|---|------|-------|
-| 1 | **Mobile app** | Estrutura Expo completa existe em apps/mobile/, precisa de implementação |
-| 2 | **Painel admin** | Backend 100% pronto (roles, permissions, 21 endpoints), frontend por criar |
-| 3 | **PWA** | manifest.json, service worker para offline |
-| 4 | **Domínio .ao** | Registar ofinanceiro.ao quando disponível, configurar DNS |
-| 5 | **Integração bancária** | Quando APIs bancárias angolanas estiverem disponíveis |
-| 6 | **Multicaixa Express** | Pagamento local como alternativa ao Stripe |
+| # | Item | Prioridade | Notas |
+|---|------|-----------|-------|
+| 1 | **Conversacao por voz (speech-to-speech)** | Alta | Falar com o assistente e ouvir resposta em audio. OpenAI Realtime API. Mobile first. Ver ADR-009 |
+| 2 | **Mobile app** | Alta | Estrutura Expo completa existe em apps/mobile/, precisa de implementacao |
+| 3 | **Painel admin** | Alta | Backend 100% pronto (roles, permissions, 21+ endpoints), frontend por criar |
+| 4 | **Migrar IA para OpenAI + Anthropic** | Media | Mes 4-10: Claude para chat/analise, OpenAI para OCR/voz/embeddings |
+| 5 | **PWA** | Media | manifest.json, service worker para offline |
+| 6 | **Dominio .ao** | Media | Registar ofinanceiro.ao quando disponivel, configurar DNS |
+| 7 | **Integracao bancaria** | Baixa | Quando APIs bancarias angolanas estiverem disponiveis |
+| 8 | **Multicaixa Express** | Baixa | Pagamento local como alternativa ao Stripe (stub ja implementado) |
 
 ---
 
-*Última actualização: 2026-04-02*
+*Ultima actualizacao: 2026-04-04*
