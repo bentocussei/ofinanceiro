@@ -114,11 +114,19 @@ class TrackerAgent(BaseAgent):
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _get_categories(self, ctx: AgentContext) -> dict:
+        from sqlalchemy import or_
         from app.models.category import Category
 
+        # Include system categories AND user's custom categories
         result = await ctx.db.execute(
             select(Category.id, Category.name, Category.type, Category.icon)
-            .where(Category.user_id == ctx.user_id)
+            .where(
+                or_(
+                    Category.is_system.is_(True),
+                    Category.user_id == ctx.user_id,
+                ),
+                Category.is_active.is_(True),
+            )
             .order_by(Category.name)
         )
         cats = result.all()
