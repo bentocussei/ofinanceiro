@@ -1,9 +1,11 @@
-"""Chat router — POST /chat/message + /chat/upload for the AI assistant."""
+"""Chat router — POST /chat/message + /chat/upload + /chat/stream for the AI assistant."""
 
 import base64
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.cache import get_cached_response, set_cached_response
@@ -204,4 +206,81 @@ async def send_file(
         tokens_input=response.tokens_input,
         tokens_output=response.tokens_output,
         model=response.model,
+    )
+
+
+@router.post("/stream")
+async def stream_message(
+    data: ChatMessageRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    _perm: None = PlanPermission("ai:chat:create"),
+):
+    """Stream a response from the AI assistant via Server-Sent Events.
+
+    Returns text/event-stream with chunks as they arrive from the LLM.
+    Frontend reads with EventSource or fetch + ReadableStream.
+    """
+    can_continue = await check_quota(user.id, user.plan)
+    if not can_continue:
+        raise HTTPException(status_code=429, detail={"code": "QUOTA_EXCEEDED", "message": "Limite diario atingido."})
+
+    session_id = data.session_id or str(uuid.uuid4())
+    finance_context = request.headers.get("X-Finance-Context") or request.headers.get("X-Context") or "personal"
+
+    async def event_stream():
+        """Generate SSE events."""
+        try:
+            from app.ai.llm.factory import create_llm_router
+            from app.ai.llm.base import LLMMessage
+            from app.ai.memory.facts import get_user_facts
+            from app.ai.orchestrator import _load_user_financial_context
+
+            # Load context
+            user_facts = await get_user_facts(db, user.id)
+            financial_ctx = await _load_user_financial_context(db, user.id, finance_context)
+
+            facts_text = "\n".join(f"- {f.get('fact_key', '')}: {f.get('fact_value', '')}" for f in user_facts)
+
+            system_prompt = (
+                "Es o assistente financeiro d'O Financeiro. "
+                "Responde de forma util em Portugues (Angola). "
+                "Nao uses emojis.\n\n"
+                f"FACTOS: {facts_text or 'Nenhum'}\n\n"
+                f"DADOS FINANCEIROS:\n{financial_ctx}"
+            )
+
+            messages = [
+                LLMMessage(role="system", content=system_prompt),
+                LLMMessage(role="user", content=data.message),
+            ]
+
+            # Stream from Anthropic
+            router = create_llm_router()
+            provider = router.providers.get("anthropic")
+            if provider and hasattr(provider, "chat_stream"):
+                async for chunk in provider.chat_stream(messages=messages, model="sonnet"):
+                    yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
+            else:
+                # Fallback: non-streaming response
+                response = await router.chat(
+                    task="conversation",
+                    messages=messages,
+                )
+                yield f"data: {json.dumps({'type': 'text', 'content': response.content})}\n\n"
+
+            yield f"data: {json.dumps({'type': 'done', 'session_id': session_id})}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Erro ao processar mensagem.'})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

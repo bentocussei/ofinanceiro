@@ -7,6 +7,7 @@ Inspired by Claude Code's tool execution pipeline:
 - Financial context injection in system prompts
 """
 
+import asyncio
 import json
 import logging
 import uuid
@@ -14,6 +15,7 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.compact import compact_messages, needs_compaction
 from app.ai.llm.base import LLMMessage, LLMResponse, ToolDefinition
 from app.ai.llm.router import LLMRouter, TaskType
 
@@ -123,6 +125,10 @@ class BaseAgent:
         max_iterations = 10
 
         for iteration in range(max_iterations):
+            # Compact if context is too long
+            if iteration > 0 and needs_compaction(messages):
+                messages = await compact_messages(self.router, messages)
+
             # Call LLM
             try:
                 response = await self.router.chat(
@@ -177,41 +183,68 @@ class BaseAgent:
                 ],
             ))
 
-            for tool_call in response.tool_calls:
-                tool_def = next((t for t in tools if t.name == tool_call.name), None)
-
+            # Separate safe (read-only) and unsafe (write) tools
+            safe_calls = []
+            unsafe_calls = []
+            for tc in response.tool_calls:
+                tool_def = next((t for t in tools if t.name == tc.name), None)
                 if not tool_def:
-                    # Unknown tool — send error back to LLM
-                    result = {"error": f"Tool '{tool_call.name}' nao existe"}
+                    result = {"error": f"Tool '{tc.name}' nao existe"}
                     messages.append(LLMMessage(
                         role="tool",
                         content=json.dumps(result, ensure_ascii=False),
-                        tool_call_id=tool_call.id,
-                        name=tool_call.name,
+                        tool_call_id=tc.id,
+                        name=tc.name,
+                    ))
+                    continue
+                if self._is_safe_tool(tc.name):
+                    safe_calls.append(tc)
+                else:
+                    unsafe_calls.append(tc)
+
+            # Execute safe tools concurrently
+            if safe_calls:
+                results = await self._execute_concurrent(safe_calls, context)
+                for tc, result in zip(safe_calls, results):
+                    tool_calls_made.append({
+                        "name": tc.name, "arguments": tc.arguments, "result": result,
+                    })
+                    # Budget tool results: cap at 2000 chars
+                    result_str = json.dumps(result, ensure_ascii=False)
+                    if len(result_str) > 2000:
+                        result_str = result_str[:2000] + '..."}'
+                    messages.append(LLMMessage(
+                        role="tool", content=result_str,
+                        tool_call_id=tc.id, name=tc.name,
+                    ))
+
+            # Execute unsafe tools sequentially (abort on first failure)
+            abort = False
+            for tc in unsafe_calls:
+                if abort:
+                    messages.append(LLMMessage(
+                        role="tool",
+                        content=json.dumps({"error": "Cancelado — tool anterior falhou"}, ensure_ascii=False),
+                        tool_call_id=tc.id, name=tc.name,
                     ))
                     continue
 
-                # Execute tool
                 try:
-                    result = await self.execute_tool(
-                        tool_call.name, tool_call.arguments, context
-                    )
+                    result = await self.execute_tool(tc.name, tc.arguments, context)
                 except Exception as e:
-                    logger.exception("Tool %s failed", tool_call.name)
-                    result = {"error": f"Erro ao executar {tool_call.name}: {e!s}"}
+                    logger.exception("Tool %s failed", tc.name)
+                    result = {"error": f"Erro ao executar {tc.name}: {e!s}"}
+                    abort = True  # Abort cascade
 
                 tool_calls_made.append({
-                    "name": tool_call.name,
-                    "arguments": tool_call.arguments,
-                    "result": result,
+                    "name": tc.name, "arguments": tc.arguments, "result": result,
                 })
-
-                # Add tool result to messages so LLM sees the outcome
+                result_str = json.dumps(result, ensure_ascii=False)
+                if len(result_str) > 2000:
+                    result_str = result_str[:2000] + '..."}'
                 messages.append(LLMMessage(
-                    role="tool",
-                    content=json.dumps(result, ensure_ascii=False),
-                    tool_call_id=tool_call.id,
-                    name=tool_call.name,
+                    role="tool", content=result_str,
+                    tool_call_id=tc.id, name=tc.name,
                 ))
 
             # Loop continues — LLM will see tool results and decide next action
@@ -224,6 +257,35 @@ class BaseAgent:
             tokens_input=total_input,
             tokens_output=total_output,
         )
+
+    # Read-only tools that are safe to run concurrently
+    SAFE_TOOLS = frozenset({
+        "get_balance", "get_transactions", "search_transactions",
+        "check_budget", "get_goal_progress",
+        "list_debts", "list_investments",
+        "get_news", "get_exchange_rates",
+        "get_family_summary", "get_child_spending", "get_member_contributions",
+        "get_spending", "get_cashflow", "can_afford",
+        "generate_report", "get_financial_score",
+    })
+
+    def _is_safe_tool(self, tool_name: str) -> bool:
+        """Check if a tool is safe to run concurrently (read-only)."""
+        return tool_name in self.SAFE_TOOLS or tool_name.startswith("get_") or tool_name.startswith("list_")
+
+    async def _execute_concurrent(
+        self, tool_calls: list, context: AgentContext
+    ) -> list[dict]:
+        """Execute multiple safe tools concurrently."""
+        async def _run(tc) -> dict:
+            try:
+                return await self.execute_tool(tc.name, tc.arguments, context)
+            except Exception as e:
+                logger.exception("Concurrent tool %s failed", tc.name)
+                return {"error": f"Erro: {e!s}"}
+
+        results = await asyncio.gather(*[_run(tc) for tc in tool_calls])
+        return list(results)
 
     async def execute_tool(
         self, tool_name: str, arguments: dict, context: AgentContext

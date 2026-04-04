@@ -28,6 +28,7 @@ from app.ai.agents.router_agent import RouterAgent
 from app.ai.agents.tracker_agent import TrackerAgent
 from app.ai.llm.base import LLMMessage
 from app.ai.llm.router import LLMRouter
+from app.ai.cost_tracker import track_agent_cost
 from app.ai.memory.extractor import extract_facts_from_message
 from app.ai.memory.facts import get_user_facts
 from app.ai.memory.semantic import search_similar, store_embedding
@@ -312,7 +313,17 @@ class ChatOrchestrator:
             user_id, session_id, "assistant", response.content, response.agent_name
         )
 
-        # 10. Extract facts from user message (non-blocking)
+        # 10. Track cost per agent
+        if response.model and response.model != "unavailable":
+            try:
+                await track_agent_cost(
+                    user_id, response.agent_name, response.model,
+                    response.tokens_input, response.tokens_output,
+                )
+            except Exception:
+                pass
+
+        # 11. Extract facts from user message (non-blocking)
         try:
             await extract_facts_from_message(db, user_id, message)
         except Exception:

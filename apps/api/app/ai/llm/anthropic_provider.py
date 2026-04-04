@@ -95,5 +95,51 @@ class AnthropicProvider(LLMProvider):
             finish_reason=response.stop_reason or "",
         )
 
+    async def chat_stream(
+        self,
+        messages: list[LLMMessage],
+        model: str | None = None,
+        tools: list[ToolDefinition] | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1024,
+    ):
+        """Stream chat response — yields text chunks as they arrive."""
+        model_id = ANTHROPIC_MODELS.get(model or "sonnet", model or ANTHROPIC_MODELS["sonnet"])
+
+        system_msg = ""
+        chat_messages = []
+        for msg in messages:
+            if msg.role == "system":
+                system_msg = msg.content
+            elif msg.role == "tool":
+                chat_messages.append({
+                    "role": "user",
+                    "content": [{"type": "tool_result", "tool_use_id": msg.tool_call_id, "content": msg.content}],
+                })
+            else:
+                chat_messages.append({"role": msg.role, "content": msg.content})
+
+        anthropic_tools = None
+        if tools:
+            anthropic_tools = [
+                {"name": t.name, "description": t.description, "input_schema": t.parameters}
+                for t in tools
+            ]
+
+        kwargs: dict = {
+            "model": model_id,
+            "messages": chat_messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if system_msg:
+            kwargs["system"] = system_msg
+        if anthropic_tools:
+            kwargs["tools"] = anthropic_tools
+
+        async with self.client.messages.stream(**kwargs) as stream:
+            async for text in stream.text_stream:
+                yield text
+
     async def is_available(self) -> bool:
         return bool(settings.anthropic_api_key)
