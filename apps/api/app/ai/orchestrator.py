@@ -102,13 +102,13 @@ async def _load_user_financial_context(
     # --- Accounts with balances ---
     acct_query = select(Account).where(
         Account.user_id == user_id,
-        Account.is_active.is_(True),
+        Account.is_archived.is_(False),
     )
     if is_family and family_id_str:
         try:
             acct_query = select(Account).where(
                 Account.family_id == uuid.UUID(family_id_str),
-                Account.is_active.is_(True),
+                Account.is_archived.is_(False),
             )
         except (ValueError, Exception):
             pass
