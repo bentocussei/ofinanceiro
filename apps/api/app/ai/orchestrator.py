@@ -30,6 +30,7 @@ from app.ai.llm.base import LLMMessage
 from app.ai.llm.router import LLMRouter
 from app.ai.memory.extractor import extract_facts_from_message
 from app.ai.memory.facts import get_user_facts
+from app.ai.memory.semantic import search_similar, store_embedding
 from app.ai.memory.session import add_message_to_session, get_session
 
 logger = logging.getLogger(__name__)
@@ -248,6 +249,17 @@ class ChatOrchestrator:
             logger.exception("Failed to load financial context for user %s", user_id)
             financial_context = "Erro ao carregar dados financeiros."
 
+        # 2b. Search semantic memory for relevant past context
+        try:
+            similar_memories = await search_similar(db, user_id, message, limit=3, threshold=0.65)
+            if similar_memories:
+                memory_lines = ["MEMORIA DE CONVERSAS ANTERIORES:"]
+                for mem in similar_memories:
+                    memory_lines.append(f"  - {mem['content']}")
+                financial_context += "\n\n" + "\n".join(memory_lines)
+        except Exception:
+            logger.debug("Semantic memory search skipped")
+
         # 3. Load session history from Redis
         if not conversation_history:
             session_data = await get_session(user_id, session_id)
@@ -305,5 +317,21 @@ class ChatOrchestrator:
             await extract_facts_from_message(db, user_id, message)
         except Exception:
             logger.debug("Fact extraction skipped for message")
+
+        # 11. Store conversation insight as embedding (non-blocking)
+        # Only store if there were tool calls (meaningful interaction)
+        if response.tool_calls_made:
+            try:
+                insight = f"Utilizador: {message}\nAssistente ({response.agent_name}): "
+                for tc in response.tool_calls_made[:3]:
+                    insight += f"[{tc['name']}] "
+                insight += response.content[:200]
+                await store_embedding(
+                    db, user_id, insight,
+                    metadata={"agent": response.agent_name, "session": session_id},
+                )
+                await db.commit()
+            except Exception:
+                logger.debug("Semantic memory storage skipped")
 
         return response

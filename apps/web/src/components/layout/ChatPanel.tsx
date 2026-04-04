@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Banknote, BarChart3, Bot, ClipboardList, MessageCircle, X } from "lucide-react"
+import { Banknote, BarChart3, Bot, ClipboardList, MessageCircle, Paperclip, X } from "lucide-react"
 import { chatApi } from "@/lib/api/chat"
 
 interface ChatMessage {
@@ -28,6 +28,7 @@ export function ChatPanel() {
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const messageCounter = useRef(0)
 
   const scrollToBottom = () => {
@@ -89,6 +90,49 @@ export function ChatPanel() {
       }
     },
     [messages, sessionId, isLoading]
+  )
+
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file || isLoading) return
+
+      const userMsg: ChatMessage = {
+        id: `msg-${++messageCounter.current}`,
+        role: "user",
+        content: `[Ficheiro: ${file.name}]`,
+      }
+      setMessages((prev) => [...prev, userMsg])
+      setIsLoading(true)
+
+      try {
+        const response = await chatApi.sendFile(file, "", sessionId ?? undefined)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg-${++messageCounter.current}`,
+            role: "assistant",
+            content: response.content,
+            agent: response.agent,
+          },
+        ])
+        setSessionId(response.session_id)
+      } catch (error: unknown) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg-${++messageCounter.current}`,
+            role: "assistant",
+            content: error instanceof Error ? error.message : "Erro ao processar ficheiro",
+            agent: "system",
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      }
+    },
+    [sessionId, isLoading]
   )
 
   return (
@@ -212,12 +256,28 @@ export function ChatPanel() {
         {/* Input */}
         <div className="p-3 border-t border-border">
           <form
-            className="flex gap-2"
+            className="flex gap-2 items-center"
             onSubmit={(e) => {
               e.preventDefault()
               sendMessage(input)
             }}
           >
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+              title="Enviar foto ou ficheiro"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <Input
               placeholder="Escreve uma mensagem..."
               value={input}

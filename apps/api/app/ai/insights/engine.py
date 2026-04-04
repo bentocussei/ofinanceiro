@@ -50,8 +50,8 @@ async def generate_insights(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
     if insight:
         insights.append(insight)
 
-    # Limit to 2 insights per run
-    return insights[:2]
+    # Return up to 5 insights per run
+    return insights[:5]
 
 
 async def _check_unusual_spending(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
@@ -162,23 +162,89 @@ async def _check_seasonal_pattern(db: AsyncSession, user_id: uuid.UUID) -> dict 
     prev_month_end = this_month_start - timedelta(days=1)
     prev_month_start = prev_month_end.replace(day=1)
 
-    for period_start, period_end in [(this_month_start, today), (prev_month_start, prev_month_end)]:
-        await db.execute(
-            select(func.sum(Transaction.amount)).where(
-                Transaction.user_id == user_id,
-                Transaction.type == TransactionType.EXPENSE,
-                Transaction.transaction_date >= period_start,
-                Transaction.transaction_date <= period_end,
-            )
+    # This month spending
+    result = await db.execute(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= this_month_start,
+            Transaction.transaction_date <= today,
         )
+    )
+    this_month_total = result.scalar() or 0
 
-    # Simplified — just check if data exists
+    # Previous month spending
+    result = await db.execute(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= prev_month_start,
+            Transaction.transaction_date <= prev_month_end,
+        )
+    )
+    prev_month_total = result.scalar() or 0
+
+    if prev_month_total > 0 and this_month_total > 0:
+        # Normalize by days elapsed
+        days_this_month = (today - this_month_start).days + 1
+        days_prev_month = (prev_month_end - prev_month_start).days + 1
+        daily_this = this_month_total / days_this_month
+        daily_prev = prev_month_total / days_prev_month
+        pct_change = ((daily_this - daily_prev) / daily_prev) * 100
+
+        if pct_change > 20:
+            return {
+                "type": "seasonal_pattern",
+                "title": "Gastos acima do normal este mes",
+                "message": f"Os seus gastos diarios este mes estao {pct_change:.0f}% acima do mes anterior.",
+                "severity": "warning",
+            }
     return None
 
 
 async def _check_savings_opportunity(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
-    """Check if user has consistent surplus over 3 months."""
-    # Simplified for Phase 5
+    """Check if user has consistent income surplus over recent months."""
+    from app.models.account import Account
+
+    # Get total balance
+    result = await db.execute(
+        select(func.sum(Account.balance)).where(
+            Account.user_id == user_id, Account.is_archived.is_(False)
+        )
+    )
+    total_balance = result.scalar() or 0
+
+    # Get last 30 days income vs expense
+    month_ago = date.today() - timedelta(days=30)
+
+    result = await db.execute(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.INCOME,
+            Transaction.transaction_date >= month_ago,
+        )
+    )
+    monthly_income = result.scalar() or 0
+
+    result = await db.execute(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= month_ago,
+        )
+    )
+    monthly_expense = result.scalar() or 0
+
+    surplus = monthly_income - monthly_expense
+    if surplus > 0 and monthly_income > 0:
+        surplus_pct = (surplus / monthly_income) * 100
+        if surplus_pct > 15:
+            return {
+                "type": "savings_opportunity",
+                "title": "Oportunidade de poupanca",
+                "message": f"Teve um excedente de {surplus / 100:,.0f} Kz ({surplus_pct:.0f}% do rendimento) este mes. Considere direccionar para uma meta ou investimento.",
+                "severity": "info",
+            }
     return None
 
 
