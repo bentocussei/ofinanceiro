@@ -277,6 +277,8 @@ class TrackerAgent(BaseAgent):
     async def _update_transaction(self, args: dict, ctx: AgentContext) -> dict:
         import uuid as _uuid
         from app.models.transaction import Transaction
+        from app.schemas.transaction import TransactionUpdate
+        from app.services.transaction import update_transaction
 
         try:
             txn_uuid = _uuid.UUID(args["transaction_id"])
@@ -290,16 +292,20 @@ class TrackerAgent(BaseAgent):
         if not txn:
             return {"error": "Transacção não encontrada"}
 
+        # Build update data — only include fields that were provided
+        update_data: dict = {}
         if "description" in args:
-            txn.description = args["description"]
+            update_data["description"] = args["description"]
         if "amount" in args:
-            txn.amount = int(args["amount"] * 100)
+            update_data["amount"] = int(args["amount"] * 100)
         if "category_id" in args:
             try:
-                txn.category_id = _uuid.UUID(args["category_id"])
+                update_data["category_id"] = _uuid.UUID(args["category_id"])
             except ValueError:
                 pass
 
+        data = TransactionUpdate(**update_data)
+        txn = await update_transaction(ctx.db, txn, data)
         await ctx.db.commit()
         return {
             "success": True,
@@ -311,6 +317,7 @@ class TrackerAgent(BaseAgent):
     async def _delete_transaction(self, args: dict, ctx: AgentContext) -> dict:
         import uuid as _uuid
         from app.models.transaction import Transaction
+        from app.services.transaction import delete_transaction
 
         try:
             txn_uuid = _uuid.UUID(args["transaction_id"])
@@ -324,9 +331,10 @@ class TrackerAgent(BaseAgent):
         if not txn:
             return {"error": "Transacção não encontrada"}
 
-        await ctx.db.delete(txn)
+        description = txn.description
+        await delete_transaction(ctx.db, txn)
         await ctx.db.commit()
-        return {"success": True, "deleted": str(txn.id), "description": txn.description}
+        return {"success": True, "deleted": str(txn_uuid), "description": description}
 
     async def _search_transactions(self, args: dict, ctx: AgentContext) -> dict:
         from app.schemas.transaction import TransactionFilter
