@@ -296,7 +296,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto">
+    <div className="flex flex-col h-screen max-w-5xl mx-auto">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
@@ -333,7 +333,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
           /* Messages */
           <div className="px-4 py-6 space-y-6">
             {messages.map((msg) => (
-              <div key={msg.id} className="max-w-3xl mx-auto">
+              <div key={msg.id} className="max-w-4xl mx-auto">
                 {msg.role === "user" ? (
                   /* User message */
                   <div className="flex justify-end">
@@ -365,7 +365,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
             ))}
 
             {isLoading && (
-              <div className="max-w-3xl mx-auto flex gap-3">
+              <div className="max-w-4xl mx-auto flex gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
@@ -391,7 +391,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
 
       {/* Input area */}
       <div className="border-t border-border bg-background px-4 py-3">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {messages.length > 0 && (
             <div className="flex justify-center mb-2">
               <button
