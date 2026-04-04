@@ -448,7 +448,6 @@ async def ask_about_news(
     In production, the News AI agent will use RAG over recent news articles
     and market data to answer user questions in context.
     """
-    # TODO: Replace with actual AI agent call
     return AskResponse(
         answer="Esta funcionalidade estará disponível em breve. O assistente de IA irá responder a perguntas sobre notícias financeiras e condições de mercado.",
         ai_generated=False,

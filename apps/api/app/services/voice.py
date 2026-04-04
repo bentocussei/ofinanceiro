@@ -1,7 +1,6 @@
-"""Voice service: speech-to-text using Whisper API.
+"""Voice service: speech-to-text using OpenAI Whisper API.
 
-Note: Requires OpenAI API key for Whisper.
-In dev without API key, returns a mock transcription.
+Requires OPENAI_API_KEY. Returns clear error if not configured.
 """
 
 import logging
@@ -13,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 async def transcribe_audio(audio_base64: str) -> dict:
     """Transcribe audio to text using Whisper API.
+
     Returns {"text": "transcription"} or {"error": "message"}.
     """
     if not settings.openai_api_key:
-        logger.info("DEV MODE — Whisper not available, returning mock transcription")
-        return {"text": "[Transcrição de voz não disponível sem API key OpenAI]", "mock": True}
+        return {"error": "Servico de transcricao de voz nao esta disponivel de momento."}
 
     try:
         import base64
@@ -41,4 +40,4 @@ async def transcribe_audio(audio_base64: str) -> dict:
 
     except Exception as e:
         logger.exception("Voice transcription failed")
-        return {"error": str(e)}
+        return {"error": "Erro na transcricao de voz. Tente novamente."}

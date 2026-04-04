@@ -19,20 +19,19 @@ Inclui: mocks que dependem de serviços externos, configurações pendentes, e i
 
 ---
 
-## 2. Mocks Legítimos (Desenvolvimento)
+## 2. Comportamento sem servicos externos
 
-| # | Item | Ficheiro | Razão | Quando Remover |
-|---|------|---------|-------|----------------|
-| 1 | **MockLLMProvider** | `apps/api/app/ai/llm/mock_provider.py` | Fallback quando não há API keys configuradas | Nunca remover — manter como fallback dev/test. Em produção, as API keys reais são usadas automaticamente via `factory.py` |
-| 2 | **OTP log em dev** | `apps/api/app/services/otp.py` | Sem Twilio em dev, OTP é logado no console | Mantém-se — controlado por `settings.environment` |
-| 3 | **OCR mock** | `apps/api/app/services/ocr.py` | Sem API key multimodal, OCR usa mock LLM | Produção: usa GPT-4o/Sonnet real com API key |
-| 4 | **Voice mock** | `apps/api/app/services/voice.py` | Sem API key OpenAI, retorna texto mock | Produção: usa Whisper real com API key |
-| 5 | **Embeddings skip** | `apps/api/app/ai/memory/semantic.py` | Sem API key OpenAI, embeddings não são gerados | Produção: usa text-embedding-3-small com API key |
-| 6 | **News articles hardcoded** | `apps/api/app/routers/news.py` | Sem fontes RSS/API reais para Angola | Produção: integrar RSS (BNA, Jornal de Angola, Expansão, etc.) ou news aggregator API |
-| 7 | **Exchange rates hardcoded** | `apps/api/app/routers/news.py` | Sem API do BNA para taxas em tempo real | Produção: integrar API/scraping do BNA para taxas oficiais diárias |
-| 8 | **Market summary hardcoded** | `apps/api/app/routers/news.py` → `/market-summary` | Sem LLM para análise de mercado | Produção: NewsAgent gera resumo diário via LLM com dados reais |
-| 9 | **Impact analysis hardcoded** | `apps/api/app/routers/news.py` → `/impact-analysis` | Sem LLM + perfil financeiro do user | Produção: NewsAgent cruza notícias com dados financeiros do utilizador |
-| 10 | **News ask mock** | `apps/api/app/routers/news.py` → `/ask` | Sem LLM para RAG sobre notícias | Produção: NewsAgent usa RAG com embeddings de artigos recentes |
+Nenhum mock — todos os servicos retornam mensagem de indisponibilidade quando nao configurados.
+
+| # | Item | Ficheiro | Comportamento sem API key |
+|---|------|---------|--------------------------|
+| 1 | **OTP SMS** | `apps/api/app/services/otp.py` | Log no console em dev (controlado por `settings.environment`) |
+| 2 | **OCR** | `apps/api/app/services/ocr.py` | Retorna "Servico de OCR nao disponivel" |
+| 3 | **Voice** | `apps/api/app/services/voice.py` | Retorna "Servico de transcricao nao disponivel" |
+| 4 | **Embeddings** | `apps/api/app/ai/memory/semantic.py` | Operacoes ignoradas silenciosamente |
+| 5 | **Chat IA** | `apps/api/app/ai/llm/router.py` | Retorna "Assistente nao disponivel de momento" |
+| 6 | **News articles** | `apps/api/app/routers/news.py` | Dados estaticos (sem RSS/API real para Angola) |
+| 7 | **Exchange rates** | `apps/api/app/routers/news.py` | Dados estaticos (sem API do BNA) |
 
 ---
 

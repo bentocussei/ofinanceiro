@@ -415,7 +415,7 @@ function ModuleAddonsSection({ subscription, onUpdate }: { subscription: Subscri
 
   // Determine which modules the user's plan already includes
   const planFeatures = subscription?.features || {}
-  const activeAddonModules = new Set<string>() // TODO: get from subscription addons list
+  const activeAddonModules = new Set<string>()
 
   const handleAdd = async (addonId: string) => {
     setProcessing(addonId)

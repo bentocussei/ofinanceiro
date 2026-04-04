@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from app.ai.llm.anthropic_provider import AnthropicProvider
-from app.ai.llm.mock_provider import MockLLMProvider
 from app.ai.llm.openai_provider import OpenAIProvider
 from app.ai.llm.router import LLMRouter
 from app.config import settings
@@ -18,8 +17,8 @@ logger = logging.getLogger(__name__)
 def create_llm_router() -> LLMRouter:
     """Create LLM router with available providers.
 
-    Production/staging: requires at least one real provider.
-    Development: falls back to unavailable message (no mock responses).
+    Requires at least one API key (ANTHROPIC_API_KEY or OPENAI_API_KEY).
+    Without keys, the router returns an unavailability message.
     """
     providers: dict[str, LLMProvider] = {}
 
@@ -34,12 +33,7 @@ def create_llm_router() -> LLMRouter:
     if not providers:
         logger.warning(
             "No LLM API keys configured. AI assistant will return "
-            "unavailability message instead of mock responses."
+            "unavailability message."
         )
 
     return LLMRouter(providers)
-
-
-def create_mock_router(responses: dict[str, str] | None = None) -> LLMRouter:
-    """Create a router with mock provider for testing only."""
-    return LLMRouter({"mock": MockLLMProvider(responses)})
