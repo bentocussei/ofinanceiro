@@ -52,7 +52,7 @@ BUDGET_TOOLS = [
                 "total_limit": {"type": "number", "description": "Limite total em Kz"},
             },
         },
-        confirm_before_execute=True,
+        # Confirmation handled by LLM prompt
     ),
 ]
 

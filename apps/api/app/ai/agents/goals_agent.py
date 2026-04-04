@@ -35,7 +35,7 @@ GOALS_TOOLS = [
             },
             "required": ["name", "target_amount"],
         },
-        confirm_before_execute=True,
+        # Confirmation handled by LLM prompt
     ),
     ToolDefinition(
         name="get_goal_progress",

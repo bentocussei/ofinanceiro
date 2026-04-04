@@ -46,7 +46,7 @@ TRACKER_TOOLS = [
             },
             "required": ["amount", "type", "description"],
         },
-        confirm_before_execute=True,
+        # Confirmation handled by LLM prompt
     ),
     ToolDefinition(
         name="get_balance",
