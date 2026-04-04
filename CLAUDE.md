@@ -169,14 +169,18 @@ See `diagramas/03_sistema_memoria.mermaid` for details.
 | Embeddings | text-embedding-3-small | $0.02 | Semantic memory |
 | Batch Insights | gpt-4o-mini | $0.15 / $0.60 | Low cost |
 
-**Post-launch phase (months 4-10):**
+**Post-launch phase (months 4-10) — OpenAI + Anthropic dual provider:**
 
-| Task | Model | Reason |
-|------|-------|--------|
-| All conversation + analysis | gpt-5.4 | Unified, higher quality |
-| OCR | gpt-5.4 (vision) | Better accuracy |
-| Voice → Text | gpt-4o-mini-transcribe | Still best for audio |
-| Embeddings | text-embedding-3-small | No need to change |
+| Task | Model | Provider | Reason |
+|------|-------|----------|--------|
+| Chat (daily conversations) | Claude latest (Sonnet/Opus) | Anthropic | Best conversational quality |
+| Complex Analysis | Claude latest (Opus) | Anthropic | Superior reasoning |
+| Routing/Classification | GPT-5 latest (mini) | OpenAI | Fast, cheap |
+| Receipt OCR | GPT-5 latest (vision) | OpenAI | Best multimodal |
+| Voice → Text (transcription) | gpt-4o-mini-transcribe | OpenAI | Best audio transcription |
+| Voice conversation (future) | Realtime API | OpenAI | Speech-to-speech, low latency |
+| Embeddings | text-embedding-3-small | OpenAI | Semantic memory |
+| Batch Insights | GPT-5 latest (mini) | OpenAI | Low cost |
 
 Target: $0.15-$0.50 per active user/month (launch), scaling down with volume discounts.
 
