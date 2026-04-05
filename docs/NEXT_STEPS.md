@@ -1,7 +1,7 @@
 # O Financeiro — Estado Actual e Próximos Passos
 
-**Ultima actualizacao:** 2026-04-04
-**Estado:** Plataforma pronta para lancamento. Faltam ANTHROPIC_API_KEY + OPENAI_API_KEY para IA funcional.
+**Ultima actualizacao:** 2026-04-05
+**Estado:** Plataforma pronta para lancamento. Agentic system 100% funcional (61/61 testes E2E).
 
 ---
 
@@ -23,7 +23,7 @@
 - [x] Educação financeira (33 tips, 16 desafios, learning path, achievements)
 - [x] Notícias financeiras (23 artigos, câmbios, market summary, impact analysis)
 - [x] Notificações com cron job horário
-- [x] Chat panel (skeleton pronto para IA)
+- [x] Chat panel → Assistente dedicado com página completa (/assistant + /family/assistant)
 - [x] Onboarding (5 passos) com redirect automático
 - [x] Context switching pessoal/familiar
 - [x] Paginação cursor-based em 14 páginas
@@ -33,7 +33,7 @@
 ### Autenticação e Segurança
 - [x] Registo simplificado: nome + telefone → OTP SMS → entra (sem password obrigatório)
 - [x] Login com 2 métodos: senha ou código SMS (OTP)
-- [x] JWT com access (15min) + refresh (7 dias)
+- [x] JWT com access (60min) + refresh (7 dias) + proxy valida expiração
 - [x] Register NÃO retorna tokens — requer verificação OTP
 - [x] Rate limiting (API geral + login brute force por telefone)
 - [x] Security headers (HSTS, nosniff, X-Frame-Options, XSS, Referrer-Policy)
@@ -67,9 +67,30 @@
 - [x] Pagamento bills debita conta + cria transacção
 - [x] Transferências debitam origem + creditam destino
 - [x] Delete transacção reverte balance
+- [x] Move transacção entre contas (pessoal ↔ familiar) com reversal
 - [x] Regras recorrentes processam automaticamente (cron)
 - [x] Audit trail: source_type + source_id em todas as transacções
 - [x] Activos e investimentos são registos retroactivos (sem débito automático)
+
+### Agentic System (concluído 2026-04-05)
+- [x] 8 skills dinâmicas (markdown, carregadas do disco, resolvidas por agente+mensagem)
+- [x] ToolRegistry centralizado (41+ tools, 9 agentes, metadata rica)
+- [x] SSE streaming com progresso real das tools ("A consultar saldos...")
+- [x] Gráficos inline Chart.js (doughnut, bar, line, area) + MetricCards KPI
+- [x] Web search (Anthropic API) + web fetch (httpx + markdownify)
+- [x] OCR multimodal (Claude Vision para imagens, pypdf para PDFs)
+- [x] Multi-file upload com preview (max 5, thumbnails, texto opcional)
+- [x] CRUD completo via chat para todos os módulos (transacções, orçamentos, metas, dívidas, investimentos)
+- [x] Services e schemas para debt + investment (criados + routers refactored)
+- [x] Contexto familiar em todos os services (family_id passado automaticamente)
+- [x] Categorias e contas com IDs no contexto financeiro (LLM selecciona da lista real)
+- [x] Confirmação obrigatória para operações de escrita (add, update, delete, move)
+- [x] Correcção na confirmação ("sim, mas são 8000 na carteira")
+- [x] Acentuação correcta em todas as respostas (skills + prompts)
+- [x] Data actual injectada no contexto (LLM sabe o ano)
+- [x] Label "FINANCEIRO" (não mostra nomes internos dos agentes)
+- [x] 61/61 testes E2E passaram
+- [x] Arquitectura documentada (docs/04_ARQUITECTURA_IA_v2.md + diagramas mermaid)
 
 ### Infraestrutura
 - [x] Deploy Railway (production + staging)
@@ -129,20 +150,29 @@ DATABASE_URL="postgresql+asyncpg://..." python3 -m scripts.seed_production
 
 ---
 
-## FUTURO — Não bloqueia lançamento
+## FUTURO — Melhorias pós-lançamento (por ordem de impacto)
 
-| # | Item | Prioridade | Notas |
-|---|------|-----------|-------|
-| 1 | **Conversacao por voz (speech-to-speech)** | Alta | Falar com o assistente e ouvir resposta em audio. OpenAI Realtime API. Mobile first. Ver ADR-009 |
-| 2 | **Mobile app** | Alta | Estrutura Expo completa existe em apps/mobile/, precisa de implementacao |
-| 3 | **Painel admin** | Alta | Backend 100% pronto (roles, permissions, 21+ endpoints), frontend por criar |
-| 4 | **News Engine** | Alta | Noticias financeiras em tempo real — RSS, crawler BNA, traducao, sentimento, RAG. Ver ADR-010 |
-| 5 | **Activar embeddings + voz** | Media | Quando OPENAI_API_KEY configurada — memoria semantica + input por voz |
-| 5 | **PWA** | Media | manifest.json, service worker para offline |
-| 6 | **Dominio .ao** | Media | Registar ofinanceiro.ao quando disponivel, configurar DNS |
-| 7 | **Integracao bancaria** | Baixa | Quando APIs bancarias angolanas estiverem disponiveis |
-| 8 | **Multicaixa Express** | Baixa | Pagamento local como alternativa ao Stripe (stub ja implementado) |
+### Agentic System
+| # | Item | Impacto | Notas |
+|---|------|---------|-------|
+| 1 | **Streaming de texto token-by-token** | Alto — UX | Actualmente envia resposta completa. Implementar text streaming via SSE para respostas progressivas |
+| 2 | **Import de extractos bancários (CSV/Excel)** | Alto | Parser de extractos BFA, BAI, BIC — importação automática de transacções |
+| 3 | **BNA crawler — taxas de câmbio reais** | Médio | Actualmente estáticas no news agent. Implementar crawler do site BNA |
+| 4 | **Voice input (OpenAI Whisper)** | Médio | Transcrição de áudio para texto. Mobile first |
+| 5 | **MCP — integração com serviços externos** | Baixo | Model Context Protocol para conectar a APIs bancárias, BNA, etc. |
+
+### Plataforma
+| # | Item | Impacto | Notas |
+|---|------|---------|-------|
+| 1 | **Mobile app** | Alto | Estrutura Expo completa existe em apps/mobile/, precisa de implementação |
+| 2 | **Conversação por voz (speech-to-speech)** | Alto | OpenAI Realtime API. Mobile first. Ver ADR-009 |
+| 3 | **Painel admin** | Alto | Backend 100% pronto (roles, permissions, 21+ endpoints), frontend por criar |
+| 4 | **Activar embeddings semânticos** | Médio | Quando OPENAI_API_KEY configurada — memória semântica para pesquisa por similaridade |
+| 5 | **PWA** | Médio | manifest.json, service worker para offline |
+| 6 | **Domínio .ao** | Médio | Registar ofinanceiro.ao quando disponível |
+| 7 | **Integração bancária** | Baixo | Quando APIs bancárias angolanas estiverem disponíveis |
+| 8 | **Multicaixa Express** | Baixo | Pagamento local como alternativa ao Stripe |
 
 ---
 
-*Ultima actualizacao: 2026-04-04*
+*Última actualização: 2026-04-05*
