@@ -179,7 +179,7 @@ async def _load_user_financial_context(
     if budget_list:
         budget_lines = ["ORCAMENTOS ACTIVOS:"]
         for b in budget_list:
-            budget_lines.append(f"  - {b.name}: limite {b.total_limit / 100:,.0f} Kz")
+            budget_lines.append(f"  - {b.name}: limite {(b.total_limit or 0) / 100:,.0f} Kz [budget_id: {b.id}]")
         sections.append("\n".join(budget_lines))
 
     # --- Goals ---
@@ -195,7 +195,7 @@ async def _load_user_financial_context(
         for g in goal_list:
             pct = (g.current_amount / g.target_amount * 100) if g.target_amount > 0 else 0
             goal_lines.append(
-                f"  - {g.name}: {g.current_amount / 100:,.0f} / {g.target_amount / 100:,.0f} Kz ({pct:.0f}%)"
+                f"  - {g.name}: {g.current_amount / 100:,.0f} / {g.target_amount / 100:,.0f} Kz ({pct:.0f}%) [goal_id: {g.id}]"
             )
         sections.append("\n".join(goal_lines))
 
@@ -209,7 +209,7 @@ async def _load_user_financial_context(
         debt_lines = [f"DIVIDAS ({len(debt_list)}) — Total: {total_debt / 100:,.0f} Kz"]
         for d in debt_list:
             debt_lines.append(
-                f"  - {d.name}: {d.current_balance / 100:,.0f} Kz (pagamento {d.monthly_payment / 100:,.0f} Kz/mes)"
+                f"  - {d.name}: {d.current_balance / 100:,.0f} Kz (pagamento {(d.monthly_payment or 0) / 100:,.0f} Kz/mes) [debt_id: {d.id}]"
             )
         sections.append("\n".join(debt_lines))
 
