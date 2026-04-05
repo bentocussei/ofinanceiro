@@ -117,6 +117,19 @@ TRACKER_TOOLS = [
         },
         agent="tracker", category="action", read_only=False,
     ),
+    ToolMeta(
+        name="move_transaction",
+        description="Mover uma transacção de uma conta para outra (ex: de pessoal para familiar ou vice-versa). Reverte o saldo na conta original e aplica na conta destino.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "transaction_id": {"type": "string", "description": "UUID da transacção a mover"},
+                "target_account_id": {"type": "string", "description": "UUID da conta de destino (obtido de get_balance)"},
+            },
+            "required": ["transaction_id", "target_account_id"],
+        },
+        agent="tracker", category="action", read_only=False,
+    ),
 ]
 ToolRegistry.instance().register_many(TRACKER_TOOLS)
 
@@ -139,6 +152,8 @@ class TrackerAgent(BaseAgent):
             return await self._update_transaction(arguments, context)
         if tool_name == "delete_transaction":
             return await self._delete_transaction(arguments, context)
+        if tool_name == "move_transaction":
+            return await self._move_transaction(arguments, context)
         if tool_name == "get_balance":
             return await self._get_balance(context)
         if tool_name == "get_transactions":
@@ -339,6 +354,46 @@ class TrackerAgent(BaseAgent):
         await delete_transaction(ctx.db, txn)
         await ctx.db.commit()
         return {"success": True, "deleted": str(txn_uuid), "description": description}
+
+    async def _move_transaction(self, args: dict, ctx: AgentContext) -> dict:
+        import uuid as _uuid
+        from app.models.transaction import Transaction
+        from app.services.transaction import move_transaction
+
+        try:
+            txn_uuid = _uuid.UUID(args["transaction_id"])
+            target_account_id = _uuid.UUID(args["target_account_id"])
+        except (ValueError, KeyError):
+            return {"error": "transaction_id ou target_account_id inválido"}
+
+        # Find transaction (search across all user's transactions, not context-filtered)
+        result = await ctx.db.execute(
+            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        )
+        txn = result.scalar_one_or_none()
+        if not txn:
+            return {"error": "Transacção não encontrada"}
+
+        old_account = await ctx.db.get(Account, txn.account_id)
+        old_account_name = old_account.name if old_account else "?"
+
+        try:
+            txn = await move_transaction(ctx.db, txn, target_account_id)
+        except ValueError as e:
+            return {"error": str(e)}
+
+        new_account = await ctx.db.get(Account, target_account_id)
+        new_account_name = new_account.name if new_account else "?"
+
+        await ctx.db.commit()
+        return {
+            "success": True,
+            "transaction_id": str(txn.id),
+            "description": txn.description,
+            "amount_kz": txn.amount / 100,
+            "moved_from": old_account_name,
+            "moved_to": new_account_name,
+        }
 
     async def _search_transactions(self, args: dict, ctx: AgentContext) -> dict:
         from app.schemas.transaction import TransactionFilter

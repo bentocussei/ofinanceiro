@@ -179,6 +179,42 @@ async def update_transaction(
     return txn
 
 
+async def move_transaction(
+    db: AsyncSession, txn: Transaction, target_account_id: uuid.UUID,
+) -> Transaction:
+    """Move a transaction from one account to another (e.g., personal → family).
+
+    Business rules:
+    1. Reverse balance on the original account
+    2. Apply balance on the target account
+    3. Update the transaction's account_id
+    """
+    old_account = await db.get(Account, txn.account_id)
+    new_account = await db.get(Account, target_account_id)
+
+    if not new_account:
+        raise ValueError("Conta de destino não encontrada")
+
+    # 1. Reverse balance on original account
+    if old_account:
+        if txn.type == "income":
+            old_account.balance -= txn.amount
+        elif txn.type == "expense":
+            old_account.balance += txn.amount
+
+    # 2. Apply balance on target account
+    if txn.type == "income":
+        new_account.balance += txn.amount
+    elif txn.type == "expense":
+        new_account.balance -= txn.amount
+
+    # 3. Update transaction
+    txn.account_id = target_account_id
+
+    await db.flush()
+    return txn
+
+
 async def delete_transaction(db: AsyncSession, txn: Transaction) -> None:
     # Reverse balance
     account = await db.get(Account, txn.account_id)

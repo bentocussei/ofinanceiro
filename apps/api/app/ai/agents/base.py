@@ -142,6 +142,7 @@ class BaseAgent:
         "get_exchange_rates": "A consultar taxas de câmbio",
         "web_search": "A pesquisar na internet",
         "web_fetch": "A ler página web",
+        "move_transaction": "A mover transacção entre contas",
         "generate_report": "A gerar relatório financeiro",
         "get_financial_score": "A calcular score financeiro",
     }
