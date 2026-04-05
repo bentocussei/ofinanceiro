@@ -120,9 +120,9 @@
 
 | Secção | Total | Passaram | Pendentes |
 |--------|-------|----------|-----------|
-| 1. Assistente | 22 | 19 | 3 (OCR facturas) |
-| 2. Dívidas UI | 9 | 8 | 1 (pagamento com conta) |
+| 1. Assistente | 22 | 20 | 2 (OCR facturas, dark mode) |
+| 2. Dívidas UI | 9 | 9 | 0 |
 | 3. Investimentos UI | 10 | 10 | 0 |
-| 4. Novas tools chat | 12 | 6 | 6 (deletes via chat) |
-| 5. Gerais | 8 | 6 | 2 (quota, sonner delete) |
-| **Total** | **61** | **49** | **12** |
+| 4. Novas tools chat | 12 | 11 | 1 (apagar meta familiar) |
+| 5. Gerais | 8 | 7 | 1 (quota) |
+| **Total** | **61** | **57** | **4** |
