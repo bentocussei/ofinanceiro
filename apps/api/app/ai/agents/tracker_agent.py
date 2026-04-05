@@ -25,6 +25,7 @@ REGRAS:
 9. Valores são sempre em Kwanzas (Kz). Converte se necessário.
 10. Responde sempre em Português (Angola) COM acentuação correcta. Não uses emojis.
 11. NUNCA inventes valores — usa apenas o que o utilizador diz.
+12. DESCRIÇÃO RICA: Se a factura/recibo identificar um beneficiário (ex: nome do aluno numa propina, nome do paciente numa consulta), inclui-o na descrição. Ex: "Propina Setembro 2024 — Ana Cussei — Colégio X". Só inclui quando o documento tem essa informação e faz sentido.
 
 FACTOS DO UTILIZADOR:
 {user_facts}
