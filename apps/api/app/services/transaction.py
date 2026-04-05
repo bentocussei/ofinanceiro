@@ -180,20 +180,43 @@ async def update_transaction(
 
 
 async def move_transaction(
-    db: AsyncSession, txn: Transaction, target_account_id: uuid.UUID,
+    db: AsyncSession,
+    txn: Transaction,
+    target_account_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> Transaction:
     """Move a transaction from one account to another (e.g., personal → family).
 
     Business rules:
-    1. Reverse balance on the original account
-    2. Apply balance on the target account
-    3. Update the transaction's account_id
+    1. Cannot move to the same account
+    2. Target account must belong to the same user
+    3. Currencies must match (no cross-currency moves)
+    4. Reverse balance on the original account
+    5. Apply balance on the target account
+    6. Update the transaction's account_id
+
+    Raises ValueError for validation failures.
     """
+    # Validation: same account
+    if txn.account_id == target_account_id:
+        raise ValueError("A transacção já está nesta conta")
+
     old_account = await db.get(Account, txn.account_id)
     new_account = await db.get(Account, target_account_id)
 
     if not new_account:
         raise ValueError("Conta de destino não encontrada")
+
+    # Validation: ownership — target must belong to same user
+    if new_account.user_id != user_id:
+        raise ValueError("A conta de destino não pertence a este utilizador")
+
+    # Validation: currency must match
+    if old_account and old_account.currency != new_account.currency:
+        raise ValueError(
+            f"Moedas diferentes: {old_account.currency} → {new_account.currency}. "
+            "Não é possível mover entre moedas diferentes."
+        )
 
     # 1. Reverse balance on original account
     if old_account:
@@ -207,6 +230,8 @@ async def move_transaction(
         new_account.balance += txn.amount
     elif txn.type == "expense":
         new_account.balance -= txn.amount
+    # Note: "transfer" type transactions don't affect individual account balances
+    # — they represent money moving between accounts (handled separately)
 
     # 3. Update transaction
     txn.account_id = target_account_id

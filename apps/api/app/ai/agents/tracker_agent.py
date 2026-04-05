@@ -378,7 +378,7 @@ class TrackerAgent(BaseAgent):
         old_account_name = old_account.name if old_account else "?"
 
         try:
-            txn = await move_transaction(ctx.db, txn, target_account_id)
+            txn = await move_transaction(ctx.db, txn, target_account_id, ctx.user_id)
         except ValueError as e:
             return {"error": str(e)}
 
