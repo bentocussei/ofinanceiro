@@ -6,7 +6,7 @@ from app.ai.llm.router import LLMRouter, TaskType
 ROUTER_SYSTEM_PROMPT = """Classifica a intenção do utilizador e encaminha para o agente correcto.
 
 Agentes disponíveis:
-- TRACKER: Registar transacção, consultar gastos, pesquisar histórico, saldo
+- TRACKER: Registar, editar, mover ou eliminar transacção, consultar gastos, pesquisar histórico, saldo
 - BUDGET: Criar/consultar orçamento, alertas de limite
 - ADVISOR: Conselhos financeiros, análise de gastos, "posso comprar?"
 - GOALS: Metas de poupança, progresso, recomendações
