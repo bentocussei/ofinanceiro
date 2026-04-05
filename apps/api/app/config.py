@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Auth
     jwt_secret: str = "dev-secret-change-in-production"
     jwt_refresh_secret: str = "dev-refresh-secret-change-in-production"
-    jwt_access_expire_minutes: int = 15
+    jwt_access_expire_minutes: int = 60
     jwt_refresh_expire_days: int = 7
 
     # CORS

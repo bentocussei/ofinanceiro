@@ -12,12 +12,17 @@ function getTokens() {
   }
 }
 
+const IS_SECURE = typeof window !== 'undefined' && window.location.protocol === 'https:'
+
 function setCookie(name: string, value: string, days: number) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax; Secure`
+  const secure = IS_SECURE ? '; Secure' : ''
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax${secure}`
 }
 
 function deleteCookie(name: string) {
+  // Delete with and without Secure flag to cover both HTTP and HTTPS
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax; Secure`
 }
 
