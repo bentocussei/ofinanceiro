@@ -138,7 +138,7 @@ export default function DebtsPage() {
         creditor: creditor.trim() || undefined,
         creditor_type: creditorType,
         original_amount: Math.round(parseFloat(originalAmount) * 100),
-        interest_rate: parseFloat(interestRate) || 0,
+        interest_rate: Math.round((parseFloat(interestRate) || 0) * 100),
         minimum_payment: Math.round(parseFloat(minimumPayment) * 100) || 0,
         due_day: parseInt(dueDay) || 1,
         start_date: startDate || undefined,
@@ -196,7 +196,7 @@ export default function DebtsPage() {
     try {
       const result = await debtsApi.simulate({
         current_balance: Math.round(parseFloat(simBalance) * 100),
-        interest_rate: parseFloat(simRate),
+        interest_rate: Math.round(parseFloat(simRate) * 100),
         monthly_payment: Math.round(parseFloat(simPayment) * 100),
       })
       setSimulation(result)
@@ -341,7 +341,7 @@ export default function DebtsPage() {
                           {TYPE_LABELS[debt.type] || debt.type}
                         </span>
                         {debt.creditor ? `${debt.creditor} -- ` : ""}
-                        {debt.interest_rate}% juros
+                        {((debt.interest_rate || 0) / 100).toFixed(0)}% juros
                         {debt.due_day ? ` -- Dia ${debt.due_day}` : ""}
                         {debt.status === "paid_off" ? " -- Quitada" : ""}
                       </p>

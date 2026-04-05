@@ -117,6 +117,7 @@ TYPE_LABELS: dict[str, str] = {
     "crypto": "Criptomoedas",
     "real_estate": "Imobiliário",
     "savings": "Poupança",
+    "fixed_income": "Renda fixa",
     "other": "Outros",
 }
 
