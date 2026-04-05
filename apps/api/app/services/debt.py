@@ -209,9 +209,18 @@ def simulate_payoff(
         total_paid_extra += total_payment
         months_extra += 1
 
+    total_interest = total_paid_normal - current_balance
+
     return {
+        # Frontend expected fields
+        "months_to_payoff": months_normal,
+        "total_interest": total_interest,
+        "total_paid": total_paid_normal,
+        # Extra payment fields
+        "months_saved": months_normal - months_extra,
+        "interest_saved": total_paid_normal - total_paid_extra,
+        # Legacy fields for backward compat
         "without_extra": {"months": months_normal, "total_paid": total_paid_normal},
         "with_extra": {"months": months_extra, "total_paid": total_paid_extra},
         "savings": total_paid_normal - total_paid_extra,
-        "months_saved": months_normal - months_extra,
     }
