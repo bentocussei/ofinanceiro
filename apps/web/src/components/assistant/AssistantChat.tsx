@@ -8,8 +8,11 @@ import { toast } from "sonner"
 import {
   ArrowUp,
   Bot,
+  FileText,
+  Image as ImageIcon,
   MessageSquarePlus,
   Paperclip,
+  X,
 } from "lucide-react"
 import { chatApi } from "@/lib/api/chat"
 import { InlineChart, type ChartConfig } from "@/components/assistant/InlineChart"
@@ -144,6 +147,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [progressMsg, setProgressMsg] = useState("")
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [stagedFiles, setStagedFiles] = useState<File[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -241,34 +245,82 @@ export function AssistantChat({ context }: AssistantChatProps) {
   // Memoized markdown components — passes sendMessage as sendPrompt for chart interactivity
   const markdownComponents = useMemo(() => createMarkdownComponents(sendMessage), [sendMessage])
 
-  // Send file
-  const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file || isLoading) return
+  // Stage files (don't send yet — show preview)
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || [])
+      if (!files.length || isLoading) return
+      setStagedFiles((prev) => {
+        const combined = [...prev, ...files]
+        return combined.slice(0, 5) // max 5 files
+      })
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    },
+    [isLoading],
+  )
+
+  const removeStagedFile = useCallback((index: number) => {
+    setStagedFiles((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // Send files with optional text
+  const sendWithFiles = useCallback(
+    async (text: string) => {
+      if (isLoading || (!text.trim() && stagedFiles.length === 0)) return
+
+      const fileNames = stagedFiles.map((f) => f.name).join(", ")
+      const userContent = stagedFiles.length > 0
+        ? `${text.trim() ? text.trim() + "\n" : ""}[${stagedFiles.length} ficheiro${stagedFiles.length > 1 ? "s" : ""}: ${fileNames}]`
+        : text
 
       const userMsg: ChatMessage = {
         id: `msg-${++messageCounter.current}`,
         role: "user",
-        content: `[Ficheiro: ${file.name}]`,
+        content: userContent,
         timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, userMsg])
+      setInput("")
       setIsLoading(true)
+      setProgressMsg("A processar ficheiros...")
+
+      const filesToSend = [...stagedFiles]
+      setStagedFiles([])
 
       try {
-        const response = await chatApi.sendFile(file, "", sessionId ?? undefined)
+        // Send first file with message, then additional files
+        const message = text.trim() || undefined
+        const response = await chatApi.sendFile(filesToSend[0], message, sessionId ?? undefined)
+        let finalContent = response.content
+        let finalSessionId = response.session_id
+
+        // If multiple files, send remaining ones in sequence
+        for (let i = 1; i < filesToSend.length; i++) {
+          setProgressMsg(`A processar ficheiro ${i + 1} de ${filesToSend.length}...`)
+          const extraResponse = await chatApi.sendFile(
+            filesToSend[i],
+            `Continuação do documento anterior (página ${i + 1})`,
+            finalSessionId,
+          )
+          finalContent = extraResponse.content
+          finalSessionId = extraResponse.session_id
+        }
+
         setMessages((prev) => [
           ...prev,
           {
             id: `msg-${++messageCounter.current}`,
             role: "assistant",
-            content: response.content,
+            content: finalContent,
             agent: response.agent,
             timestamp: Date.now(),
           },
         ])
-        setSessionId(response.session_id)
+        setSessionId(finalSessionId)
+
+        if (finalContent.includes("registad") || finalContent.includes("com sucesso")) {
+          toast.success("Operação realizada com sucesso")
+        }
       } catch (error: unknown) {
         setMessages((prev) => [
           ...prev,
@@ -282,10 +334,11 @@ export function AssistantChat({ context }: AssistantChatProps) {
         ])
       } finally {
         setIsLoading(false)
-        if (fileInputRef.current) fileInputRef.current.value = ""
+        setProgressMsg("")
+        inputRef.current?.focus()
       }
     },
-    [sessionId, isLoading],
+    [sessionId, isLoading, stagedFiles],
   )
 
   // New conversation
@@ -405,48 +458,107 @@ export function AssistantChat({ context }: AssistantChatProps) {
           )}
 
           <form
-            className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all"
+            className="rounded-xl border border-border bg-card focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all"
             onSubmit={(e) => {
               e.preventDefault()
-              sendMessage(input)
+              if (stagedFiles.length > 0) {
+                sendWithFiles(input)
+              } else {
+                sendMessage(input)
+              }
             }}
           >
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
-              title="Enviar foto ou ficheiro"
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.csv,.xlsx,.xls"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={
-                context === "family"
-                  ? "Pergunte qualquer coisa sobre as financas da familia..."
-                  : "Pergunte qualquer coisa sobre as suas financas..."
-              }
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={isLoading}
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-30 transition-opacity"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
+            {/* Staged files preview */}
+            {stagedFiles.length > 0 && (
+              <div className="flex gap-2 px-3 pt-3 pb-1 overflow-x-auto">
+                {stagedFiles.map((file, i) => {
+                  const isImage = file.type.startsWith("image/")
+                  return (
+                    <div key={`${file.name}-${i}`} className="relative shrink-0 group">
+                      <div className="w-20 h-20 rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+                        {isImage ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1">
+                            <FileText className="h-6 w-6 text-muted-foreground" />
+                            <span className="text-[9px] text-muted-foreground font-medium uppercase">
+                              {file.name.split(".").pop()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeStagedFile(i)}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <span className="text-[9px] text-muted-foreground truncate block w-20 mt-0.5 text-center">
+                        {file.name.length > 12 ? file.name.slice(0, 10) + "..." : file.name}
+                      </span>
+                    </div>
+                  )
+                })}
+                {stagedFiles.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-20 h-20 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground hover:bg-accent/50 transition-colors shrink-0"
+                    title="Adicionar mais ficheiros"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Input row */}
+            <div className="flex items-center gap-2 px-3 py-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || stagedFiles.length >= 5}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                title="Anexar foto ou ficheiro (máx. 5)"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.csv,.xlsx,.xls"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={
+                  stagedFiles.length > 0
+                    ? "Adicionar mensagem (opcional)..."
+                    : context === "family"
+                      ? "Pergunte qualquer coisa sobre as financas da familia..."
+                      : "Pergunte qualquer coisa sobre as suas financas..."
+                }
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={isLoading}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              />
+              <button
+                type="submit"
+                disabled={(!input.trim() && stagedFiles.length === 0) || isLoading}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-30 transition-opacity"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
           </form>
 
           <p className="text-[10px] text-muted-foreground/50 text-center mt-2">

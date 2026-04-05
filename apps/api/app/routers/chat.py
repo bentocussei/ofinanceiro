@@ -152,12 +152,23 @@ async def send_file(
 
         if ocr_result.get("success") and ocr_result.get("data"):
             data = ocr_result["data"]
+            items = data.get("items", [])
+            items_text = ""
+            if items:
+                items_text = "\nProdutos/Itens:\n"
+                for item in items:
+                    name = item.get("name", "?")
+                    price = item.get("price", "?")
+                    items_text += f"  - {name}: {price} Kz\n"
             auto_message = (
-                f"Enviei uma foto de recibo. O OCR extraiu:\n"
+                f"Enviei uma foto de recibo/factura. O OCR extraiu:\n"
                 f"- Comerciante: {data.get('merchant', '?')}\n"
                 f"- Total: {data.get('total', '?')} Kz\n"
                 f"- Data: {data.get('date', '?')}\n"
-                f"Quero registar esta transaccao."
+                f"- Método de pagamento: {data.get('payment_method', '?')}\n"
+                f"- Moeda: {data.get('currency', 'AOA')}\n"
+                f"{items_text}"
+                f"Quero registar esta transacção com todos os produtos na descrição."
             )
         else:
             auto_message = message or f"Enviei uma imagem ({filename}). O que devo fazer com ela?"
