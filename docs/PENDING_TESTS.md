@@ -123,6 +123,6 @@
 | 1. Assistente | 22 | 20 | 2 (OCR facturas, dark mode) |
 | 2. Dívidas UI | 9 | 9 | 0 |
 | 3. Investimentos UI | 10 | 10 | 0 |
-| 4. Novas tools chat | 12 | 11 | 1 (apagar meta familiar) |
-| 5. Gerais | 8 | 7 | 1 (quota) |
-| **Total** | **61** | **57** | **4** |
+| 4. Novas tools chat | 12 | 12 | 0 |
+| 5. Gerais | 8 | 8 | 0 |
+| **Total** | **61** | **59** | **2** |
