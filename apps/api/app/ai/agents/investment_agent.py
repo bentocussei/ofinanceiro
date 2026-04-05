@@ -96,7 +96,7 @@ class InvestmentAgent(BaseAgent):
                 current_value=int(arguments["current_value"] * 100),
                 interest_rate=int(arguments["interest_rate"] * 100) if arguments.get("interest_rate") else None,
             )
-            inv = await create_investment(context.db, context.user_id, data)
+            inv = await create_investment(context.db, context.user_id, data, family_id=context.family_id)
             await context.db.commit()
             return {"success": True, "investment_id": str(inv.id), "name": inv.name}
 
@@ -110,7 +110,7 @@ class InvestmentAgent(BaseAgent):
             except (ValueError, KeyError):
                 return {"error": "investment_id inválido"}
 
-            inv = await get_investment(context.db, inv_id, context.user_id)
+            inv = await get_investment(context.db, inv_id, context.user_id, family_id=context.family_id)
             if not inv:
                 return {"error": "Investimento não encontrado"}
 
@@ -136,7 +136,7 @@ class InvestmentAgent(BaseAgent):
             except (ValueError, KeyError):
                 return {"error": "investment_id inválido"}
 
-            inv = await get_investment(context.db, inv_id, context.user_id)
+            inv = await get_investment(context.db, inv_id, context.user_id, family_id=context.family_id)
             if not inv:
                 return {"error": "Investimento não encontrado"}
 

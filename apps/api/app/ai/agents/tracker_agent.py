@@ -223,9 +223,8 @@ class TrackerAgent(BaseAgent):
         )
 
         try:
-            txn = await create_transaction(ctx.db, ctx.user_id, data)
+            txn = await create_transaction(ctx.db, ctx.user_id, data, family_id=ctx.family_id)
         except Exception as e:
-            # Service may raise HTTPException for account not found — catch and return error
             return {"error": f"Erro ao registar: {e!s}"}
         await ctx.db.commit()
         return {

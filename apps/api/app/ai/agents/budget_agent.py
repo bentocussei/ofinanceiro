@@ -198,7 +198,7 @@ class BudgetAgent(BaseAgent):
             period_end=end,
             total_limit=int(args.get("total_limit", 0) * 100) if args.get("total_limit") else None,
         )
-        budget = await create_budget(ctx.db, ctx.user_id, data)
+        budget = await create_budget(ctx.db, ctx.user_id, data, family_id=ctx.family_id)
         return {"success": True, "budget_id": str(budget.id), "name": budget.name}
 
     async def _update_budget(self, args: dict, ctx: AgentContext) -> dict:
@@ -211,7 +211,7 @@ class BudgetAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "budget_id inválido"}
 
-        budget = await get_budget(ctx.db, budget_id, ctx.user_id)
+        budget = await get_budget(ctx.db, budget_id, ctx.user_id, family_id=ctx.family_id)
         if not budget:
             return {"error": "Orçamento não encontrado"}
 
@@ -237,7 +237,7 @@ class BudgetAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "budget_id inválido"}
 
-        budget = await get_budget(ctx.db, budget_id, ctx.user_id)
+        budget = await get_budget(ctx.db, budget_id, ctx.user_id, family_id=ctx.family_id)
         if not budget:
             return {"error": "Orçamento não encontrado"}
 

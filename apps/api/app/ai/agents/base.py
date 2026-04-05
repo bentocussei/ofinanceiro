@@ -38,6 +38,16 @@ class AgentContext:
     finance_context_type: str = "personal"
     loaded_skills: str = ""
 
+    @property
+    def family_id(self) -> uuid.UUID | None:
+        """Extract family_id from finance_context_type if in family mode."""
+        if self.finance_context_type.startswith("family:"):
+            try:
+                return uuid.UUID(self.finance_context_type.replace("family:", ""))
+            except ValueError:
+                pass
+        return None
+
 
 @dataclass
 class AgentResponse:

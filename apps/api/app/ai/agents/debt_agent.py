@@ -95,7 +95,7 @@ class DebtAgent(BaseAgent):
                 monthly_payment=int(arguments["monthly_payment"] * 100) if arguments.get("monthly_payment") else None,
                 payment_day=arguments.get("payment_day"),
             )
-            debt = await create_debt(context.db, context.user_id, data)
+            debt = await create_debt(context.db, context.user_id, data, family_id=context.family_id)
             await context.db.commit()
             return {"success": True, "debt_id": str(debt.id), "name": debt.name}
 
@@ -109,7 +109,7 @@ class DebtAgent(BaseAgent):
             except (ValueError, KeyError):
                 return {"error": "debt_id inválido"}
 
-            debt = await get_debt(context.db, debt_id, context.user_id)
+            debt = await get_debt(context.db, debt_id, context.user_id, family_id=context.family_id)
             if not debt:
                 return {"error": "Dívida não encontrada"}
 
@@ -135,7 +135,7 @@ class DebtAgent(BaseAgent):
             except (ValueError, KeyError):
                 return {"error": "debt_id inválido"}
 
-            debt = await get_debt(context.db, debt_id, context.user_id)
+            debt = await get_debt(context.db, debt_id, context.user_id, family_id=context.family_id)
             if not debt:
                 return {"error": "Dívida não encontrada"}
 

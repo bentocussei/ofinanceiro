@@ -79,13 +79,13 @@ class GoalsAgent(BaseAgent):
             target_amount=int(args["target_amount"] * 100),
             contribution_amount=int(args["monthly_amount"] * 100) if args.get("monthly_amount") else None,
         )
-        goal = await create_goal(ctx.db, ctx.user_id, data)
+        goal = await create_goal(ctx.db, ctx.user_id, data, family_id=ctx.family_id)
         return {"success": True, "goal_id": str(goal.id), "name": goal.name}
 
     async def _get_progress(self, ctx: AgentContext) -> dict:
         from app.services.goal import list_goals
 
-        goals = await list_goals(ctx.db, ctx.user_id, "active")
+        goals = await list_goals(ctx.db, ctx.user_id, "active", family_id=ctx.family_id)
         if not goals:
             return {"message": "Nenhuma meta activa."}
 
@@ -145,7 +145,7 @@ class GoalsAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "goal_id inválido"}
 
-        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id, family_id=ctx.family_id)
         if not goal:
             return {"error": "Meta não encontrada"}
 
@@ -171,7 +171,7 @@ class GoalsAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "goal_id inválido"}
 
-        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id, family_id=ctx.family_id)
         if not goal:
             return {"error": "Meta não encontrada"}
 
@@ -190,7 +190,7 @@ class GoalsAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "goal_id inválido"}
 
-        goal = await get_goal(ctx.db, goal_id, ctx.user_id)
+        goal = await get_goal(ctx.db, goal_id, ctx.user_id, family_id=ctx.family_id)
         if not goal:
             return {"error": "Meta não encontrada"}
 
