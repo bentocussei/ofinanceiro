@@ -177,7 +177,29 @@ async def send_file(
         auto_message = message or f"Enviei um extracto bancario ({filename}). Podes analisar e importar as transaccoes?"
 
     elif is_pdf:
-        auto_message = message or f"Enviei um PDF ({filename}). Podes analisar este documento?"
+        # Extract text from PDF
+        try:
+            from io import BytesIO
+            from pypdf import PdfReader
+
+            reader = PdfReader(BytesIO(file_bytes))
+            pdf_text = ""
+            for page in reader.pages[:10]:  # max 10 pages
+                pdf_text += page.extract_text() or ""
+
+            if pdf_text.strip():
+                # Truncate if too long
+                if len(pdf_text) > 3000:
+                    pdf_text = pdf_text[:3000] + "\n... (texto truncado)"
+                auto_message = (
+                    f"Enviei um PDF ({filename}). Conteúdo extraído:\n\n"
+                    f"{pdf_text.strip()}\n\n"
+                    f"{message or 'Analisa este documento e diz-me o que contém. Se for uma factura, extrai os dados para registo.'}"
+                )
+            else:
+                auto_message = message or f"Enviei um PDF ({filename}) mas não consegui extrair texto. Pode ser um PDF de imagem."
+        except Exception:
+            auto_message = message or f"Enviei um PDF ({filename}). Podes analisar este documento?"
 
     else:
         auto_message = message or f"Enviei um ficheiro ({filename}, {content_type}). O que posso fazer com ele?"
