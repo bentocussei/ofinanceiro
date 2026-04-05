@@ -182,13 +182,16 @@ async def _load_user_financial_context(
             budget_lines.append(f"  - {b.name}: limite {(b.total_limit or 0) / 100:,.0f} Kz [budget_id: {b.id}]")
         sections.append("\n".join(budget_lines))
 
-    # --- Goals ---
-    goals = await db.scalars(
-        select(Goal).where(
-            Goal.user_id == user_id,
-            Goal.status == "active",
-        ).limit(5)
-    )
+    # --- Goals (context-aware: personal or family) ---
+    goal_query = select(Goal).where(Goal.user_id == user_id, Goal.status == "active")
+    if is_family and family_id_str:
+        try:
+            goal_query = goal_query.where(Goal.family_id == uuid.UUID(family_id_str))
+        except ValueError:
+            pass
+    else:
+        goal_query = goal_query.where(Goal.family_id.is_(None))
+    goals = await db.scalars(goal_query.limit(5))
     goal_list = list(goals.all())
     if goal_list:
         goal_lines = ["METAS ACTIVAS:"]
@@ -199,9 +202,16 @@ async def _load_user_financial_context(
             )
         sections.append("\n".join(goal_lines))
 
-    # --- Debts ---
-    debts = await db.scalars(
-        select(Debt).where(Debt.user_id == user_id).limit(5)
+    # --- Debts (context-aware) ---
+    debt_query = select(Debt).where(Debt.user_id == user_id)
+    if is_family and family_id_str:
+        try:
+            debt_query = debt_query.where(Debt.family_id == uuid.UUID(family_id_str))
+        except ValueError:
+            pass
+    else:
+        debt_query = debt_query.where(Debt.family_id.is_(None))
+    debts = await db.scalars(debt_query.limit(5)
     )
     debt_list = list(debts.all())
     if debt_list:
