@@ -5,9 +5,8 @@ import { useRouter, usePathname } from "next/navigation"
 import { familiesApi, type Family } from "@/lib/api/families"
 import { FamilySidebar } from "@/components/layout/FamilySidebar"
 import { FamilyOnboarding } from "@/components/layout/FamilyOnboarding"
+import { MobileNav } from "@/components/layout/MobileNav"
 import { PermissionProvider, usePermissions } from "@/providers/PermissionProvider"
-import { MessageCircle } from "lucide-react"
-import Link from "next/link"
 
 function FamilyLayoutInner({
   children,
@@ -43,7 +42,8 @@ function FamilyLayoutInner({
   return (
     <div className="flex h-screen">
       <FamilySidebar familyName={family.name} />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-14 md:pb-0">
+        <MobileNav context="family" />
         {isAssistant ? (
           children
         ) : (
@@ -52,15 +52,6 @@ function FamilyLayoutInner({
           </div>
         )}
       </main>
-      {!isAssistant && (
-        <Link
-          href="/family/assistant"
-          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105 md:hidden"
-          title="Abrir assistente"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Link>
-      )}
     </div>
   )
 }
