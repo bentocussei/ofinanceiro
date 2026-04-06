@@ -85,9 +85,9 @@ export default function FamilyTransactionsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Transacções Familiares</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* View toggle */}
           <div className="flex rounded-lg shadow-sm overflow-hidden">
             <button
