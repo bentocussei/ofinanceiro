@@ -271,11 +271,11 @@ export default function FamilyIncomeSourcesPage() {
       ) : (
         <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <Banknote className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{item.name}</p>
+            <div key={item.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors">
+              <div className="flex items-start gap-3 min-w-0">
+                <Banknote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{item.name}</p>
                   <p className="text-xs text-muted-foreground">
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">
                       {TYPE_LABELS[item.type] || item.type}
@@ -289,14 +289,16 @@ export default function FamilyIncomeSourcesPage() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <p className="font-mono font-semibold text-green-500">{formatKz(item.expected_amount)}</p>
-                <Button variant="ghost" size="sm" onClick={() => startEdit(item)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-600">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                <p className="font-mono font-semibold text-green-500 whitespace-nowrap">{formatKz(item.expected_amount)}</p>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => startEdit(item)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-600">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

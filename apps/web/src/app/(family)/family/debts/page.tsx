@@ -337,11 +337,11 @@ export default function FamilyDebtsPage() {
 
             return (
               <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{debt.name}</p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{debt.name}</p>
                       <p className="text-xs text-muted-foreground">
                         <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">
                           {TYPE_LABELS[debt.type] || debt.type}
@@ -352,19 +352,21 @@ export default function FamilyDebtsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="font-mono font-semibold text-red-500">{formatKz(debt.remaining_balance)}</p>
-                      <p className="text-xs text-muted-foreground font-mono">Min: {formatKz(debt.minimum_payment)}</p>
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                    <div className="text-left sm:text-right">
+                      <p className="font-mono font-semibold text-red-500 whitespace-nowrap">{formatKz(debt.remaining_balance)}</p>
+                      <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">Min: {formatKz(debt.minimum_payment)}</p>
                     </div>
-                    {debt.status !== "paid_off" && (
-                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setPayOpen(debt.id); setPayAmount("") }} title="Registar pagamento">
-                        <Banknote className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      {debt.status !== "paid_off" && (
+                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setPayOpen(debt.id); setPayAmount("") }} title="Registar pagamento">
+                          <Banknote className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(debt.id) }} className="text-red-500 hover:text-red-600">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(debt.id) }} className="text-red-500 hover:text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-2">
