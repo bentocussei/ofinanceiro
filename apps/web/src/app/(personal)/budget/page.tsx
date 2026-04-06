@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { PieChart } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { BudgetDetailDialog } from "@/components/budgets/BudgetDetailDialog"
 import { BudgetFormDialog } from "@/components/budgets/BudgetFormDialog"
@@ -57,7 +58,8 @@ export default function BudgetPage() {
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Orcamentos</h2>
-        <Button onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
+        <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Novo orcamento" />
       </div>
 
       {budgets.length === 0 ? (

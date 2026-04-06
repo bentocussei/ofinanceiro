@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Repeat, Plus, Pencil, Trash2 } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -250,7 +251,7 @@ export default function RecurringRulesPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Recorrentes</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova regra
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
@@ -320,6 +321,8 @@ export default function RecurringRulesPage() {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova regra" />
+</div>
   )
 }

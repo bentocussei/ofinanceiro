@@ -7,6 +7,7 @@ import {
   Home, Car, MapPin, Gem, Paintbrush, Monitor,
   Sofa, TreeDeciduous, Briefcase, Package,
 } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import {
   AssetDetailDialog,
@@ -218,7 +219,7 @@ export default function AssetsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Património</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
             <Plus className="h-4 w-4 mr-1" /> Novo bem
           </DialogTrigger>
           <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -415,6 +416,8 @@ export default function AssetsPage() {
         onUpdated={() => { setCursor(null); setHasMore(false); fetchAssets(); fetchSummary() }}
         onDeleted={() => { setCursor(null); setHasMore(false); fetchAssets(); fetchSummary() }}
       />
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Novo bem" />
+</div>
   )
 }

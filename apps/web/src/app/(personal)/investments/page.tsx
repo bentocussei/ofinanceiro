@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Plus, Trash2, Calculator, LineChart,
   PieChart, AlertTriangle, AlertOctagon, Info, Shield, Sparkles, Send,
 } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { InvestmentDetailDialog } from "@/components/investments/InvestmentDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -303,7 +304,7 @@ export default function InvestmentsPage() {
             Simulador
           </Button>
           <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-            <DialogTrigger render={<Button />}>
+            <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
               <Plus className="h-4 w-4 mr-1" /> Novo investimento
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -624,6 +625,8 @@ export default function InvestmentsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Novo investimento" />
+</div>
   )
 }

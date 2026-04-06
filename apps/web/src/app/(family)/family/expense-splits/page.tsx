@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Check, Percent, Plus } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -196,7 +197,7 @@ export default function FamilyExpenseSplitsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Divisão de Despesas</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button size="sm" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" size="sm" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova divisão
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
@@ -397,6 +398,8 @@ export default function FamilyExpenseSplitsPage() {
           <p className="text-sm text-muted-foreground mb-4">Nenhuma divisão de despesa registada</p>
         </div>
       )}
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova divisão" />
+</div>
   )
 }

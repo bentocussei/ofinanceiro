@@ -51,10 +51,15 @@ const USAGE_TYPES = [
 
 interface Props {
   onCreated?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
 }
 
-export function CreateAccountDialog({ onCreated }: Props) {
-  const [open, setOpen] = useState(false)
+export function CreateAccountDialog({ onCreated, open: controlledOpen, onOpenChange, hideTrigger }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = onOpenChange ?? setInternalOpen
   const [name, setName] = useState("")
   const [type, setType] = useState("bank")
   const [institution, setInstitution] = useState("")
@@ -125,9 +130,11 @@ export function CreateAccountDialog({ onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
-      <DialogTrigger render={<Button />}>
-        + Nova conta
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger render={<Button />}>
+          + Nova conta
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nova conta</DialogTitle>

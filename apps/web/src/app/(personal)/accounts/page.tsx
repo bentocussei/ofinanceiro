@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 
 import { Wallet } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { AccountDetailDialog } from "@/components/accounts/AccountDetailDialog"
 import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
@@ -30,15 +31,20 @@ export default function AccountsPage() {
     accountsApi.summary().then(setSummary).catch(() => {})
   }, [])
 
+  const [createOpen, setCreateOpen] = useState(false)
+
   return (
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Contas</h2>
-        <div className="flex gap-2">
+        <div className="hidden md:flex gap-2">
           <TransferDialog onTransferred={() => accountsApi.summary().then(setSummary)} />
           <CreateAccountDialog onCreated={() => accountsApi.summary().then(setSummary)} />
         </div>
       </div>
+
+      <CreateAccountDialog open={createOpen} onOpenChange={setCreateOpen} hideTrigger onCreated={() => accountsApi.summary().then(setSummary)} />
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova conta" />
 
       {summary && (
         <>

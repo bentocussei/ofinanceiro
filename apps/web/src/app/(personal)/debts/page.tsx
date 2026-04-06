@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import {
   CreditCard, Plus, Trash2, Calculator, Banknote,
 } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { DebtDetailDialog } from "@/components/debts/DebtDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -215,7 +216,7 @@ export default function DebtsPage() {
             Simular
           </Button>
           <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-            <DialogTrigger render={<Button />}>
+            <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
               <Plus className="h-4 w-4 mr-1" /> Nova dívida
             </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -471,6 +472,8 @@ export default function DebtsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova dívida" />
+</div>
   )
 }

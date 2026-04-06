@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Plus, Wallet } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -77,7 +78,7 @@ export default function FamilyAccountsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Contas Partilhadas</h2>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger render={<Button size="sm" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" size="sm" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova conta
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
@@ -171,6 +172,8 @@ export default function FamilyAccountsPage() {
           <p className="text-sm text-muted-foreground mb-4">Nenhuma conta partilhada registada</p>
         </div>
       )}
-    </div>
+    
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova conta" />
+</div>
   )
 }

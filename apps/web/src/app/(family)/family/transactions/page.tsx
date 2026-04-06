@@ -1,8 +1,9 @@
 "use client"
 
 import { useMemo, useEffect, useState } from "react"
-import { Plus, Receipt } from "lucide-react"
+import { Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
 import { transactionsApi, type Transaction } from "@/lib/api/transactions"
@@ -145,15 +146,7 @@ export default function FamilyTransactionsPage() {
         </div>
       </div>
 
-      {/* Mobile FAB */}
-      <button
-        type="button"
-        onClick={() => setCreateOpen(true)}
-        aria-label="Nova transacção"
-        className="md:hidden fixed bottom-20 right-4 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Nova transacção" />
 
       {filtered.length === 0 ? (
         <div className="text-center py-16">

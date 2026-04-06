@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Plus, Target, PiggyBank } from "lucide-react"
+import { MobileFAB } from "@/components/layout/MobileFAB"
 
 import { GoalDetailDialog } from "@/components/goals/GoalDetailDialog"
 import { Button } from "@/components/ui/button"
@@ -134,7 +135,7 @@ export default function GoalsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Metas</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button size="sm" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" size="sm" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova meta
           </DialogTrigger>
           <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -337,6 +338,8 @@ export default function GoalsPage() {
         onUpdated={() => { setCursor(null); setHasMore(false); fetchGoals() }}
         onDeleted={() => { setCursor(null); setHasMore(false); fetchGoals() }}
       />
-    </div>
+    
+      <MobileFAB onClick={() => setDetailOpen(true)} label="Nova meta" />
+</div>
   )
 }
