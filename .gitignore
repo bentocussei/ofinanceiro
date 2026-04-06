@@ -76,3 +76,7 @@ docker-compose.override.yml
 *.bak
 *.tmp
 .wrangler/
+
+# Playwright debug screenshots
+desktop-*.png
+mobile-*.png
