@@ -80,3 +80,4 @@ docker-compose.override.yml
 # Playwright debug screenshots
 desktop-*.png
 mobile-*.png
+.playwright-mcp/
