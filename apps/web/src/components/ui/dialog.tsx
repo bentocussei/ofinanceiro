@@ -53,11 +53,18 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Base / mobile: bottom sheet (slides up from bottom, full width, rounded top corners)
+          "fixed left-0 right-0 bottom-0 z-50 grid w-full max-w-full gap-4 rounded-t-2xl rounded-b-none bg-popover p-4 pb-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-150 outline-none max-h-[90vh] overflow-y-auto",
+          "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-4 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-4",
+          // Desktop (sm and up): centered modal (original look)
+          "sm:left-1/2 sm:right-auto sm:top-1/2 sm:bottom-auto sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:max-h-none sm:overflow-visible sm:pb-4",
+          "sm:data-open:slide-in-from-bottom-0 sm:data-open:zoom-in-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden mx-auto -mt-1 h-1.5 w-10 rounded-full bg-muted-foreground/30" aria-hidden="true" />
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
