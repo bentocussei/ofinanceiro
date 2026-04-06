@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react"
 import type { ReactNode } from "react"
+import { hapticTap } from "@/lib/haptics"
 
 interface Props {
   onClick: () => void
@@ -17,7 +18,7 @@ export function MobileFAB({ onClick, label, icon }: Props) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => { hapticTap(); onClick() }}
       aria-label={label}
       className="md:hidden fixed bottom-20 right-4 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition-transform"
     >

@@ -32,6 +32,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { hapticTap } from "@/lib/haptics"
 
 interface NavItem {
   href: string
@@ -133,6 +134,18 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
 
   const isActive = (href: string) => pathname === href
 
+  // Find the current page title from nav sections
+  const currentPageTitle = (() => {
+    for (const section of sections) {
+      for (const item of section.items) {
+        if (pathname === item.href || pathname?.startsWith(item.href + "/")) {
+          return item.label
+        }
+      }
+    }
+    return "O Financeiro"
+  })()
+
   // Auto-close drawer when viewport reaches desktop breakpoint
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)")
@@ -147,7 +160,7 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
     <>
       {/* Top bar — mobile only */}
       <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-card border-b border-border">
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet open={open} onOpenChange={(v) => { if (v) hapticTap(); setOpen(v) }}>
           <SheetTrigger
             className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent"
             aria-label="Abrir menu"
@@ -191,7 +204,7 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
           </SheetContent>
         </Sheet>
 
-        <span className="text-sm font-semibold tracking-tight">O Financeiro</span>
+        <span className="text-sm font-semibold tracking-tight truncate px-2">{currentPageTitle}</span>
 
         <Link
           href={context === "family" ? "/family" : "/settings"}
@@ -211,6 +224,7 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={() => hapticTap()}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] transition-colors ${
                 active ? "text-primary" : "text-muted-foreground"
               }`}
