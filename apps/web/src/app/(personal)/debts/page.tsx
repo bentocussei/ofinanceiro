@@ -331,7 +331,7 @@ export default function DebtsPage() {
               : 0
 
             return (
-              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
+              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3 min-w-0">
                     <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />

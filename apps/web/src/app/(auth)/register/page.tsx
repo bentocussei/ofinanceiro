@@ -298,7 +298,7 @@ export default function RegisterPage() {
                   <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3">
                     <Gift className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                     <div className="text-sm">
-                      <p className="font-medium text-primary">{promoValidation.name}</p>
+                      <p className="font-medium text-primary truncate">{promoValidation.name}</p>
                       <p className="text-muted-foreground">{promoValidation.description}</p>
                     </div>
                   </div>

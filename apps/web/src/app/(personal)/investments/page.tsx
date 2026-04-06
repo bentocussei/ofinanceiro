@@ -508,7 +508,7 @@ export default function InvestmentsPage() {
                 : 0
 
               return (
-                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailInvestment(inv); setDetailOpen(true) }}>
+                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailInvestment(inv); setDetailOpen(true) }}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`flex items-center justify-center h-9 w-9 rounded-lg ${returnVal >= 0 ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
                       {returnVal >= 0

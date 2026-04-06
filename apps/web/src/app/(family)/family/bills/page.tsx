@@ -316,7 +316,7 @@ export default function FamilyBillsPage() {
                 <div className="flex items-center gap-3">
                   <Receipt className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">{item.name}</p>
+                    <p className="font-medium truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {item.category && <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">{item.category}</span>}
                       Dia {item.due_day} -- {FREQ_LABELS[item.frequency] || item.frequency}

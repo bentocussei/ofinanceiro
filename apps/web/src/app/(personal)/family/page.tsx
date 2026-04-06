@@ -248,7 +248,7 @@ export default function FamilyPage() {
         {activeMembers.map((member) => {
           const RoleIcon = ROLE_ICONS[member.role] || User
           return (
-            <div key={member.id} className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => openMemberDetail(member)}>
+            <div key={member.id} className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => openMemberDetail(member)}>
               <RoleIcon className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">
                 <p className="font-medium text-sm">{member.display_name || "Membro"}</p>

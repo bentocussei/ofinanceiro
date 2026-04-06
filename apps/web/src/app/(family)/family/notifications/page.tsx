@@ -69,7 +69,7 @@ export default function FamilyNotificationsPage() {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-accent/50 ${!n.is_read ? "bg-blue-50/50 dark:bg-blue-950/10" : ""}`}
+              className={`px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-accent/50 active:bg-accent/50 ${!n.is_read ? "bg-blue-50/50 dark:bg-blue-950/10" : ""}`}
               onClick={() => { if (!n.is_read) markRead(n.id) }}
             >
               <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${!n.is_read ? "bg-blue-500" : "bg-transparent"}`} />

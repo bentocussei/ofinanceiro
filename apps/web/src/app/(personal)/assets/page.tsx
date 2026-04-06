@@ -368,7 +368,7 @@ export default function AssetsPage() {
             const keyDetail = getKeyDetail(asset)
 
             return (
-              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setDetailAsset(asset); setDetailOpen(true) }}>
+              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailAsset(asset); setDetailOpen(true) }}>
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">

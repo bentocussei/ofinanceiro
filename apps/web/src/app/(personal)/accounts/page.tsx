@@ -71,11 +71,11 @@ export default function AccountsPage() {
           {/* Accounts List */}
           <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
             {summary.accounts.map((acc) => (
-              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
+              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
                 <div className="flex items-center gap-3">
                   <IconDisplay name={acc.type} className="h-6 w-6" />
                   <div>
-                    <p className="font-medium">{acc.name}</p>
+                    <p className="font-medium truncate">{acc.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {TYPE_LABELS[acc.type] || acc.type}
                       {acc.institution ? ` · ${acc.institution}` : ""}

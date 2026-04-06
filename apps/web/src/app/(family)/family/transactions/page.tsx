@@ -173,7 +173,7 @@ export default function FamilyTransactionsPage() {
             </thead>
             <tbody className="divide-y">
               {filtered.map((txn) => (
-                <tr key={txn.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                <tr key={txn.id} className="hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                     {formatRelativeDate(txn.transaction_date)}
                   </td>
@@ -236,7 +236,7 @@ export default function FamilyTransactionsPage() {
                   </div>
                   <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
                     {items.map((txn) => (
-                      <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                      <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div
                             className={`h-2 w-2 shrink-0 rounded-full ${
