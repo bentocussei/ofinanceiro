@@ -29,14 +29,19 @@ import { tagsApi, type Tag } from "@/lib/api/tags"
 
 interface Props {
   onCreated?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
 }
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function CreateTransactionDialog({ onCreated }: Props) {
-  const [open, setOpen] = useState(false)
+export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpenChange, hideTrigger }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = onOpenChange ?? setInternalOpen
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
@@ -138,9 +143,11 @@ export function CreateTransactionDialog({ onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
-      <DialogTrigger render={<Button />}>
-        + Nova transacção
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger render={<Button />}>
+          + Nova transacção
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova transacção</DialogTitle>

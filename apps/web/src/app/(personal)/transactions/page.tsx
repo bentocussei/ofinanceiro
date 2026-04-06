@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect, useState } from "react"
 
-import { Receipt } from "lucide-react"
+import { Plus, Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
@@ -21,6 +21,7 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("month")
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const fetchTransactions = (reset = false) => {
     const cursorParam = reset || !cursor ? "" : `&cursor=${cursor}`
@@ -101,42 +102,57 @@ export default function TransactionsPage() {
               Planilha
             </button>
           </div>
-          <CreateTransactionDialog onCreated={() => fetchTransactions(true)} />
+          <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>+ Nova transacção</Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {typeOptions.map((opt) => (
-          <button
-            key={opt.value}
-            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-              typeFilter === opt.value
-                ? "bg-foreground text-background border-foreground"
-                : "border-border hover:bg-accent"
-            }`}
-            onClick={() => setTypeFilter(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Single dialog instance, controlled by parent state */}
+      <CreateTransactionDialog open={createOpen} onOpenChange={setCreateOpen} hideTrigger onCreated={() => fetchTransactions(true)} />
 
-        <span className="w-px h-6 bg-border self-center mx-1" />
+      {/* Filters — horizontal scroll on mobile */}
+      <div className="-mx-4 px-4 md:mx-0 md:px-0 mb-4 overflow-x-auto md:overflow-visible scrollbar-hide">
+        <div className="flex items-center gap-2 md:flex-wrap min-w-max md:min-w-0">
+          {typeOptions.map((opt) => (
+            <button
+              key={opt.value}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                typeFilter === opt.value
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:bg-accent"
+              }`}
+              onClick={() => setTypeFilter(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
 
-        {periodOptions.map((opt) => (
-          <button
-            key={opt.value}
-            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-              periodFilter === opt.value
-                ? "bg-foreground text-background border-foreground"
-                : "border-border hover:bg-accent"
-            }`}
-            onClick={() => setPeriodFilter(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
+          <span className="w-px h-6 bg-border shrink-0 mx-1" />
+
+          {periodOptions.map((opt) => (
+            <button
+              key={opt.value}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                periodFilter === opt.value
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:bg-accent"
+              }`}
+              onClick={() => setPeriodFilter(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Mobile FAB */}
+      <button
+        type="button"
+        onClick={() => setCreateOpen(true)}
+        aria-label="Nova transacção"
+        className="md:hidden fixed bottom-20 right-4 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -216,10 +232,10 @@ export default function TransactionsPage() {
                 </div>
                 <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
                   {items.map((txn) => (
-                    <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
-                      <span className="text-sm">{txn.description || "Sem descrição"}</span>
+                    <div key={txn.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                      <span className="text-sm truncate min-w-0 flex-1">{txn.description || "Sem descrição"}</span>
                       <span
-                        className={`font-mono font-semibold text-sm ${
+                        className={`font-mono font-semibold text-sm whitespace-nowrap shrink-0 ${
                           txn.type === "income" ? "text-green-500" : "text-red-500"
                         }`}
                       >
