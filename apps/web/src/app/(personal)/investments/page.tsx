@@ -295,7 +295,7 @@ export default function InvestmentsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Investimentos</h2>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setSimOpen(true)}>
@@ -432,7 +432,7 @@ export default function InvestmentsPage() {
 
         {/* Insights & Recommendations */}
         <div className="rounded-xl bg-card p-5 shadow-sm border border-border">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-muted-foreground" />
               <h3 className="font-semibold">Insights e recomendações</h3>

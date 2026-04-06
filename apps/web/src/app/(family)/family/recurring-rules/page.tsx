@@ -248,7 +248,7 @@ export default function FamilyRecurringRulesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Recorrentes Familiares</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
           <DialogTrigger render={<Button />}>

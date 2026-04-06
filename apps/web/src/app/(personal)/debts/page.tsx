@@ -207,7 +207,7 @@ export default function DebtsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Dívidas</h2>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setSimOpen(true)}>

@@ -68,9 +68,9 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Relatórios</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {periodOptions.map((opt) => (
             <button
               key={opt.value}

@@ -110,7 +110,7 @@ export default function EducationPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-[22px] font-bold tracking-tight">Educacao financeira</h2>
         <Button variant="outline" onClick={fetchData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
