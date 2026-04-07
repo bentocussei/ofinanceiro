@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next"
 
+const ENV_LABEL = process.env.NEXT_PUBLIC_APP_ENV_LABEL?.trim() || ""
+const APP_NAME = ENV_LABEL ? `O Financeiro (${ENV_LABEL})` : "O Financeiro"
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "O Financeiro",
-    short_name: "O Financeiro",
+    name: APP_NAME,
+    short_name: APP_NAME,
     description:
       "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
     start_url: "/dashboard",

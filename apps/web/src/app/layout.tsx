@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { PWARegister } from "@/components/layout/PWARegister";
+import { InstallPWAPrompt } from "@/components/layout/InstallPWAPrompt";
 import "./globals.css";
 
 const inter = Inter({
@@ -76,6 +77,7 @@ export default function RootLayout({
         {children}
         <Toaster position="bottom-right" richColors />
         <PWARegister />
+        <InstallPWAPrompt />
       </body>
     </html>
   );

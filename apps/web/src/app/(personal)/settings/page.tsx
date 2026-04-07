@@ -6,6 +6,7 @@ import {
   Mail,
   Phone,
   ShieldCheck,
+  Smartphone,
   Tag as TagIcon,
   Trash2,
   User,
@@ -16,19 +17,28 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { InstallAppTab } from "@/components/settings/InstallAppTab"
 import { SecurityTab } from "@/components/settings/SecurityTab"
 import { SubscriptionTab } from "@/components/settings/SubscriptionTab"
 import { TagsTab } from "@/components/settings/TagsTab"
 import { usersApi } from "@/lib/api/users"
 import { getCurrentUser, type UserProfile } from "@/lib/auth"
 
-type TabId = "profile" | "subscription" | "tags" | "security"
+type TabId = "profile" | "subscription" | "tags" | "security" | "install"
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+interface TabDef {
+  id: TabId
+  label: string
+  icon: React.ElementType
+  mobileOnly?: boolean
+}
+
+const TABS: TabDef[] = [
   { id: "profile", label: "Perfil", icon: User },
   { id: "subscription", label: "Subscricao", icon: CreditCard },
   { id: "tags", label: "Etiquetas", icon: TagIcon },
   { id: "security", label: "Seguranca", icon: ShieldCheck },
+  { id: "install", label: "Instalar app", icon: Smartphone, mobileOnly: true },
 ]
 
 // ---------------------------------------------------------------------------
@@ -47,6 +57,18 @@ export default function SettingsPage() {
     })
   }, [])
 
+  // Mobile-only tabs (e.g. install) must fall back when viewport reaches desktop
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const mq = window.matchMedia("(min-width: 768px)")
+    const sync = () => {
+      if (mq.matches && tab === "install") setTab("profile")
+    }
+    sync()
+    mq.addEventListener("change", sync)
+    return () => mq.removeEventListener("change", sync)
+  }, [tab])
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -60,7 +82,7 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold tracking-tight mb-6">Configuracoes</h1>
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto">
+      <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto scrollbar-hide">
         {TABS.map((t) => {
           const Icon = t.icon
           const active = tab === t.id
@@ -69,6 +91,8 @@ export default function SettingsPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                t.mobileOnly ? "md:hidden" : ""
+              } ${
                 active
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
@@ -86,6 +110,7 @@ export default function SettingsPage() {
       {tab === "subscription" && <SubscriptionTab user={user} />}
       {tab === "tags" && <TagsTab />}
       {tab === "security" && <SecurityTab />}
+      {tab === "install" && <InstallAppTab />}
     </div>
   )
 }
