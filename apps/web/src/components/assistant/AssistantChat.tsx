@@ -367,7 +367,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                 : "Pergunte qualquer coisa sobre as suas financas. Posso consultar saldos, registar transaccoes, analisar gastos e muito mais."}
             </p>
 
-            <div className="grid grid-cols-2 gap-2 w-full max-w-lg">
+            <div className="hidden md:grid grid-cols-2 gap-2 w-full max-w-lg">
               {quickActions.map((action) => (
                 <button
                   key={action.label}

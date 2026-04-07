@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "O Financeiro",
     description:
-      "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+      "Gestão financeira pessoal e familiar para Angola",
     type: "website",
     locale: "pt_AO",
     siteName: "O Financeiro",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "O Financeiro",
     description:
-      "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+      "Gestão financeira pessoal e familiar para Angola",
   },
 };
 

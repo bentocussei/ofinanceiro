@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: APP_NAME,
     short_name: APP_NAME,
     description:
-      "Gestão financeira pessoal e familiar com IA para Angola e PALOP",
+      "Gestão financeira pessoal e familiar para Angola",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

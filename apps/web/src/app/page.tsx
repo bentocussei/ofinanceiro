@@ -123,8 +123,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex items-center justify-between px-8 py-3 max-w-[1600px]">
-          <a href="/"><LogoFull className="h-12" /></a>
+        <div className="mx-auto flex items-center justify-between px-4 md:px-8 py-3 max-w-[1600px]">
+          <a href="/"><LogoFull className="h-9 md:h-12" /></a>
           <nav className="hidden items-center gap-6 text-sm md:flex">
             <a href="#funcionalidades" className="text-muted-foreground transition-colors hover:text-foreground">
               Funcionalidades
@@ -136,7 +136,7 @@ export default function LandingPage() {
               Preços
             </a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
             <Link
               href="/login"
@@ -146,51 +146,51 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/register"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="whitespace-nowrap rounded-md bg-primary px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Começar grátis
+              Começar<span className="hidden sm:inline"> grátis</span>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-28 pb-16">
+      <section className="relative overflow-hidden pt-20 md:pt-28 pb-12 md:pb-16">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="pointer-events-none absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
 
-        <div className="relative mx-auto px-8 max-w-[1600px]">
+        <div className="relative mx-auto px-4 md:px-8 max-w-[1600px]">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             {/* Left — text */}
             <div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
                 Saiba exactamente para onde vai cada{" "}
                 <span className="text-primary">Kwanza</span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-5 md:mt-6 max-w-xl text-base md:text-lg leading-relaxed text-muted-foreground">
                 A plataforma de gestão financeira pessoal e familiar mais completa de Angola.
                 Contas, orçamentos, metas, investimentos, património — tudo num só lugar.
               </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-7 md:mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 md:px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
                 >
                   Começar 90 dias grátis
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-lg border border-border px-8 py-3.5 text-sm font-medium transition-colors hover:bg-accent"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-6 md:px-8 py-3.5 text-sm font-medium transition-colors hover:bg-accent"
                 >
                   Já tenho conta
                 </Link>
               </div>
 
               {/* Stats */}
-              <div className="mt-12 grid grid-cols-3 gap-6">
+              <div className="mt-10 md:mt-12 grid grid-cols-3 gap-4 md:gap-6">
                 {stats.map((s) => (
                   <div key={s.label}>
                     <p className="text-xl font-bold font-mono text-primary">{s.value}</p>
@@ -222,9 +222,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="funcionalidades" className="py-20">
-        <div className="mx-auto px-8 max-w-[1600px]">
-          <div className="max-w-xl mb-14">
+      <section id="funcionalidades" className="py-14 md:py-20">
+        <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
+          <div className="max-w-xl mb-10 md:mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Funcionalidades
             </p>
@@ -261,9 +261,9 @@ export default function LandingPage() {
       </section>
 
       {/* Platform showcase */}
-      <section id="plataforma" className="border-t border-border bg-muted/30 py-20">
-        <div className="mx-auto px-8 max-w-[1600px]">
-          <div className="max-w-xl mb-14">
+      <section id="plataforma" className="border-t border-border bg-muted/30 py-14 md:py-20">
+        <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
+          <div className="max-w-xl mb-10 md:mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Plataforma
             </p>
@@ -281,8 +281,8 @@ export default function LandingPage() {
       </section>
 
       {/* Video Demo */}
-      <section className="py-20">
-        <div className="mx-auto px-8 max-w-[1600px]">
+      <section className="py-14 md:py-20">
+        <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">
@@ -313,8 +313,8 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="precos" className="border-t border-border bg-muted/30 py-20">
-        <div className="mx-auto px-8 max-w-[1600px]">
+      <section id="precos" className="border-t border-border bg-muted/30 py-14 md:py-20">
+        <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
           <div className="max-w-xl mb-10">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Preços
@@ -373,8 +373,8 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20">
-        <div className="mx-auto px-8 max-w-[1600px]">
+      <section className="py-14 md:py-20">
+        <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
             <div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -386,7 +386,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 md:px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_2px_12px_rgba(21,128,61,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_4px_20px_rgba(21,128,61,0.35)]"
                 >
                   Criar conta grátis
                   <ArrowRight className="h-4 w-4" />
@@ -439,7 +439,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border py-4">
-        <div className="mx-auto flex flex-col items-center justify-between gap-3 px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
+        <div className="mx-auto flex flex-col items-center justify-between gap-3 px-4 md:px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
           <LogoFull className="h-12" />
           <p>Gestao financeira pessoal e familiar para Angola</p>
           <p className="text-xs text-muted-foreground/60">Powered by Magiflex</p>
