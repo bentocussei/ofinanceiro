@@ -56,8 +56,12 @@ export function TransactionDetailDialog({
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (open && isEditing) {
+    if (open) {
+      // Categories are needed both for the read-only category name lookup
+      // and for the edit-mode picker.
       categoriesApi.list().then(setCategories).catch(() => {})
+    }
+    if (open && isEditing) {
       tagsApi.list().then(setAvailableTags).catch(() => {})
     }
   }, [open, isEditing])
@@ -169,7 +173,10 @@ export function TransactionDetailDialog({
 
   if (!transaction) return null
 
-  const categoryName = transaction.category_name || "Sem categoria"
+  const categoryName =
+    transaction.category_name ||
+    categories.find((c) => c.id === transaction.category_id)?.name ||
+    "Sem categoria"
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setIsEditing(false) }}>

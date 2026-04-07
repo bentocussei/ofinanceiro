@@ -6,7 +6,76 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+interface SelectItemMeta {
+  value: unknown
+  label: string
+}
+
+/**
+ * Walk a React tree looking for SelectItem-like elements and collect
+ * { value, label } pairs. The label is taken from the explicit `label`
+ * prop on the item if present, otherwise extracted from its children.
+ *
+ * This lets the wrapped <Select> derive base-ui's `items` prop
+ * automatically so that <Select.Value> displays the correct human label
+ * for the currently selected value (base-ui falls back to the raw value
+ * when no items array is provided).
+ */
+function collectSelectItems(node: React.ReactNode): SelectItemMeta[] {
+  const out: SelectItemMeta[] = []
+
+  const visit = (n: React.ReactNode): void => {
+    if (n == null || typeof n === "boolean") return
+    if (Array.isArray(n)) {
+      n.forEach(visit)
+      return
+    }
+    if (typeof n !== "object") return
+    const el = n as React.ReactElement<Record<string, unknown>>
+    const props = el.props
+    if (!props) return
+
+    // Detect SelectItem by the presence of a `value` prop. Both our
+    // wrapper and the raw base-ui primitive expose it identically.
+    if ("value" in props) {
+      const value = props.value
+      const explicitLabel =
+        typeof props.label === "string" ? props.label : undefined
+      const extracted = extractTextFromChildren(
+        props.children as React.ReactNode
+      ).trim()
+      const label = explicitLabel || extracted || String(value ?? "")
+      out.push({ value, label })
+    }
+
+    // Recurse into children regardless (SelectContent wraps items, etc.)
+    if ("children" in props && props.children != null) {
+      visit(props.children as React.ReactNode)
+    }
+  }
+
+  visit(node)
+  return out
+}
+
+function Select({
+  children,
+  items: itemsProp,
+  ...props
+}: SelectPrimitive.Root.Props) {
+  // If the caller already passed `items`, respect it.
+  // Otherwise auto-collect from <SelectItem> children.
+  const items = React.useMemo(() => {
+    if (itemsProp !== undefined) return itemsProp
+    return collectSelectItems(children)
+  }, [itemsProp, children])
+
+  return (
+    <SelectPrimitive.Root items={items} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
