@@ -1,17 +1,19 @@
 "use client"
 
-import { CheckCircle2, Download, Plus, Share, Smartphone } from "lucide-react"
+import { CheckCircle2, Download, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePWAInstall } from "@/lib/usePWAInstall"
+import { getBrowserInstructions } from "@/lib/pwaInstructions"
 import { hapticConfirm } from "@/lib/haptics"
 
 /**
  * Settings tab that explains and triggers PWA installation.
  * Mounted only on mobile (the tab itself is hidden on desktop in the
- * parent settings page).
+ * parent settings page). Detects the browser to show the right
+ * manual install steps when programmatic install is unavailable.
  */
 export function InstallAppTab() {
-  const { canInstall, install, isStandalone, isIOS } = usePWAInstall()
+  const { canInstall, install, isStandalone, browser } = usePWAInstall()
 
   const handleInstall = async () => {
     hapticConfirm()
@@ -63,61 +65,30 @@ export function InstallAppTab() {
           </li>
         </ul>
 
-        {isIOS ? (
-          <div className="rounded-lg bg-muted p-4 space-y-3 text-sm">
-            <p className="font-medium text-foreground">Como instalar no iPhone</p>
-            <ol className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">1.</span>
-                <span className="flex-1">
-                  Toque no botão de partilhar
-                  <Share className="inline-block h-4 w-4 mx-1 text-blue-500" />
-                  na barra inferior do Safari
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">2.</span>
-                <span className="flex-1">
-                  Deslize para baixo e escolha
-                  <Plus className="inline-block h-4 w-4 mx-1" />
-                  <span className="font-medium text-foreground">
-                    Adicionar ao ecrã principal
-                  </span>
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">3.</span>
-                <span className="flex-1">
-                  Confirme tocando em <span className="font-medium text-foreground">Adicionar</span>
-                </span>
-              </li>
-            </ol>
-          </div>
-        ) : canInstall ? (
+        {canInstall ? (
           <Button onClick={handleInstall} className="w-full">
             <Download className="h-4 w-4 mr-2" />
             Instalar agora
           </Button>
         ) : (
-          <div className="rounded-lg bg-muted p-4 space-y-3 text-sm">
-            <p className="font-medium text-foreground">Como instalar no Android</p>
-            <ol className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">1.</span>
-                <span className="flex-1">Abra o menu do Chrome (três pontos no canto superior direito)</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">2.</span>
-                <span className="flex-1">
-                  Escolha <span className="font-medium text-foreground">Instalar app</span> ou <span className="font-medium text-foreground">Adicionar ao ecrã inicial</span>
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="font-semibold text-foreground">3.</span>
-                <span className="flex-1">Confirme a instalação</span>
-              </li>
-            </ol>
-          </div>
+          (() => {
+            const instructions = getBrowserInstructions(browser)
+            return (
+              <div className="rounded-lg bg-muted p-4 space-y-3 text-sm">
+                <p className="font-medium text-foreground">
+                  Como instalar no {instructions.label}
+                </p>
+                <ol className="space-y-2 text-muted-foreground">
+                  {instructions.steps.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="font-semibold text-foreground shrink-0">{i + 1}.</span>
+                      <span className="flex-1">{step.text}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )
+          })()
         )}
       </div>
     </div>
