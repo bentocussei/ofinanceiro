@@ -25,6 +25,26 @@ from app.services import transaction as txn_service
 router = APIRouter(prefix="/api/v1/transactions", tags=["transactions"])
 
 
+def _serialize(txn: Transaction) -> TransactionResponse:
+    """Build a TransactionResponse with denormalized account_name and
+    category_name. Requires the transaction to have its `account` and
+    `category` relationships eagerly loaded by the caller."""
+    response = TransactionResponse.model_validate(txn)
+    # account is a non-null relationship, but we still defend against it
+    # being unloaded in unexpected paths.
+    try:
+        if txn.account is not None:
+            response.account_name = txn.account.name
+    except Exception:
+        response.account_name = None
+    try:
+        if txn.category is not None:
+            response.category_name = txn.category.name
+    except Exception:
+        response.category_name = None
+    return response
+
+
 @router.get("/")
 async def list_transactions(
     account_id: uuid.UUID | None = None,
@@ -57,7 +77,7 @@ async def list_transactions(
     )
 
     return {
-        "items": [TransactionResponse.model_validate(t) for t in transactions],
+        "items": [_serialize(t) for t in transactions],
         "cursor": next_cursor,
         "has_more": next_cursor is not None,
     }
@@ -195,7 +215,7 @@ async def get_transaction(
     txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
-    return TransactionResponse.model_validate(txn)
+    return _serialize(txn)
 
 
 @router.post("/", response_model=TransactionResponse, status_code=201)
@@ -208,7 +228,10 @@ async def create_transaction(
 ) -> TransactionResponse:
     require_permission(ctx, "can_add_transactions")
     txn = await txn_service.create_transaction(db, user.id, data, family_id=ctx.family_id)
-    return TransactionResponse.model_validate(txn)
+    # Re-fetch with relationships eager-loaded so the response includes
+    # account_name and category_name without triggering lazy loads.
+    fresh = await txn_service.get_transaction(db, txn.id, user.id, family_id=ctx.family_id)
+    return _serialize(fresh or txn)
 
 
 @router.put("/{txn_id}", response_model=TransactionResponse)
@@ -224,8 +247,9 @@ async def update_transaction(
     txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
-    updated = await txn_service.update_transaction(db, txn, data)
-    return TransactionResponse.model_validate(updated)
+    await txn_service.update_transaction(db, txn, data)
+    fresh = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
+    return _serialize(fresh or txn)
 
 
 @router.delete("/{txn_id}", status_code=204)

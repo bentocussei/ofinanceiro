@@ -4,6 +4,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.account import Account
 from app.models.transaction import Transaction
@@ -25,7 +26,14 @@ async def list_transactions(
     - family_id=None (personal): transactions on accounts where family_id IS NULL
     - family_id=<uuid> (family): transactions on accounts with matching family_id
     """
-    stmt = select(Transaction).join(Account, Transaction.account_id == Account.id)
+    stmt = (
+        select(Transaction)
+        .join(Account, Transaction.account_id == Account.id)
+        .options(
+            selectinload(Transaction.account),
+            selectinload(Transaction.category),
+        )
+    )
     if family_id is not None:
         stmt = stmt.where(Account.family_id == family_id)
     else:
@@ -81,6 +89,10 @@ async def get_transaction(
     stmt = (
         select(Transaction)
         .join(Account, Transaction.account_id == Account.id)
+        .options(
+            selectinload(Transaction.account),
+            selectinload(Transaction.category),
+        )
         .where(Transaction.id == txn_id)
     )
     if family_id is not None:

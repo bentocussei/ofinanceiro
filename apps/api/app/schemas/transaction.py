@@ -40,7 +40,9 @@ class TransactionResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     account_id: uuid.UUID
+    account_name: str | None = None
     category_id: uuid.UUID | None
+    category_name: str | None = None
     amount: int
     type: TransactionType
     description: str | None

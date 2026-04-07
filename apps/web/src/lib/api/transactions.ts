@@ -13,6 +13,7 @@ export interface Transaction {
   category_icon?: string | null
   member_name?: string | null
   account_id?: string
+  account_name?: string | null
   notes?: string | null
   tags?: string[] | null
   is_private?: boolean
