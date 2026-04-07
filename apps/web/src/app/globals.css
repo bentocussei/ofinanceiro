@@ -191,3 +191,25 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Mobile page transitions via View Transitions API.
+   Only animates on mobile (< 768px) so desktop stays snappy. */
+@media (max-width: 767px) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root) {
+    animation: vt-fade-out 180ms ease forwards;
+  }
+  ::view-transition-new(root) {
+    animation: vt-fade-in 200ms ease forwards;
+  }
+
+  @keyframes vt-fade-out {
+    to { opacity: 0; transform: translateX(-12px); }
+  }
+  @keyframes vt-fade-in {
+    from { opacity: 0; transform: translateX(12px); }
+  }
+}

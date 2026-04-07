@@ -5,6 +5,8 @@ import { useMemo, useEffect, useState } from "react"
 import { Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { MobileFAB } from "@/components/layout/MobileFAB"
+import { PullToRefreshIndicator } from "@/components/layout/PullToRefreshIndicator"
+import { usePullToRefresh } from "@/lib/usePullToRefresh"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
 import { transactionsApi, type Transaction } from "@/lib/api/transactions"
@@ -83,8 +85,13 @@ export default function TransactionsPage() {
     { value: "all", label: "Tudo" },
   ]
 
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: async () => { fetchTransactions(true) },
+  })
+
   return (
     <div>
+      <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} />
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Transacções</h2>
         <div className="flex items-center gap-2 flex-wrap">
