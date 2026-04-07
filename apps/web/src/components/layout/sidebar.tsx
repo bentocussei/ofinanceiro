@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/popover"
 import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
 import { usePermissions } from "@/providers/PermissionProvider"
+import { useTheme, type Theme } from "@/lib/useTheme"
 
 interface NavItem {
   href: string
@@ -82,43 +83,6 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
 ]
-
-type Theme = "light" | "dark" | "system"
-
-function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("system")
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null
-    if (stored) {
-      setThemeState(stored)
-      applyTheme(stored)
-    }
-  }, [])
-
-  const setTheme = (t: Theme) => {
-    setThemeState(t)
-    localStorage.setItem("theme", t)
-    applyTheme(t)
-  }
-
-  return { theme, setTheme }
-}
-
-function applyTheme(t: Theme) {
-  const root = document.documentElement
-  if (t === "dark") {
-    root.classList.add("dark")
-  } else if (t === "light") {
-    root.classList.remove("dark")
-  } else {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
-    }
-  }
-}
 
 const MODULE_MAP: Record<string, string> = {
   "/dashboard": "",

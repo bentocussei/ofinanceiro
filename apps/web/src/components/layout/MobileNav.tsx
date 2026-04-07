@@ -10,13 +10,17 @@ import {
   CreditCard,
   GraduationCap,
   Home,
+  LogOut,
   Menu,
-  MoreHorizontal,
+  Monitor,
+  Moon,
   Newspaper,
   Percent,
   PieChart,
   Receipt,
   Repeat,
+  Settings,
+  Sun,
   Target,
   TrendingUp,
   Users,
@@ -32,7 +36,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
+import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
 import { hapticTap } from "@/lib/haptics"
+import { useTheme, type Theme } from "@/lib/useTheme"
 
 interface NavItem {
   href: string
@@ -128,9 +135,12 @@ const FAMILY_TABS: NavItem[] = [
 export function MobileNav({ context }: { context: "personal" | "family" }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const { theme, setTheme } = useTheme()
 
   const sections = context === "family" ? FAMILY_SECTIONS : PERSONAL_SECTIONS
   const tabs = context === "family" ? FAMILY_TABS : PERSONAL_TABS
+  const contextLabel = context === "family" ? "Familiar" : "Pessoal"
 
   const isActive = (href: string) => pathname === href
 
@@ -143,8 +153,16 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
         }
       }
     }
-    return "O Financeiro"
+    return null
   })()
+
+  const headerTitle = currentPageTitle
+    ? `${contextLabel} - ${currentPageTitle}`
+    : contextLabel
+
+  useEffect(() => {
+    getCurrentUser().then(setUser).catch(() => {})
+  }, [])
 
   // Auto-close drawer when viewport reaches desktop breakpoint
   useEffect(() => {
@@ -155,6 +173,16 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
     mq.addEventListener("change", handler)
     return () => mq.removeEventListener("change", handler)
   }, [])
+
+  const cycleTheme = () => {
+    const order: Theme[] = ["system", "light", "dark"]
+    const idx = order.indexOf(theme)
+    setTheme(order[(idx + 1) % order.length])
+  }
+
+  const themeLabel =
+    theme === "light" ? "Claro" : theme === "dark" ? "Escuro" : "Sistema"
+  const ThemeIcon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor
 
   return (
     <>
@@ -168,10 +196,9 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0 flex flex-col">
-            <SheetHeader className="px-4 py-3 border-b border-border">
-              <SheetTitle className="text-left text-sm font-semibold">
-                {context === "family" ? "Família" : "Pessoal"}
-              </SheetTitle>
+            <SheetHeader className="px-2 py-2 border-b border-border">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <ContextSwitcher />
             </SheetHeader>
             <nav className="flex-1 overflow-y-auto px-2 py-3">
               {sections.map((section) => (
@@ -201,17 +228,73 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
                 </div>
               ))}
             </nav>
+
+            {/* User section + theme + logout — fixed at bottom */}
+            <div className="border-t border-border p-2 space-y-1">
+              {/* User info card */}
+              <div className="flex items-center gap-3 px-2 py-2 rounded-md">
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name || "Avatar"}
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                    {user?.name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">
+                    {user?.name || "Utilizador"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {user?.phone || ""}
+                  </p>
+                </div>
+              </div>
+
+              {/* Settings link */}
+              <Link
+                href={context === "family" ? "/family/settings" : "/settings"}
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                Configurações
+              </Link>
+
+              {/* Theme cycle */}
+              <button
+                type="button"
+                onClick={cycleTheme}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <ThemeIcon className="h-4 w-4" />
+                Tema: {themeLabel}
+              </button>
+
+              {/* Logout */}
+              <button
+                type="button"
+                onClick={() => { setOpen(false); logout() }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Terminar sessão
+              </button>
+            </div>
           </SheetContent>
         </Sheet>
 
-        <span className="text-sm font-semibold tracking-tight truncate px-2">{currentPageTitle}</span>
+        <span className="text-sm font-semibold tracking-tight truncate px-2">{headerTitle}</span>
 
         <Link
-          href={context === "family" ? "/family" : "/settings"}
+          href={context === "family" ? "/family/settings" : "/settings"}
           className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent"
-          aria-label="Mais"
+          aria-label="Configurações"
         >
-          <MoreHorizontal className="h-5 w-5" />
+          <Settings className="h-5 w-5" />
         </Link>
       </header>
 
