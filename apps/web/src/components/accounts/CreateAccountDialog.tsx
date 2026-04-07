@@ -159,7 +159,7 @@ export function CreateAccountDialog({ onCreated, open: controlledOpen, onOpenCha
               </SelectTrigger>
               <SelectContent>
                 {ACCOUNT_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value} label={t.label}>
+                  <SelectItem key={t.value} value={t.value}>
                     <span className="flex items-center gap-2"><IconDisplay name={t.value} className="h-4 w-4" /> {t.label}</span>
                   </SelectItem>
                 ))}

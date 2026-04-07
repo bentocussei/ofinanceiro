@@ -228,7 +228,7 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id} label={acc.name}>
+                  <SelectItem key={acc.id} value={acc.id}>
                     <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                   </SelectItem>
                 ))}
@@ -247,7 +247,7 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
                 {categories
                   .filter((c) => !c.parent_id && (c.type === type || c.type === "both"))
                   .map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} label={cat.name}>
+                    <SelectItem key={cat.id} value={cat.id}>
                       <span className="flex items-center gap-1"><IconDisplay name={cat.name} className="h-4 w-4" /> {cat.name}</span>
                     </SelectItem>
                   ))}

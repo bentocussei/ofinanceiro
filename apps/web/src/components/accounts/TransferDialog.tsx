@@ -108,7 +108,7 @@ export function TransferDialog({ onTransferred }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.filter((a) => a.id !== toId).map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id} label={acc.name}>
+                    <SelectItem key={acc.id} value={acc.id}>
                       <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                     </SelectItem>
                   ))}
@@ -126,7 +126,7 @@ export function TransferDialog({ onTransferred }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.filter((a) => a.id !== fromId).map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id} label={acc.name}>
+                    <SelectItem key={acc.id} value={acc.id}>
                       <span className="flex items-center gap-1"><IconDisplay name={acc.icon} className="h-4 w-4" /> {acc.name}</span>
                     </SelectItem>
                   ))}

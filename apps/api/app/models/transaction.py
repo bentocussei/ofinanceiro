@@ -32,7 +32,7 @@ class Transaction(BaseModel):
     account: Mapped["Account"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Account",
         foreign_keys=[account_id],
-        lazy="select",
+        lazy="raise",
     )
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL")
@@ -40,7 +40,7 @@ class Transaction(BaseModel):
     category: Mapped["Category | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Category",
         foreign_keys=[category_id],
-        lazy="select",
+        lazy="raise",
     )
 
     # Amount in centavos (integer)

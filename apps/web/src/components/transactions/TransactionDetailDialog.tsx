@@ -270,7 +270,7 @@ export function TransactionDetailDialog({
                   {categories
                     .filter((c) => !c.parent_id && (c.type === transaction.type || c.type === "both"))
                     .map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id} label={cat.name}>
+                      <SelectItem key={cat.id} value={cat.id}>
                         <span className="flex items-center gap-1">
                           <IconDisplay name={cat.name} className="h-4 w-4" /> {cat.name}
                         </span>
