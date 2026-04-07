@@ -36,6 +36,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { ContextSwitcher } from "@/components/layout/ContextSwitcher"
 import { getCurrentUser, logout, type UserProfile } from "@/lib/auth"
 import { hapticTap } from "@/lib/haptics"
@@ -157,7 +162,7 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
   })()
 
   const headerTitle = currentPageTitle
-    ? `${contextLabel} - ${currentPageTitle}`
+    ? `${currentPageTitle} (${contextLabel})`
     : contextLabel
 
   useEffect(() => {
@@ -229,73 +234,99 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
               ))}
             </nav>
 
-            {/* User section + theme + logout — fixed at bottom */}
-            <div className="border-t border-border p-2 space-y-1">
-              {/* User info card */}
-              <div className="flex items-center gap-3 px-2 py-2 rounded-md">
-                {user?.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt={user.name || "Avatar"}
-                    className="h-9 w-9 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                    {user?.name?.charAt(0)?.toUpperCase() || "?"}
+            {/* Compact user section with popover — same pattern as desktop */}
+            <div className="border-t border-border p-2">
+              <Popover>
+                <PopoverTrigger className="flex w-full items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent transition-colors cursor-pointer">
+                  {user?.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name || "Avatar"}
+                      className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                      {user?.name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="text-sm font-medium truncate">
+                      {user?.name || "Utilizador"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {user?.phone || ""}
+                    </p>
                   </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">
-                    {user?.name || "Utilizador"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {user?.phone || ""}
-                  </p>
-                </div>
-              </div>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-60 p-0">
+                  {/* Header — name + phone */}
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                    {user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt=""
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                        {user?.name?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">
+                        {user?.name || "Utilizador"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user?.phone || ""}
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Settings link */}
-              <Link
-                href={context === "family" ? "/family/settings" : "/settings"}
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                Configurações
-              </Link>
+                  {/* Settings link */}
+                  <div className="p-1">
+                    <Link
+                      href={context === "family" ? "/family/settings" : "/settings"}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Configurações
+                    </Link>
+                  </div>
 
-              {/* Theme cycle */}
-              <button
-                type="button"
-                onClick={cycleTheme}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
-              >
-                <ThemeIcon className="h-4 w-4" />
-                Tema: {themeLabel}
-              </button>
+                  {/* Theme cycle */}
+                  <div className="border-t border-border p-1">
+                    <button
+                      type="button"
+                      onClick={cycleTheme}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    >
+                      <ThemeIcon className="h-4 w-4" />
+                      Tema: {themeLabel}
+                    </button>
+                  </div>
 
-              {/* Logout */}
-              <button
-                type="button"
-                onClick={() => { setOpen(false); logout() }}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Terminar sessão
-              </button>
+                  {/* Logout */}
+                  <div className="border-t border-border p-1">
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); logout() }}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Terminar sessão
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </SheetContent>
         </Sheet>
 
         <span className="text-sm font-semibold tracking-tight truncate px-2">{headerTitle}</span>
 
-        <Link
-          href={context === "family" ? "/family/settings" : "/settings"}
-          className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent"
-          aria-label="Configurações"
-        >
-          <Settings className="h-5 w-5" />
-        </Link>
+        {/* Spacer to keep the title centred (mirrors the hamburger button width) */}
+        <span className="h-9 w-9 shrink-0" aria-hidden="true" />
       </header>
 
       {/* Bottom tab bar — mobile only */}
