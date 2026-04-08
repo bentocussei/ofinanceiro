@@ -78,6 +78,7 @@ Este documento é a fonte única de verdade para:
 
 | # | Item |
 |---|------|
+| 13b | **Migrar backups offsite de Cloudflare R2 para Backblaze B2** — Decisão temporária para early-stage: começamos com R2 (já temos conta) para reduzir contas a gerir. **Mas isto não é backup verdadeiramente offsite** — se a conta Cloudflare for comprometida, o atacante tem acesso simultâneo aos dados ao vivo (R2 storage de avatares/recibos) E aos backups da BD. Deve ser migrado para Backblaze B2 (ou outro provider independente) quando o projecto crescer ou quando houver mais um par de mãos a ajudar com gestão. Custo total: ~$1/ano. Alta prioridade post-MVP. |
 | 14 | Race conditions: idempotency keys em criar transacção (evita duplicados em retry) |
 | 15 | Optimistic locking em update de transacção/conta (version column) |
 | 16 | Slow query log do Postgres + alertas para queries > 1s |

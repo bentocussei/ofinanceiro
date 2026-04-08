@@ -1,4 +1,4 @@
-# Lightweight image for the daily Postgres → B2 backup cron service.
+# Lightweight image for the daily Postgres → R2 backup cron service.
 # Includes PostgreSQL 18 client (pg_dump) and the Python backup script.
 FROM python:3.13-slim
 
@@ -17,7 +17,7 @@ WORKDIR /app
 COPY scripts/backup_requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY scripts/backup_to_b2.py /app/backup_to_b2.py
+COPY scripts/backup_to_r2.py /app/backup_to_r2.py
 
 # Default command — Railway cron schedule will trigger this on its cadence.
-CMD ["python", "-u", "/app/backup_to_b2.py"]
+CMD ["python", "-u", "/app/backup_to_r2.py"]
