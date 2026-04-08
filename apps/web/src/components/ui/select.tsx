@@ -58,20 +58,20 @@ function collectSelectItems(node: React.ReactNode): SelectItemMeta[] {
   return out
 }
 
-function Select({
+function Select<Value, Multiple extends boolean | undefined = false>({
   children,
   items: itemsProp,
   ...props
-}: SelectPrimitive.Root.Props) {
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
   // If the caller already passed `items`, respect it.
   // Otherwise auto-collect from <SelectItem> children.
   const items = React.useMemo(() => {
     if (itemsProp !== undefined) return itemsProp
-    return collectSelectItems(children)
+    return collectSelectItems(children) as SelectPrimitive.Root.Props<Value, Multiple>["items"]
   }, [itemsProp, children])
 
   return (
-    <SelectPrimitive.Root items={items} {...props}>
+    <SelectPrimitive.Root<Value, Multiple> items={items} {...props}>
       {children}
     </SelectPrimitive.Root>
   )
