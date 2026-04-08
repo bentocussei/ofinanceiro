@@ -69,6 +69,7 @@ resend==2.27.0
 rsa==4.9.1
 ruff==0.15.8
 s3transfer==0.16.0
+sentry-sdk==2.57.0
 six==1.17.0
 sniffio==1.3.1
 soupsieve==2.8.3

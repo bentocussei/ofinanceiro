@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 100
     chat_rate_limit_per_minute: int = 20
 
+    # Sentry — error tracking and performance
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1  # 10% of requests
+    sentry_profiles_sample_rate: float = 0.1
+
     # Twilio (SMS OTP + notifications)
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""

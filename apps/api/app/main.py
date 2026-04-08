@@ -10,6 +10,33 @@ from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
+
+# Initialise Sentry as early as possible — before any other code can raise.
+# When SENTRY_DSN is unset (development), this is a noop.
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    from sentry_sdk.integrations.asyncio import AsyncioIntegration
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        profiles_sample_rate=settings.sentry_profiles_sample_rate,
+        # Catch unhandled exceptions in async tasks too
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            SqlalchemyIntegration(),
+            AsyncioIntegration(),
+        ],
+        # Send a fingerprint per route + exception type so similar errors group well
+        send_default_pii=False,  # Never send PII (phone, email, etc.) in events
+        # Filter health checks out of performance traces
+        traces_sampler=lambda ctx: 0.0
+        if ctx.get("transaction_context", {}).get("name", "").endswith("/health")
+        else settings.sentry_traces_sample_rate,
+    )
 from app.routers import (
     accounts,
     admin_billing,

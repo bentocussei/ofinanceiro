@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -35,8 +35,30 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=MessageResponse, status_code=201)
-async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def register(
+    data: RegisterRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
     """Registar novo utilizador com telefone e password. Não retorna tokens — requer verificação OTP."""
+    # Rate limit: 3 registos por hora por IP, e 3 por hora por número.
+    # Protege contra SMS bombing via /register (cada registo dispara um SMS).
+    from app.middleware.rate_limit import check_rate_limit
+
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        await check_rate_limit(
+            f"register:ip:{client_ip}", max_requests=3, window_seconds=3600
+        )
+        await check_rate_limit(
+            f"register:phone:{data.phone}", max_requests=3, window_seconds=3600
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # Fail-open if Redis is unavailable — prefer service over hard rate limit
+        pass
+
     # Normalizar telefone: garantir que tem código do país
     phone = data.phone.strip().replace(" ", "")
     if not phone.startswith("+"):
@@ -143,8 +165,28 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> Token
 
 
 @router.post("/otp/send", response_model=MessageResponse)
-async def send_otp(data: OTPSendRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def send_otp(
+    data: OTPSendRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
     """Enviar OTP por SMS para o número de telefone."""
+    # Per-IP rate limit: 10 OTP requests per hour per IP.
+    # Per-phone rate limit (5/10min) is enforced inside can_send_otp below.
+    # The IP layer protects against an attacker rotating phone numbers
+    # to SMS-bomb us.
+    from app.middleware.rate_limit import check_rate_limit
+
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        await check_rate_limit(
+            f"otp:ip:{client_ip}", max_requests=10, window_seconds=3600
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Fail-open if Redis unavailable
+
     if not await can_send_otp(data.phone):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
