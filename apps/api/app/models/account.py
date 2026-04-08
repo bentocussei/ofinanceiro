@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String, Text
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,15 +28,15 @@ class Account(BaseModel):
         default=CurrencyCode.AOA,
     )
     # Balance in centavos (integer) to avoid float precision issues
-    balance: Mapped[int] = mapped_column(Integer, default=0)
+    balance: Mapped[int] = mapped_column(BigInteger, default=0)
     icon: Mapped[str | None] = mapped_column(String(10))
     color: Mapped[str | None] = mapped_column(String(7))
     institution: Mapped[str | None] = mapped_column(String(100))
     account_number: Mapped[str | None] = mapped_column(Text)
     # Limite de crédito em centavos (para cartões de crédito)
-    credit_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    credit_limit: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     # Alerta de saldo baixo em centavos
-    low_balance_alert: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    low_balance_alert: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     usage_type: Mapped[AccountUsageType | None] = mapped_column(
         ENUM(AccountUsageType, name="account_usage_type", create_type=True), nullable=True
     )

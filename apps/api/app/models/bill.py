@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     DateTime,
@@ -37,7 +38,7 @@ class Bill(BaseModel):
         PG_UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     # Valor esperado em centavos
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,

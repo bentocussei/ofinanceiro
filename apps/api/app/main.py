@@ -68,10 +68,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async with engine.begin() as conn:
             # Ensure pgvector extension exists (required for semantic memory)
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            await conn.run_sync(Base.metadata.create_all, checkfirst=True)
-        logger.info("Database tables verified/created (pgvector enabled)")
+        logger.info("pgvector extension verified")
     except Exception as e:
-        logger.warning("Table creation warning: %s", e)
+        logger.warning("pgvector extension setup warning: %s", e)
+
+    # NOTE: Schema is managed via Alembic migrations, NOT via create_all.
+    # See feedback_production_safety.md HARD RULE #3.
+    # To apply schema changes:
+    #   cd apps/api
+    #   alembic revision --autogenerate -m "describe change"
+    #   # review generated SQL
+    #   alembic upgrade head   # in staging first, then production
+    # The Base import is kept only so that model files are imported and
+    # picked up by alembic autogenerate when run locally.
+    _ = Base  # noqa: F841
 
     yield
     # Shutdown

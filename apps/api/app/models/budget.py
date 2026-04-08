@@ -4,6 +4,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     ForeignKey,
@@ -43,7 +44,7 @@ class Budget(BaseModel):
     period_start: Mapped[date] = mapped_column(Date)
     period_end: Mapped[date] = mapped_column(Date)
     # Total limit in centavos (for flex/50-30-20 methods)
-    total_limit: Mapped[int | None] = mapped_column(Integer)
+    total_limit: Mapped[int | None] = mapped_column(BigInteger)
     rollover: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     alert_threshold: Mapped[int] = mapped_column(SmallInteger, default=80)  # percentagem
@@ -69,9 +70,9 @@ class BudgetItem(BaseModel):
         PG_UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE")
     )
     # Limit in centavos
-    limit_amount: Mapped[int] = mapped_column(Integer)
+    limit_amount: Mapped[int] = mapped_column(BigInteger)
     # Rollover from previous period in centavos
-    rollover_amount: Mapped[int] = mapped_column(Integer, default=0)
+    rollover_amount: Mapped[int] = mapped_column(BigInteger, default=0)
 
     # Relationships
     budget: Mapped["Budget"] = relationship(back_populates="items")

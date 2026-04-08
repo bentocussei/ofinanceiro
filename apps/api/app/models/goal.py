@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     DateTime,
@@ -35,14 +36,14 @@ class Goal(BaseModel):
     icon: Mapped[str | None] = mapped_column(String(10))
     color: Mapped[str | None] = mapped_column(String(7))
     # Amounts in centavos
-    target_amount: Mapped[int] = mapped_column(Integer)
-    current_amount: Mapped[int] = mapped_column(Integer, default=0)
+    target_amount: Mapped[int] = mapped_column(BigInteger)
+    current_amount: Mapped[int] = mapped_column(BigInteger, default=0)
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
     )
     target_date: Mapped[date | None] = mapped_column(Date)
-    contribution_amount: Mapped[int | None] = mapped_column(Integer)
+    contribution_amount: Mapped[int | None] = mapped_column(BigInteger)
     contribution_frequency: Mapped["RecurrenceFrequency"] = mapped_column(
         ENUM(RecurrenceFrequency, name="recurrence_frequency", create_type=True),
         default=RecurrenceFrequency.MONTHLY,
@@ -78,7 +79,7 @@ class GoalContribution(BaseModel):
     user_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
     )
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)
     note: Mapped[str | None] = mapped_column(Text)
     contributed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

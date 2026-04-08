@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -77,4 +78,4 @@ class PromotionUsage(BaseModel):
     applied_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    discount_amount: Mapped[int] = mapped_column(Integer, default=0)  # centavos
+    discount_amount: Mapped[int] = mapped_column(BigInteger, default=0)  # centavos

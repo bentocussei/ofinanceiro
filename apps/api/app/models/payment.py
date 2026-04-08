@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,7 +45,7 @@ class Payment(BaseModel):
         ENUM(PaymentStatus, name="payment_status", create_type=True),
         default=PaymentStatus.PENDING,
     )
-    amount: Mapped[int] = mapped_column(Integer)  # centavos
+    amount: Mapped[int] = mapped_column(BigInteger)  # centavos
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,

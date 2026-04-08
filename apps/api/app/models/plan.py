@@ -1,6 +1,6 @@
 """Plan model for billing tiers."""
 
-from sqlalchemy import Boolean, Integer, SmallInteger, String, Text
+from sqlalchemy import BigInteger, Boolean, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,8 +16,8 @@ class Plan(BaseModel):
     )
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(Text)
-    base_price_monthly: Mapped[int] = mapped_column(Integer)  # centavos AOA
-    base_price_annual: Mapped[int] = mapped_column(Integer)  # centavos AOA
+    base_price_monthly: Mapped[int] = mapped_column(BigInteger)  # centavos AOA
+    base_price_annual: Mapped[int] = mapped_column(BigInteger)  # centavos AOA
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,

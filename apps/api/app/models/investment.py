@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -28,8 +28,8 @@ class Investment(BaseModel):
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
     )
-    invested_amount: Mapped[int] = mapped_column(Integer)  # centavos
-    current_value: Mapped[int] = mapped_column(Integer)  # centavos
+    invested_amount: Mapped[int] = mapped_column(BigInteger)  # centavos
+    current_value: Mapped[int] = mapped_column(BigInteger)  # centavos
     interest_rate: Mapped[int | None] = mapped_column(Integer)  # basis points
     start_date: Mapped[date | None] = mapped_column(Date)
     maturity_date: Mapped[date | None] = mapped_column(Date)

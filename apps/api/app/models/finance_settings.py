@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, SmallInteger, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,7 +23,7 @@ class FinanceSettings(BaseModel):
     )
     month_start_day: Mapped[int] = mapped_column(SmallInteger, default=1)
     budget_alert_threshold: Mapped[int] = mapped_column(SmallInteger, default=80)  # percentagem
-    low_balance_threshold: Mapped[int] = mapped_column(Integer, default=0)  # centavos
+    low_balance_threshold: Mapped[int] = mapped_column(BigInteger, default=0)  # centavos
     bill_reminder_days: Mapped[list[int]] = mapped_column(
         ARRAY(SmallInteger), default=lambda: [7, 3, 1]
     )

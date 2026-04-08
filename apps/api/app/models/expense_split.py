@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,7 +23,7 @@ class ExpenseSplit(BaseModel):
     )
     description: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # Total em centavos
-    total_amount: Mapped[int] = mapped_column(Integer)
+    total_amount: Mapped[int] = mapped_column(BigInteger)
     split_type: Mapped[SplitType] = mapped_column(
         ENUM(SplitType, name="split_type", create_type=True),
         default=SplitType.EQUAL,
@@ -47,7 +47,7 @@ class ExpenseSplitPart(BaseModel):
         PG_UUID(as_uuid=True), ForeignKey("family_members.id", ondelete="CASCADE"), index=True
     )
     # Valor em centavos
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)
     # Para tipo PERCENTAGE: em basis points (ex: 5000 = 50.00%)
     percentage: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_paid: Mapped[bool] = mapped_column(Boolean, default=False)

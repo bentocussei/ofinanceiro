@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     Double,
@@ -44,7 +45,7 @@ class Transaction(BaseModel):
     )
 
     # Amount in centavos (integer)
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)
     type: Mapped[TransactionType] = mapped_column()
     description: Mapped[str | None] = mapped_column(Text)
     merchant: Mapped[str | None] = mapped_column(Text)

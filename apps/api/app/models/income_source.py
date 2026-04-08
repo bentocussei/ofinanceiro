@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String, Text
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +26,7 @@ class IncomeSource(BaseModel):
     )
     description: Mapped[str | None] = mapped_column(Text)
     # Valor esperado em centavos
-    expected_amount: Mapped[int] = mapped_column(Integer)
+    expected_amount: Mapped[int] = mapped_column(BigInteger)
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,

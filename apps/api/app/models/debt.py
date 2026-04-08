@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     DateTime,
@@ -36,14 +37,14 @@ class Debt(BaseModel):
         ENUM(DebtType, name="debt_type", create_type=True)
     )
     creditor: Mapped[str | None] = mapped_column(String(200))
-    original_amount: Mapped[int] = mapped_column(Integer)  # centavos
-    current_balance: Mapped[int] = mapped_column(Integer)  # centavos
+    original_amount: Mapped[int] = mapped_column(BigInteger)  # centavos
+    current_balance: Mapped[int] = mapped_column(BigInteger)  # centavos
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
     )
     interest_rate: Mapped[int | None] = mapped_column(Integer)  # basis points (e.g., 1200 = 12.00%)
-    monthly_payment: Mapped[int | None] = mapped_column(Integer)  # centavos
+    monthly_payment: Mapped[int | None] = mapped_column(BigInteger)  # centavos
     payment_day: Mapped[int | None] = mapped_column(SmallInteger)
     start_date: Mapped[date | None] = mapped_column(Date)
     expected_end_date: Mapped[date | None] = mapped_column(Date)
@@ -78,8 +79,8 @@ class DebtPayment(BaseModel):
     debt_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("debts.id", ondelete="CASCADE"), index=True
     )
-    amount: Mapped[int] = mapped_column(Integer)  # centavos
-    principal: Mapped[int | None] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)  # centavos
+    principal: Mapped[int | None] = mapped_column(BigInteger)
     interest: Mapped[int | None] = mapped_column(Integer)
     payment_date: Mapped[date] = mapped_column(Date)
     transaction_id: Mapped[uuid.UUID | None] = mapped_column(

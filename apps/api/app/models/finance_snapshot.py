@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import ForeignKey, Integer, SmallInteger, String, UniqueConstraint
+from sqlalchemy import BigInteger, ForeignKey, Integer, SmallInteger, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -25,13 +25,13 @@ class FinanceSnapshot(BaseModel):
         ENUM(SnapshotPeriodType, name="snapshot_period_type", create_type=True)
     )
     # Todos os valores em centavos
-    total_income: Mapped[int] = mapped_column(Integer, default=0)
-    total_expense: Mapped[int] = mapped_column(Integer, default=0)
+    total_income: Mapped[int] = mapped_column(BigInteger, default=0)
+    total_expense: Mapped[int] = mapped_column(BigInteger, default=0)
     net_savings: Mapped[int] = mapped_column(Integer, default=0)
-    total_balance: Mapped[int] = mapped_column(Integer, default=0)
+    total_balance: Mapped[int] = mapped_column(BigInteger, default=0)
     total_debt: Mapped[int] = mapped_column(Integer, default=0)
     total_savings: Mapped[int] = mapped_column(Integer, default=0)  # metas
-    net_worth: Mapped[int] = mapped_column(Integer, default=0)
+    net_worth: Mapped[int] = mapped_column(BigInteger, default=0)
     expense_by_category: Mapped[dict] = mapped_column(JSONB, default=dict)
     income_by_source: Mapped[dict] = mapped_column(JSONB, default=dict)
     health_score: Mapped[int | None] = mapped_column(SmallInteger)  # 0-100

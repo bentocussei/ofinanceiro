@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     DateTime,
     ForeignKey,
     Index,
@@ -67,11 +68,11 @@ class Invoice(BaseModel):
     customer_address: Mapped[str | None] = mapped_column(Text)
 
     # Amounts (all centavos AOA)
-    subtotal: Mapped[int] = mapped_column(Integer)  # sum of lines before discount/tax
-    discount_total: Mapped[int] = mapped_column(Integer, default=0)
+    subtotal: Mapped[int] = mapped_column(BigInteger)  # sum of lines before discount/tax
+    discount_total: Mapped[int] = mapped_column(BigInteger, default=0)
     discount_reason: Mapped[str | None] = mapped_column(String(200))
-    vat_total: Mapped[int] = mapped_column(Integer, default=0)  # IVA
-    total: Mapped[int] = mapped_column(Integer)  # final amount
+    vat_total: Mapped[int] = mapped_column(BigInteger, default=0)  # IVA
+    total: Mapped[int] = mapped_column(BigInteger)  # final amount
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,
@@ -120,12 +121,12 @@ class InvoiceLine(BaseModel):
     line_number: Mapped[int] = mapped_column(SmallInteger)
     description: Mapped[str] = mapped_column(String(300))
     quantity: Mapped[int] = mapped_column(SmallInteger, default=1)
-    unit_price: Mapped[int] = mapped_column(Integer)  # centavos
-    discount_amount: Mapped[int] = mapped_column(Integer, default=0)
+    unit_price: Mapped[int] = mapped_column(BigInteger)  # centavos
+    discount_amount: Mapped[int] = mapped_column(BigInteger, default=0)
     vat_rate: Mapped[str] = mapped_column(String(10), default="exempt")  # "14" or "exempt"
     vat_exempt_reason: Mapped[str | None] = mapped_column(String(10))  # AGT code: M01, M02...
-    vat_amount: Mapped[int] = mapped_column(Integer, default=0)
-    line_total: Mapped[int] = mapped_column(Integer)  # (unit_price * qty - discount + vat)
+    vat_amount: Mapped[int] = mapped_column(BigInteger, default=0)
+    line_total: Mapped[int] = mapped_column(BigInteger)  # (unit_price * qty - discount + vat)
 
     # Reference
     product_code: Mapped[str | None] = mapped_column(String(100))  # plan_id, addon_id
@@ -168,7 +169,7 @@ class Receipt(BaseModel):
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
     )
 
-    amount: Mapped[int] = mapped_column(Integer)  # centavos
+    amount: Mapped[int] = mapped_column(BigInteger)  # centavos
     currency: Mapped[CurrencyCode] = mapped_column(
         ENUM(CurrencyCode, name="currency_code", create_type=True),
         default=CurrencyCode.AOA,

@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, SmallInteger, String
+from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Index, Integer, SmallInteger, String
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -31,7 +31,7 @@ class RecurringRule(BaseModel):
         ENUM(TransactionType, name="transaction_type", create_type=True)
     )
     # Valor em centavos
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[int] = mapped_column(BigInteger)
     description: Mapped[str | None] = mapped_column(String(200))
     frequency: Mapped[RecurrenceFrequency] = mapped_column(
         ENUM(RecurrenceFrequency, name="recurrence_frequency", create_type=True)
