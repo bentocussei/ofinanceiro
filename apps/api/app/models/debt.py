@@ -81,7 +81,7 @@ class DebtPayment(BaseModel):
     )
     amount: Mapped[int] = mapped_column(BigInteger)  # centavos
     principal: Mapped[int | None] = mapped_column(BigInteger)
-    interest: Mapped[int | None] = mapped_column(Integer)
+    interest: Mapped[int | None] = mapped_column(BigInteger)
     payment_date: Mapped[date] = mapped_column(Date)
     transaction_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("transactions.id")

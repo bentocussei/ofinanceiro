@@ -27,10 +27,10 @@ class FinanceSnapshot(BaseModel):
     # Todos os valores em centavos
     total_income: Mapped[int] = mapped_column(BigInteger, default=0)
     total_expense: Mapped[int] = mapped_column(BigInteger, default=0)
-    net_savings: Mapped[int] = mapped_column(Integer, default=0)
+    net_savings: Mapped[int] = mapped_column(BigInteger, default=0)
     total_balance: Mapped[int] = mapped_column(BigInteger, default=0)
-    total_debt: Mapped[int] = mapped_column(Integer, default=0)
-    total_savings: Mapped[int] = mapped_column(Integer, default=0)  # metas
+    total_debt: Mapped[int] = mapped_column(BigInteger, default=0)
+    total_savings: Mapped[int] = mapped_column(BigInteger, default=0)  # metas
     net_worth: Mapped[int] = mapped_column(BigInteger, default=0)
     expense_by_category: Mapped[dict] = mapped_column(JSONB, default=dict)
     income_by_source: Mapped[dict] = mapped_column(JSONB, default=dict)

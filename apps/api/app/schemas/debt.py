@@ -15,8 +15,8 @@ class DebtCreate(BaseModel):
     interest_rate: int | None = None  # basis points (1200 = 12%)
     monthly_payment: int | None = None  # centavos
     payment_day: int | None = Field(None, ge=1, le=31)
-    start_date: str | None = None
-    expected_end_date: str | None = None
+    start_date: date | None = None
+    expected_end_date: date | None = None
     notes: str | None = None
     nature: str | None = None
     creditor_type: str | None = None
@@ -34,8 +34,8 @@ class DebtUpdate(BaseModel):
     interest_rate: int | None = None
     monthly_payment: int | None = None
     payment_day: int | None = Field(None, ge=1, le=31)
-    start_date: str | None = None
-    expected_end_date: str | None = None
+    start_date: date | None = None
+    expected_end_date: date | None = None
     notes: str | None = None
     nature: str | None = None
     creditor_type: str | None = None
@@ -63,7 +63,7 @@ class DebtResponse(BaseModel):
     monthly_payment: int | None
     payment_day: int | None
     is_active: bool
-    start_date: str | None
-    expected_end_date: str | None
+    start_date: date | None
+    expected_end_date: date | None
     notes: str | None
     created_at: datetime
