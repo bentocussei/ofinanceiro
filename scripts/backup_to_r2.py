@@ -92,7 +92,7 @@ def main() -> None:
         fail("boto3 not installed — add 'boto3' to backup_requirements.txt")
 
     now = datetime.now(timezone.utc)
-    key = f"{prefix}{env}/{now.strftime('%Y/%m')}/{env}_{now.strftime('%Y%m%d_%H%M%S')}.dump"
+    key = f"{prefix}{env}/{now.strftime('%Y/%m/%d')}/{env}_{now.strftime('%Y%m%d_%H%M%S')}.dump"
 
     info(f"target: s3://{bucket_name}/{key} via {endpoint}")
 

@@ -49,15 +49,15 @@ Este documento é a fonte única de verdade para:
 
 ## 2. P0 — Crítico, próximas 24-48h
 
-| # | Item | Porquê | Esforço |
-|---|------|--------|---------|
-| 1 | **Verificar/configurar backups automáticos do PostgreSQL no Railway** | Railway tem snapshots automáticos no plano Hobby/Pro mas precisas confirmar **frequência + retenção**. Sem isto, qualquer perda é definitiva. | 15 min |
-| 2 | **Backup offsite diário para S3/B2** | Backups do Railway estão no Railway. Se a conta for comprometida ou houver outage do Railway, perdes tudo. Backup independente fora do Railway. | 1-2h |
-| 3 | **Confirmar Alembic está configurado e a ser usado** | Se o caminho de schema em prod é `Base.metadata.create_all`, é uma bomba-relógio. Auditar e migrar para Alembic se necessário, com baseline das tabelas existentes. | 30 min auditar + ~2h baseline |
-| 4 | **Sentry activo em production** | Sem error tracking, descobres bugs pelas reclamações dos utilizadores. CLAUDE.md menciona Sentry — verificar se DSN está configurada e a receber eventos. | 30 min |
-| 5 | **Rate limiting verificado em endpoints sensíveis** | Login OTP, register, chat, password reset — sem rate limit, basta um script para fazer brute force. Verificar limits actuais e ajustar. | 30 min auditar |
-| 6 | **Verificar CORS restrito** | Só `ofinanceiro.app` e `staging.ofinanceiro.app` devem ser permitidos. Se `*` ou wildcard, é um buraco de segurança. | 5 min |
-| 7 | **Status page simples + monitoring uptime externo** | UptimeRobot ou Better Uptime gratuito. Se a app cair às 3h da manhã queres saber antes do user reclamar. Configurar alertas para email/SMS. | 20 min |
+| # | Status | Item | Porquê | Esforço |
+|---|--------|------|--------|---------|
+| 1 | ⏳ | **Verificar/configurar backups automáticos do PostgreSQL no Railway** — confirmar **frequência + retenção** em Postgres → Settings → Backups | Railway tem snapshots automáticos no plano Pro mas precisas confirmar a política. Sem isto, qualquer perda é definitiva. | 15 min |
+| 2 | ✅ | **Backup offsite diário para Cloudflare R2** — `ofinanceiro-backup-cron` corre `0 2 * * *` UTC, escreve em `ofinanceiro-backups/db/<env>/YYYY/MM/DD/`. Restoration drill validado 2026-04-08. | Backups do Railway estão no Railway. Backup independente fora do Railway garante recuperação mesmo num cenário de account compromise. | feito |
+| 3 | ✅ | **Alembic configurado e em uso** — baseline aplicada, `Base.metadata.create_all` removido do startup do API. Ver `apps/api/alembic/`. | — | feito |
+| 4 | ⏳ | **Verificar Sentry a receber eventos em produção** — disparar 1 erro de teste no API e 1 no Web e confirmar que aparecem nos respectivos projectos do Sentry. SDKs estão wired (`apps/api/app/main.py`, `apps/web/sentry.*.config.ts`) e DSNs configurados nas 4 services. | Sem validação end-to-end, não sabemos se as DSNs estão a chegar ao runtime. | 10 min |
+| 5 | ✅ | **Rate limiting** — IP+phone limits em `/auth/register` (3/h) e IP limit em `/auth/otp/send` (10/h) além do limite por phone existente. | — | feito |
+| 6 | ✅ | **CORS restrito** — `ALLOWED_ORIGINS=https://ofinanceiro.app,https://ofinanceiro-web-production.up.railway.app` em produção. | — | feito |
+| 7 | ⏳ | **Uptime monitor externo** (UptimeRobot ou Better Uptime, gratuito) para `https://api.ofinanceiro.app/health` e `https://ofinanceiro.app`, alertas email/SMS. | Se a app cai às 3h da manhã queres saber antes do user reclamar. | 10 min |
 
 ---
 
