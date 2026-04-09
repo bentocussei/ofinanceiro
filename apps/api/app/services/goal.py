@@ -117,6 +117,24 @@ async def update_goal(db: AsyncSession, goal: Goal, data: GoalUpdate) -> Goal:
 
 
 async def delete_goal(db: AsyncSession, goal: Goal) -> None:
+    """Delete a goal and clear provenance from any contribution transactions.
+
+    goal_contributions cascade-delete via the FK, but the user-visible
+    `transactions` rows that were created when contributions were made
+    have `source_type='goal_contribution'` and `source_id=goal.id`.
+    Without this cleanup those references would dangle silently. Mirror
+    of the same fix in services/debt.delete_debt.
+    """
+    from sqlalchemy import update as sa_update
+
+    await db.execute(
+        sa_update(Transaction)
+        .where(
+            Transaction.source_type == "goal_contribution",
+            Transaction.source_id == goal.id,
+        )
+        .values(source_type=None, source_id=None)
+    )
     await db.delete(goal)
     await db.flush()
 

@@ -167,7 +167,25 @@ async def update_debt(db: AsyncSession, debt: Debt, data: DebtUpdate) -> Debt:
 
 
 async def delete_debt(db: AsyncSession, debt: Debt) -> None:
-    """Delete a debt."""
+    """Delete a debt and clear provenance from any transactions it spawned.
+
+    debt_payments cascade-delete via the FK, but the user-visible
+    `transactions` rows that were created when payments were registered
+    have `source_type='debt_payment'` and `source_id=debt.id`. Without
+    this cleanup those references would dangle silently — the transaction
+    still appears on the user's history but its "from debt X" provenance
+    points to a deleted row. Clear them so the audit trail stays honest.
+    """
+    from sqlalchemy import update as sa_update
+
+    await db.execute(
+        sa_update(Transaction)
+        .where(
+            Transaction.source_type == "debt_payment",
+            Transaction.source_id == debt.id,
+        )
+        .values(source_type=None, source_id=None)
+    )
     await db.delete(debt)
     await db.flush()
 
