@@ -52,8 +52,17 @@ async def create_debt(
     db: AsyncSession, user_id: uuid.UUID, data: DebtCreate,
     family_id: uuid.UUID | None = None,
 ) -> Debt:
-    """Create a new debt."""
+    """Create a new debt.
+
+    Invariant: 0 <= current_balance <= original_amount. If the caller does not
+    supply current_balance, it defaults to original_amount (no payments yet).
+    """
     current_balance = data.current_balance if data.current_balance is not None else data.original_amount
+    if current_balance < 0 or current_balance > data.original_amount:
+        raise ValueError(
+            f"O saldo devedor inicial deve estar entre 0 e o valor original "
+            f"({data.original_amount / 100:.0f} Kz)."
+        )
     kwargs: dict = {
         "user_id": user_id,
         "family_id": family_id,
@@ -87,14 +96,71 @@ async def create_debt(
 
 
 async def update_debt(db: AsyncSession, debt: Debt, data: DebtUpdate) -> Debt:
-    """Update a debt. Auto-marks as paid off if balance reaches 0."""
+    """Update a debt while preserving the core invariants.
+
+    Invariants enforced:
+        1. 0 <= current_balance <= original_amount  (always)
+        2. original_amount is immutable once at least one payment exists
+           (the original principal is a historical fact — to "fix" the
+           outstanding balance after payments, the user must register an
+           adjustment payment, not rewrite history)
+        3. If the user changes original_amount AND no payments exist yet,
+           current_balance is reset to the new original_amount so both
+           values stay in sync (typo correction case)
+
+    Auto state transitions:
+        - balance reaches 0 → is_paid_off=True, is_active=False
+        - balance restored above 0 from a paid-off state → reactivated
+    """
     update_data = data.model_dump(exclude_unset=True)
+
+    # Total already paid (debt.payments is auto-loaded via lazy="subquery")
+    total_paid = sum(p.amount for p in debt.payments)
+
+    # Invariant 2 + 3: handle original_amount changes
+    if "original_amount" in update_data:
+        new_original = update_data["original_amount"]
+        if new_original is None:
+            update_data.pop("original_amount", None)
+        elif new_original == debt.original_amount:
+            # No-op change — drop it to avoid unnecessary side-effects
+            update_data.pop("original_amount", None)
+        elif total_paid > 0:
+            raise ValueError(
+                "Não é possível alterar o valor original depois de existirem "
+                "pagamentos registados. Para corrigir o saldo devedor, "
+                "registe um pagamento de ajuste."
+            )
+        else:
+            # No payments yet — typo correction. Sync both columns.
+            debt.original_amount = new_original
+            debt.current_balance = new_original
+            update_data.pop("original_amount", None)
+            # If the caller also tried to set current_balance, ignore it —
+            # we already enforced consistency above.
+            update_data.pop("current_balance", None)
+
+    # Invariant 1: validate any direct current_balance change
+    if "current_balance" in update_data and update_data["current_balance"] is not None:
+        new_balance = update_data["current_balance"]
+        if new_balance < 0 or new_balance > debt.original_amount:
+            raise ValueError(
+                f"O saldo devedor deve estar entre 0 e o valor original "
+                f"({debt.original_amount / 100:.0f} Kz)."
+            )
+
+    # Apply remaining fields
     for field, value in update_data.items():
         setattr(debt, field, value)
 
+    # Auto state transitions
     if debt.current_balance <= 0:
         debt.is_active = False
         debt.is_paid_off = True
+    elif debt.is_paid_off:
+        # Balance was restored above zero — reactivate
+        debt.is_paid_off = False
+        debt.is_active = True
 
     await db.flush()
     return debt

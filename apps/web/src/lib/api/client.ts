@@ -85,8 +85,26 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: { message: 'Erro de rede' } }))
-    throw new Error(error.detail?.message || 'Erro desconhecido')
+    const body = await res.json().catch(() => null)
+    // FastAPI uses several shapes for `detail`:
+    //   HTTPException(detail="msg")           → { detail: "msg" }
+    //   HTTPException(detail={"message": ..}) → { detail: { message: "msg" } }
+    //   Pydantic validation error             → { detail: [{ msg, loc, ... }] }
+    // Surface the actual server message so users see real feedback.
+    let message = 'Erro desconhecido'
+    if (body && typeof body === 'object') {
+      const d = (body as { detail?: unknown }).detail
+      if (typeof d === 'string') {
+        message = d
+      } else if (Array.isArray(d)) {
+        message = d.map((it) => (it as { msg?: string }).msg).filter(Boolean).join('; ') || message
+      } else if (d && typeof d === 'object') {
+        message = (d as { message?: string }).message || message
+      }
+    } else if (body === null) {
+      message = 'Erro de rede'
+    }
+    throw new Error(message)
   }
 
   if (res.status === 204) return undefined as T

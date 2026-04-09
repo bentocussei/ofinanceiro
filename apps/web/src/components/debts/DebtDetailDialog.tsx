@@ -139,8 +139,14 @@ export function DebtDetailDialog({
       if (editNature !== (item.nature || "formal")) updates.nature = editNature
       if (editCreditor.trim() !== (item.creditor || "")) updates.creditor = editCreditor.trim() || null
       if (editCreditorType !== (item.creditor_type || "bank")) updates.creditor_type = editCreditorType
-      const newOriginal = Math.round(parseFloat(editOriginalAmount) * 100)
-      if (newOriginal > 0 && newOriginal !== item.original_amount) updates.original_amount = newOriginal
+      // Only allow original_amount edits when no payments exist (backend
+      // enforces this too — UI is just defensive against accidental sends)
+      if (!hasPayments) {
+        const newOriginal = Math.round(parseFloat(editOriginalAmount) * 100)
+        if (newOriginal > 0 && newOriginal !== item.original_amount) {
+          updates.original_amount = newOriginal
+        }
+      }
       const newRate = parseFloat(editInterestRate) || 0
       if (newRate !== item.interest_rate) updates.interest_rate = newRate
       const newMin = Math.round(parseFloat(editMinimumPayment) * 100) || 0
@@ -216,10 +222,14 @@ export function DebtDetailDialog({
 
   if (!item) return null
 
-  const pct = item.original_amount > 0
+  // Clamp to [0, 100] defensively — even if backend invariants slip, the UI
+  // should never show "-100% pago" or a progress bar wider than 100%.
+  const rawPct = item.original_amount > 0
     ? Math.round((1 - item.remaining_balance / item.original_amount) * 100)
     : 0
+  const pct = Math.max(0, Math.min(100, rawPct))
   const isPaidOff = item.status === "paid_off"
+  const hasPayments = (item.payments_count ?? 0) > 0
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setPayAmount(""); setPayAccount(""); setError(""); setIsEditing(false) } }}>
@@ -272,7 +282,22 @@ export function DebtDetailDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Valor original (Kz)</Label><Input type="number" value={editOriginalAmount} onChange={(e) => setEditOriginalAmount(e.target.value)} className="font-mono" /></div>
+              <div>
+                <Label>Valor original (Kz)</Label>
+                <Input
+                  type="number"
+                  value={editOriginalAmount}
+                  onChange={(e) => setEditOriginalAmount(e.target.value)}
+                  disabled={hasPayments}
+                  className="font-mono disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+                {hasPayments && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O valor original não pode ser alterado depois de existirem pagamentos.
+                    Para corrigir o saldo, registe um pagamento de ajuste.
+                  </p>
+                )}
+              </div>
               <div><Label>Taxa de juros (%)</Label><Input type="number" step="0.1" value={editInterestRate} onChange={(e) => setEditInterestRate(e.target.value)} className="font-mono" /></div>
               <div><Label>Prestação mensal (Kz)</Label><Input type="number" value={editMinimumPayment} onChange={(e) => setEditMinimumPayment(e.target.value)} className="font-mono" /></div>
               <div><Label>Dia de pagamento (1-31)</Label><Input type="number" min="1" max="31" value={editDueDay} onChange={(e) => setEditDueDay(e.target.value)} className="font-mono" /></div>
@@ -335,7 +360,7 @@ export function DebtDetailDialog({
               {/* Progress */}
               <div>
                 <div className="h-2 bg-muted rounded-full mb-1">
-                  <div className="h-2 rounded-full bg-green-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                  <div className="h-2 rounded-full bg-green-500" style={{ width: `${pct}%` }} />
                 </div>
                 <p className="text-xs text-muted-foreground text-center">{pct}% pago</p>
               </div>

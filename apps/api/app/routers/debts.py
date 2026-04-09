@@ -83,7 +83,10 @@ async def create_debt_endpoint(
     _perm: None = PlanPermission("debts:manage:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    debt = await create_debt(db, user.id, data, family_id=ctx.family_id)
+    try:
+        debt = await create_debt(db, user.id, data, family_id=ctx.family_id)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     return {
         "id": str(debt.id), "name": debt.name,
         "nature": debt.nature, "creditor_type": debt.creditor_type,
@@ -102,7 +105,10 @@ async def update_debt_endpoint(
     debt = await get_debt(db, debt_id, user.id, family_id=ctx.family_id)
     if not debt:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
-    debt = await update_debt(db, debt, data)
+    try:
+        debt = await update_debt(db, debt, data)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     return _serialize_debt(debt)
 
 

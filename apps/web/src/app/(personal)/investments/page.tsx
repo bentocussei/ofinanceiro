@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import {
   TrendingUp, TrendingDown, Plus, Trash2, Calculator, LineChart,
@@ -109,7 +109,12 @@ function DiversificationBar({ score }: { score: number }) {
 export default function InvestmentsPage() {
   const [investments, setInvestments] = useState<Investment[]>([])
   const [createOpen, setCreateOpen] = useState(false)
-  const [detailInvestment, setDetailInvestment] = useState<Investment | null>(null)
+  // Derive from list so the modal sees fresh data after refetches.
+  const [detailInvestmentId, setDetailInvestmentId] = useState<string | null>(null)
+  const detailInvestment = useMemo(
+    () => investments.find((i) => i.id === detailInvestmentId) ?? null,
+    [investments, detailInvestmentId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [simOpen, setSimOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -508,7 +513,7 @@ export default function InvestmentsPage() {
                 : 0
 
               return (
-                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailInvestment(inv); setDetailOpen(true) }}>
+                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailInvestmentId(inv.id); setDetailOpen(true) }}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`flex items-center justify-center h-9 w-9 rounded-lg ${returnVal >= 0 ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
                       {returnVal >= 0

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Plus, Target, PiggyBank } from "lucide-react"
 import { MobileFAB } from "@/components/layout/MobileFAB"
@@ -27,7 +27,12 @@ import { getContextHeader } from "@/lib/context"
 export default function FamilyGoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [createOpen, setCreateOpen] = useState(false)
-  const [detailGoal, setDetailGoal] = useState<Goal | null>(null)
+  // Derive from list so the modal sees fresh data after refetches.
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null)
+  const detailGoal = useMemo(
+    () => goals.find((g) => g.id === detailGoalId) ?? null,
+    [goals, detailGoalId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [contributeGoalId, setContributeGoalId] = useState<string | null>(null)
   const [contributeAmount, setContributeAmount] = useState("")
@@ -253,7 +258,7 @@ export default function FamilyGoalsPage() {
                 <div
                   key={g.id}
                   className="rounded-xl bg-card p-5 shadow-sm cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow"
-                  onClick={() => { setDetailGoal(g); setDetailOpen(true) }}
+                  onClick={() => { setDetailGoalId(g.id); setDetailOpen(true) }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Target className="h-4 w-4 text-primary" />
@@ -309,7 +314,7 @@ export default function FamilyGoalsPage() {
               <div
                 key={g.id}
                 className="rounded-xl bg-card p-4 shadow-sm opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => { setDetailGoal(g); setDetailOpen(true) }}
+                onClick={() => { setDetailGoalId(g.id); setDetailOpen(true) }}
               >
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-income" />

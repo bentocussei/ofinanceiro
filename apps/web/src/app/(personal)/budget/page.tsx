@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { PieChart } from "lucide-react"
 import { MobileFAB } from "@/components/layout/MobileFAB"
 
@@ -37,7 +37,12 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [statuses, setStatuses] = useState<Record<string, BudgetStatus>>({})
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null)
-  const [detailBudget, setDetailBudget] = useState<Budget | null>(null)
+  // Derive from list so the modal sees fresh data after refetches.
+  const [detailBudgetId, setDetailBudgetId] = useState<string | null>(null)
+  const detailBudget = useMemo(
+    () => budgets.find((b) => b.id === detailBudgetId) ?? null,
+    [budgets, detailBudgetId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
 
@@ -97,7 +102,7 @@ export default function BudgetPage() {
                       <span className="text-xs text-muted-foreground">{status.days_remaining}d</span>
                     )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setDetailBudget(budget); setDetailOpen(true) }}
+                      onClick={(e) => { e.stopPropagation(); setDetailBudgetId(budget.id); setDetailOpen(true) }}
                       className="text-blue-500 hover:text-blue-600 text-xs font-medium"
                     >
                       Detalhe

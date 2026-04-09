@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { CreditCard, Plus, Trash2, Banknote, Calculator } from "lucide-react"
 import { MobileFAB } from "@/components/layout/MobileFAB"
@@ -49,7 +49,12 @@ const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map(
 export default function FamilyDebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [createOpen, setCreateOpen] = useState(false)
-  const [detailDebt, setDetailDebt] = useState<Debt | null>(null)
+  // See app/(personal)/debts/page.tsx for the rationale behind this pattern.
+  const [detailDebtId, setDetailDebtId] = useState<string | null>(null)
+  const detailDebt = useMemo(
+    () => debts.find((d) => d.id === detailDebtId) ?? null,
+    [debts, detailDebtId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [payOpen, setPayOpen] = useState<string | null>(null)
   const [simOpen, setSimOpen] = useState(false)
@@ -332,12 +337,13 @@ export default function FamilyDebtsPage() {
       ) : (
         <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
           {debts.map((debt) => {
-            const pct = debt.original_amount > 0
+            const rawPct = debt.original_amount > 0
               ? Math.round((1 - debt.remaining_balance / debt.original_amount) * 100)
               : 0
+            const pct = Math.max(0, Math.min(100, rawPct))
 
             return (
-              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailDebt(debt); setDetailOpen(true) }}>
+              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailDebtId(debt.id); setDetailOpen(true) }}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3 min-w-0">
                     <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
@@ -372,7 +378,7 @@ export default function FamilyDebtsPage() {
                 </div>
                 <div className="mt-2">
                   <div className="h-1.5 bg-muted rounded-full">
-                    <div className="h-1.5 rounded-full bg-green-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    <div className="h-1.5 rounded-full bg-green-500" style={{ width: `${pct}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{pct}% pago</p>
                 </div>

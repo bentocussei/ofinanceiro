@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Plus, Target, PiggyBank } from "lucide-react"
 import { MobileFAB } from "@/components/layout/MobileFAB"
@@ -22,7 +22,13 @@ import { formatKz } from "@/lib/format"
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
-  const [detailGoal, setDetailGoal] = useState<Goal | null>(null)
+  // Derive the open item from the live list so the modal sees fresh data
+  // after refetches. See app/(personal)/debts/page.tsx for the rationale.
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null)
+  const detailGoal = useMemo(
+    () => goals.find((g) => g.id === detailGoalId) ?? null,
+    [goals, detailGoalId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [contributeGoalId, setContributeGoalId] = useState<string | null>(null)
@@ -229,7 +235,7 @@ export default function GoalsPage() {
                 <div
                   key={g.id}
                   className="rounded-xl bg-card p-5 shadow-sm cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow"
-                  onClick={() => { setDetailGoal(g); setDetailOpen(true) }}
+                  onClick={() => { setDetailGoalId(g.id); setDetailOpen(true) }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Target className="h-4 w-4 text-primary" />
@@ -274,7 +280,7 @@ export default function GoalsPage() {
               <div
                 key={g.id}
                 className="rounded-xl bg-card p-4 shadow-sm opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => { setDetailGoal(g); setDetailOpen(true) }}
+                onClick={() => { setDetailGoalId(g.id); setDetailOpen(true) }}
               >
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-income" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import {
   Building2, Plus, Trash2,
@@ -38,7 +38,12 @@ import { getContextHeader } from "@/lib/context"
 export default function FamilyAssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [createOpen, setCreateOpen] = useState(false)
-  const [detailAsset, setDetailAsset] = useState<Asset | null>(null)
+  // Derive from list so the modal sees fresh data after refetches.
+  const [detailAssetId, setDetailAssetId] = useState<string | null>(null)
+  const detailAsset = useMemo(
+    () => assets.find((a) => a.id === detailAssetId) ?? null,
+    [assets, detailAssetId],
+  )
   const [detailOpen, setDetailOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cursor, setCursor] = useState<string | null>(null)
@@ -373,7 +378,7 @@ export default function FamilyAssetsPage() {
             const keyDetail = getKeyDetail(asset)
 
             return (
-              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailAsset(asset); setDetailOpen(true) }}>
+              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailAssetId(asset.id); setDetailOpen(true) }}>
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">

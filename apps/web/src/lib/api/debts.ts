@@ -23,6 +23,7 @@ export interface Debt {
   auto_pay?: boolean
   auto_pay_enabled?: boolean
   linked_account_id?: string | null
+  payments_count?: number
 }
 
 export interface DebtSimulation {

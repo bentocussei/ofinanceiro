@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "ofinanceiro-storage"
     r2_public_url: str = ""  # CDN URL for public files (optional)
+    # Separate token, scoped to ofinanceiro-backups — used by the offsite
+    # backup cron. The API process itself does not read these, but they may
+    # be present in shared .env files so the settings model must accept them.
+    r2_backups_access_key_id: str = ""
+    r2_backups_secret_access_key: str = ""
+    r2_backups_bucket: str = "ofinanceiro-backups"
 
     # AI
     anthropic_api_key: str = ""
