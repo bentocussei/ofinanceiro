@@ -14,7 +14,6 @@ from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
 from app.models.enums import SplitType
 from app.models.expense_split import ExpenseSplit, ExpenseSplitPart
-from app.models.family import FamilyMember
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/expense-splits", tags=["expense-splits"])
@@ -39,26 +38,19 @@ class ExpenseSplitCreate(BaseModel):
     parts: list[ExpenseSplitPartCreate] = Field(default_factory=list)
 
 
-async def _get_user_family_id(db: AsyncSession, user_id: uuid.UUID) -> uuid.UUID | None:
-    """Retorna o family_id do utilizador, se pertencer a uma família."""
-    stmt = select(FamilyMember.family_id).where(
-        FamilyMember.user_id == user_id, FamilyMember.is_active.is_(True)
-    )
-    result = await db.execute(stmt)
-    return result.scalar_one_or_none()
-
-
 @router.get("/")
 async def list_expense_splits(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    ctx: FinanceContext = Depends(get_context),
 ) -> list[dict]:
-    family_id = await _get_user_family_id(db, user.id)
-    if not family_id:
+    # Expense splits are by definition family-scoped — only the family
+    # context exposes them, the personal context returns an empty list.
+    if not ctx.is_family or not ctx.family_id:
         return []
     stmt = (
         select(ExpenseSplit)
-        .where(ExpenseSplit.family_id == family_id)
+        .where(ExpenseSplit.family_id == ctx.family_id)
         .options(selectinload(ExpenseSplit.parts))
         .order_by(ExpenseSplit.created_at.desc())
     )
@@ -76,14 +68,13 @@ async def create_expense_split(
     _perm: None = PlanPermission("family:expense_splits:create"),
 ) -> dict:
     require_permission(ctx, "can_add_transactions")
-    family_id = await _get_user_family_id(db, user.id)
-    if not family_id:
+    if not ctx.is_family or not ctx.family_id:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail={"code": "NO_FAMILY", "message": "Utilizador não pertence a nenhuma família"},
+            detail={"code": "NO_FAMILY_CONTEXT", "message": "Esta operação só está disponível no contexto família"},
         )
     split_data = data.model_dump(exclude={"parts"})
-    split = ExpenseSplit(family_id=family_id, **split_data)
+    split = ExpenseSplit(family_id=ctx.family_id, **split_data)
     db.add(split)
     await db.flush()
 
@@ -113,8 +104,12 @@ async def settle_expense_split(
 ) -> dict:
     """Marcar divisão como liquidada."""
     require_permission(ctx, "can_add_transactions")
-    family_id = await _get_user_family_id(db, user.id)
-    split = await _get_or_404(db, split_id, family_id)
+    if not ctx.is_family or not ctx.family_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={"code": "NO_FAMILY_CONTEXT", "message": "Esta operação só está disponível no contexto família"},
+        )
+    split = await _get_or_404(db, split_id, ctx.family_id)
     split.is_settled = True
     split.settled_at = datetime.now(UTC)
     await db.flush()
@@ -139,8 +134,12 @@ async def settle_expense_split_part(
 ) -> dict:
     """Marcar parcela individual como paga."""
     require_permission(ctx, "can_add_transactions")
-    family_id = await _get_user_family_id(db, user.id)
-    split = await _get_or_404(db, split_id, family_id)
+    if not ctx.is_family or not ctx.family_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={"code": "NO_FAMILY_CONTEXT", "message": "Esta operação só está disponível no contexto família"},
+        )
+    split = await _get_or_404(db, split_id, ctx.family_id)
 
     part = next((p for p in split.parts if p.id == part_id), None) if hasattr(split, "parts") else None
     if not part:
@@ -189,8 +188,12 @@ async def delete_expense_split(
     ctx: FinanceContext = Depends(get_context),
 ) -> None:
     require_permission(ctx, "can_add_transactions")
-    family_id = await _get_user_family_id(db, user.id)
-    split = await _get_or_404(db, split_id, family_id)
+    if not ctx.is_family or not ctx.family_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={"code": "NO_FAMILY_CONTEXT", "message": "Esta operação só está disponível no contexto família"},
+        )
+    split = await _get_or_404(db, split_id, ctx.family_id)
     await db.delete(split)
 
 

@@ -126,13 +126,21 @@ async def register_payment_endpoint(
     if not debt:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dívida não encontrada")
 
-    # Verify account ownership if provided
+    # Verify the source account is reachable from the debt's context.
+    # The check lives in the service so the rule (a family debt accepts
+    # any account in the same family, a personal debt accepts only the
+    # caller's personal accounts) stays in one place.
     if data.from_account_id:
         from sqlalchemy import select
         from app.models.account import Account
-        result = await db.execute(
-            select(Account).where(Account.id == data.from_account_id, Account.user_id == user.id)
-        )
+        acct_stmt = select(Account).where(Account.id == data.from_account_id)
+        if debt.family_id is not None:
+            acct_stmt = acct_stmt.where(Account.family_id == debt.family_id)
+        else:
+            acct_stmt = acct_stmt.where(
+                Account.user_id == user.id, Account.family_id.is_(None)
+            )
+        result = await db.execute(acct_stmt)
         if not result.scalar_one_or_none():
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 

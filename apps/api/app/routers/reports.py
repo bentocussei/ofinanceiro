@@ -151,11 +151,18 @@ async def get_patrimony(
     asset_accounts = list((await db.execute(asset_accounts_stmt)).scalars().all())
     accounts_total = sum(a.balance for a in asset_accounts)
 
-    # --- Active investments (always personal — no family_id) ---
-    investments_stmt = select(Investment).where(
-        Investment.user_id == user.id,
-        Investment.is_active.is_(True),
-    )
+    # --- Active investments ---
+    # The Investment model has family_id, and the create endpoint sets it from
+    # ctx.family_id, so investments CAN be family-scoped. The previous code
+    # filtered by user_id only, which leaked personal investments into the
+    # family report and hid family investments owned by other members.
+    investments_stmt = select(Investment).where(Investment.is_active.is_(True))
+    if ctx.is_family:
+        investments_stmt = investments_stmt.where(Investment.family_id == ctx.family_id)
+    else:
+        investments_stmt = investments_stmt.where(
+            Investment.user_id == user.id, Investment.family_id.is_(None)
+        )
     investments = list((await db.execute(investments_stmt)).scalars().all())
     investments_total = sum(inv.current_value for inv in investments)
 
@@ -177,11 +184,16 @@ async def get_patrimony(
     physical_assets = list((await db.execute(physical_assets_stmt)).scalars().all())
     physical_assets_total = sum(a.current_value for a in physical_assets)
 
-    # --- Active debts (always personal — no family_id) ---
-    debts_stmt = select(Debt).where(
-        Debt.user_id == user.id,
-        Debt.is_active.is_(True),
-    )
+    # --- Active debts ---
+    # Same fix as investments above: Debt.family_id is supported by the model
+    # and set by create_debt; the report must respect the current context.
+    debts_stmt = select(Debt).where(Debt.is_active.is_(True))
+    if ctx.is_family:
+        debts_stmt = debts_stmt.where(Debt.family_id == ctx.family_id)
+    else:
+        debts_stmt = debts_stmt.where(
+            Debt.user_id == user.id, Debt.family_id.is_(None)
+        )
     debts = list((await db.execute(debts_stmt)).scalars().all())
     debts_total = sum(d.current_balance for d in debts)
 

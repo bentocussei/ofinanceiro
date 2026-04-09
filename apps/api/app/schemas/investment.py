@@ -1,7 +1,7 @@
 """Investment schemas — mirrors router schemas with proper typing."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,8 +14,12 @@ class InvestmentCreate(BaseModel):
     current_value: int = Field(gt=0, description="Current value in centavos")
     interest_rate: int | None = None  # basis points
     annual_return_rate: float | None = None  # percentage (12.5 = 12.5%)
-    start_date: str | None = None
-    maturity_date: str | None = None
+    # Dates: must be `date` so Pydantic parses ISO strings into date objects
+    # before they reach asyncpg. Previously typed as `str`, asyncpg crashed
+    # with "'str' object has no attribute 'toordinal'" on insert. Same fix
+    # applied earlier to debt schemas.
+    start_date: date | None = None
+    maturity_date: date | None = None
     notes: str | None = None
     from_account_id: uuid.UUID | None = None
 
@@ -34,8 +38,8 @@ class InvestmentUpdate(BaseModel):
     current_value: int | None = None
     interest_rate: int | None = None
     annual_return_rate: float | None = None
-    start_date: str | None = None
-    maturity_date: str | None = None
+    start_date: date | None = None
+    maturity_date: date | None = None
     notes: str | None = None
     is_active: bool | None = None
 
@@ -57,7 +61,7 @@ class InvestmentResponse(BaseModel):
     current_value: int
     interest_rate: int | None
     is_active: bool
-    start_date: str | None
-    maturity_date: str | None
+    start_date: date | None
+    maturity_date: date | None
     notes: str | None
     created_at: datetime

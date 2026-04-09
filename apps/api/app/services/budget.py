@@ -6,6 +6,7 @@ from datetime import date
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.account import Account
 from app.models.budget import Budget, BudgetItem
 from app.models.category import Category
 from app.models.enums import TransactionType
@@ -125,14 +126,30 @@ async def get_budget_status(
     total_spent = 0
 
     for item in budget.items:
-        # Get spending for this category in the budget period
-        stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            Transaction.user_id == budget.user_id,
-            Transaction.category_id == item.category_id,
-            Transaction.type == TransactionType.EXPENSE,
-            Transaction.transaction_date >= budget.period_start,
-            Transaction.transaction_date <= budget.period_end,
+        # Get spending for this category in the budget period.
+        #
+        # IMPORTANT: spending is scoped via Account, not via Transaction.user_id.
+        # A family budget must aggregate every family member's transactions on
+        # accounts that belong to the family. Filtering by Transaction.user_id
+        # alone (the previous behaviour) silently hid every other member's
+        # spending and made the "spent" total wrong for shared budgets.
+        stmt = (
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
+                Transaction.category_id == item.category_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.transaction_date >= budget.period_start,
+                Transaction.transaction_date <= budget.period_end,
+            )
         )
+        if budget.family_id is not None:
+            stmt = stmt.where(Account.family_id == budget.family_id)
+        else:
+            stmt = stmt.where(
+                Account.user_id == budget.user_id,
+                Account.family_id.is_(None),
+            )
         result = await db.execute(stmt)
         spent = result.scalar() or 0
 

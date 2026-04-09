@@ -147,12 +147,19 @@ async def contribute(
     note: str | None = None,
     from_account_id: uuid.UUID | None = None,
 ) -> GoalContribution:
-    # Verify from_account_id ownership if provided
+    # Verify from_account_id is reachable from the goal's context. A family
+    # goal must accept any account belonging to the same family (so any member
+    # can contribute), not only accounts owned by the calling user.
     if from_account_id:
         from sqlalchemy import select as sa_select
-        acct_result = await db.execute(
-            sa_select(Account).where(Account.id == from_account_id, Account.user_id == user_id)
-        )
+        acct_stmt = sa_select(Account).where(Account.id == from_account_id)
+        if goal.family_id is not None:
+            acct_stmt = acct_stmt.where(Account.family_id == goal.family_id)
+        else:
+            acct_stmt = acct_stmt.where(
+                Account.user_id == user_id, Account.family_id.is_(None)
+            )
+        acct_result = await db.execute(acct_stmt)
         if not acct_result.scalar_one_or_none():
             from fastapi import HTTPException, status as http_status
             raise HTTPException(http_status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
