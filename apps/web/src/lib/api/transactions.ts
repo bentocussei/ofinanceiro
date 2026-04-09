@@ -41,6 +41,12 @@ export interface CreateTransactionData {
   transaction_date?: string
   is_private?: boolean
   needs_review?: boolean
+  // Idempotency key — client-generated UUID. If the same key is sent
+  // twice (double-tap, network retry, offline replay) the backend
+  // returns the existing transaction instead of creating a duplicate.
+  // Must be stable across retries of the same user intent and renewed
+  // for each fresh submission.
+  client_id?: string
 }
 
 type H = { headers?: Record<string, string> }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { CalendarIcon, X } from "lucide-react"
 
@@ -59,6 +59,11 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
+  // Idempotency key for the current submission attempt. Generated lazily on
+  // first submit and KEPT across retries (so the backend dedupes a network
+  // retry into the same transaction). Cleared on success or on reset/close.
+  const clientIdRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (open) {
       categoriesApi.list().then(setCategories).catch(() => {})
@@ -93,6 +98,7 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
     setIsPrivate(false)
     setNeedsReview(false)
     setError("")
+    clientIdRef.current = null
   }
 
   const toggleTag = (tagName: string) => {
@@ -115,6 +121,11 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
 
     setIsSubmitting(true)
     setError("")
+    // Generate the idempotency key on first submit attempt and reuse it
+    // across any retry of THIS user intent. Only cleared on success.
+    if (!clientIdRef.current) {
+      clientIdRef.current = crypto.randomUUID()
+    }
     try {
       const amountCentavos = Math.round(parseFloat(amount) * 100)
       await transactionsApi.create({
@@ -129,12 +140,14 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         is_private: isPrivate || undefined,
         needs_review: needsReview || undefined,
+        client_id: clientIdRef.current,
       })
-      reset()
+      reset()  // also clears clientIdRef
       setOpen(false)
       onCreated?.()
       toast.success("Transacção registada com sucesso")
     } catch (err: any) {
+      // Keep clientIdRef intact so a manual retry hits the same key.
       setError(err.message || "Não foi possível registar a transacção")
     } finally {
       setIsSubmitting(false)
