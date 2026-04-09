@@ -99,7 +99,14 @@ async def contribute_to_goal(
     ctx: FinanceContext = Depends(get_context),
     _perm: None = PlanPermission("goals:contribute:create"),
 ) -> GoalContributionResponse:
-    require_permission(ctx, "can_edit_budgets")
+    # Contributing to a goal is a money flow (it creates a real Transaction
+    # on the source account), not a structural change to the goal itself.
+    # It is the semantic sibling of debts.register_payment, not of
+    # goals.update — and must be gated by the same permission as adding any
+    # other transaction. The previous can_edit_budgets gate was inconsistent
+    # with debts.payment and prevented ADULT family members from contributing
+    # to a family goal even though they could pay a family debt.
+    require_permission(ctx, "can_add_transactions")
     goal = await goal_service.get_goal(db, goal_id, user.id, family_id=ctx.family_id)
     if not goal:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Meta não encontrada"})

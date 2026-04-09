@@ -200,15 +200,47 @@ async def register_payment(
     2. Create an expense transaction for the payment
     3. Reduce debt current_balance
     4. Mark as paid off if balance reaches 0
+
+    Concurrency: re-fetches both the debt and the source account with
+    SELECT ... FOR UPDATE so two simultaneous payments on the same debt
+    (e.g. double-tap, network retry, two devices at once) serialize on
+    the database row instead of both reading the same balance and each
+    writing balance - amount independently. Locks are taken in a fixed
+    order (debt first, then account) so concurrent operations on the
+    same pair never deadlock.
     """
     payment_date = data.payment_date or date.today()
+
+    # Re-acquire the debt with a row-level lock so any concurrent payment
+    # waits until this transaction commits. populate_existing=True is
+    # MANDATORY here: the router has already loaded the debt earlier in
+    # the same session, so without it SQLAlchemy returns the cached
+    # instance with the stale current_balance and concurrent payments
+    # silently overwrite each other (5 payments × 1k → debt only loses
+    # 1k instead of 5k). Forcing populate_existing makes the lock query
+    # also REFRESH the in-memory attributes from the row we just locked.
+    locked_debt = await db.execute(
+        select(Debt)
+        .where(Debt.id == debt.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    debt = locked_debt.scalar_one()
 
     # Determine source account
     account_id = data.from_account_id or debt.linked_account_id
     transaction_id: uuid.UUID | None = None
 
     if account_id:
-        account = await db.get(Account, account_id)
+        # Lock the account row the same way (populate_existing forces a
+        # fresh read of `balance` even if the row was loaded earlier).
+        locked_acc = await db.execute(
+            select(Account)
+            .where(Account.id == account_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        account = locked_acc.scalar_one_or_none()
         if account:
             # Debit account
             account.balance -= data.amount

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context import FinanceContext, get_context, require_permission
 from app.database import get_db
 from app.dependencies import PlanPermission, get_current_user
+from app.models.account import Account
 from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -104,11 +105,34 @@ async def transfer(
     if data.from_account_id == data.to_account_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": "SAME_ACCOUNT", "message": "Não pode transferir para a mesma conta"})
 
+    # Ownership / context check first (no lock needed yet — this just
+    # rejects unauthorised account ids).
     from_account = await account_service.get_account(db, data.from_account_id, user.id, family_id=ctx.family_id)
     to_account = await account_service.get_account(db, data.to_account_id, user.id, family_id=ctx.family_id)
 
     if not from_account or not to_account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "ACCOUNT_NOT_FOUND", "message": "Conta não encontrada"})
+
+    # Concurrency: lock both account rows with SELECT ... FOR UPDATE so a
+    # double-tap (or two devices transferring at the same time) serializes
+    # on the database row. Locks are taken in a fixed order — sorted by
+    # UUID — so two concurrent transfers in opposite directions on the
+    # same pair of accounts can never deadlock.
+    from sqlalchemy import select as sa_select
+
+    first_id, second_id = sorted([data.from_account_id, data.to_account_id], key=str)
+    await db.execute(
+        sa_select(Account)
+        .where(Account.id == first_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    await db.execute(
+        sa_select(Account)
+        .where(Account.id == second_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
 
     description = data.description or f"Transferência: {from_account.name} → {to_account.name}"
 

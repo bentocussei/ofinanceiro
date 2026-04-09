@@ -164,12 +164,34 @@ async def contribute(
             from fastapi import HTTPException, status as http_status
             raise HTTPException(http_status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
+    # Concurrency: re-fetch the goal with a row-level lock so two
+    # simultaneous contributions on the same goal serialize. Same fix
+    # as services/debt.register_payment — without it both branches
+    # would read the same current_amount and each write current+amount,
+    # losing one contribution. Locks taken in fixed order: goal then
+    # account, to keep deadlock-free with any concurrent operation.
+    # populate_existing=True forces a fresh attribute read on the locked
+    # row even when the session already cached the instance.
+    locked_goal = await db.execute(
+        select(Goal)
+        .where(Goal.id == goal.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    goal = locked_goal.scalar_one()
+
     # Determine the source account: explicit param > goal's savings_account_id
     account_id = from_account_id or goal.savings_account_id
 
     # If there's a linked account, debit it and create a transaction
     if account_id:
-        account = await db.get(Account, account_id)
+        locked_acc = await db.execute(
+            select(Account)
+            .where(Account.id == account_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        account = locked_acc.scalar_one_or_none()
         if account:
             account.balance -= amount
 

@@ -109,6 +109,22 @@ async def create_transaction(
     data: TransactionCreate,
     family_id: uuid.UUID | None = None,
 ) -> Transaction:
+    # Idempotency: if the client supplied a client_id and a transaction
+    # already exists for this (user_id, client_id) tuple, return it instead
+    # of inserting a duplicate. The model already enforces uniqueness via
+    # uq_txn_client_id, so without this lookup a double-tap from the mobile
+    # app (or a network retry) would 500 with an integrity-error trace.
+    if data.client_id is not None:
+        existing = await db.execute(
+            select(Transaction).where(
+                Transaction.user_id == user_id,
+                Transaction.client_id == data.client_id,
+            )
+        )
+        existing_txn = existing.scalar_one_or_none()
+        if existing_txn is not None:
+            return existing_txn
+
     # Verify account belongs to user/family context
     acct_stmt = select(Account).where(Account.id == data.account_id)
     if family_id is not None:
