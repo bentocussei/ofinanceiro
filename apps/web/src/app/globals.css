@@ -95,7 +95,7 @@
   --chart-4: oklch(0.55 0.15 310);           /* purple */
   --chart-5: oklch(0.45 0.15 155);           /* green */
 
-  --radius: 0.75rem;                          /* 12px */
+  --radius: 0.15rem;                          /* 2.4px */
 
   /* Sidebar */
   --sidebar: oklch(0.975 0.008 95);          /* slightly darker cream */
