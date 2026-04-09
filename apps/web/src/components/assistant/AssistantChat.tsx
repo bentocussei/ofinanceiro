@@ -36,20 +36,20 @@ interface ChatMessage {
 
 const PERSONAL_QUICK_ACTIONS = [
   { label: "Quanto tenho de saldo?", category: "Contas" },
-  { label: "Quanto gastei este mes?", category: "Despesas" },
-  { label: "Como esta o meu orcamento?", category: "Orcamento" },
+  { label: "Quanto gastei este mês?", category: "Despesas" },
+  { label: "Como está o meu orçamento?", category: "Orçamento" },
   { label: "Qual o estado das minhas metas?", category: "Metas" },
-  { label: "Resumo das minhas dividas", category: "Dividas" },
-  { label: "Como estao os meus investimentos?", category: "Investimentos" },
+  { label: "Resumo das minhas dívidas", category: "Dívidas" },
+  { label: "Como estão os meus investimentos?", category: "Investimentos" },
 ]
 
 const FAMILY_QUICK_ACTIONS = [
   { label: "Quanto temos de saldo familiar?", category: "Contas" },
-  { label: "Quanto gastamos este mes?", category: "Despesas" },
-  { label: "Como esta o orcamento familiar?", category: "Orcamento" },
-  { label: "Qual o estado das metas da familia?", category: "Metas" },
-  { label: "Resumo das dividas familiares", category: "Dividas" },
-  { label: "Quem gastou mais este mes?", category: "Membros" },
+  { label: "Quanto gastámos este mês?", category: "Despesas" },
+  { label: "Como está o orçamento familiar?", category: "Orçamento" },
+  { label: "Qual o estado das metas da família?", category: "Metas" },
+  { label: "Resumo das dívidas familiares", category: "Dívidas" },
+  { label: "Quem gastou mais este mês?", category: "Membros" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -363,8 +363,8 @@ export function AssistantChat({ context }: AssistantChatProps) {
             </h1>
             <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
               {context === "family"
-                ? "Pergunte qualquer coisa sobre as financas da sua familia. Posso consultar saldos partilhados, registar transaccoes e analisar gastos familiares."
-                : "Pergunte qualquer coisa sobre as suas financas. Posso consultar saldos, registar transaccoes, analisar gastos e muito mais."}
+                ? "Pergunte qualquer coisa sobre as finanças da sua família. Posso consultar saldos partilhados, registar transacções e analisar gastos familiares."
+                : "Pergunte qualquer coisa sobre as suas finanças. Posso consultar saldos, registar transacções, analisar gastos e muito mais."}
             </p>
 
             <div className="hidden md:grid grid-cols-2 gap-2 w-full max-w-lg">
@@ -543,8 +543,8 @@ export function AssistantChat({ context }: AssistantChatProps) {
                   stagedFiles.length > 0
                     ? "Adicionar mensagem (opcional)..."
                     : context === "family"
-                      ? "Pergunte qualquer coisa sobre as financas da familia..."
-                      : "Pergunte qualquer coisa sobre as suas financas..."
+                      ? "Pergunte qualquer coisa sobre as finanças da família..."
+                      : "Pergunte qualquer coisa sobre as suas finanças..."
                 }
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
