@@ -84,7 +84,10 @@ async def update_account(
     account = await account_service.get_account(db, account_id, user.id, family_id=ctx.family_id)
     if not account:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Conta não encontrada"})
-    updated = await account_service.update_account(db, account, data)
+    try:
+        updated = await account_service.update_account(db, account, data)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     return AccountResponse.model_validate(updated)
 
 

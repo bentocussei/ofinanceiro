@@ -165,27 +165,72 @@ async def create_transaction(
 async def update_transaction(
     db: AsyncSession, txn: Transaction, data: TransactionUpdate
 ) -> Transaction:
+    """Update a transaction while keeping every affected account balance correct.
+
+    Three independent dimensions can change in one PUT and they all affect
+    balances:
+
+        1. amount    — same account, delta of (new − old)
+        2. type      — same account, sign flip
+        3. account_id — money moves from old account to new account
+
+    The previous implementation only handled (1) and (2), AND only against
+    the *new* account_id (because setattr had already overwritten it). Moving
+    a transaction across accounts via PUT silently corrupted both balances.
+
+    This rewrite captures the old (account_id, amount, type) tuple BEFORE
+    touching the row, applies the field updates, then recomputes balances
+    against the correct accounts in a single pass.
+    """
+    update_data = data.model_dump(exclude_unset=True)
+
     old_amount = txn.amount
     old_type = txn.type
+    old_account_id = txn.account_id
 
-    update_data = data.model_dump(exclude_unset=True)
+    new_account_id = update_data.get("account_id", old_account_id)
+
+    # Cross-account move: validate before mutating anything
+    if new_account_id != old_account_id:
+        new_account = await db.get(Account, new_account_id)
+        if not new_account:
+            raise ValueError("Conta de destino não encontrada")
+        if new_account.user_id != txn.user_id:
+            raise ValueError("A conta de destino não pertence a este utilizador")
+        old_account_obj = await db.get(Account, old_account_id)
+        if old_account_obj and old_account_obj.currency != new_account.currency:
+            raise ValueError(
+                f"Moedas diferentes: {old_account_obj.currency} → {new_account.currency}. "
+                "Não é possível mover entre moedas diferentes."
+            )
+
+    # Apply field updates (including account_id if present)
     for field, value in update_data.items():
         setattr(txn, field, value)
 
-    # Recalculate balance if amount or type changed
-    if "amount" in update_data or "type" in update_data:
-        account = await db.get(Account, txn.account_id)
-        if account:
-            # Reverse old
+    balance_affecting_change = (
+        "amount" in update_data
+        or "type" in update_data
+        or new_account_id != old_account_id
+    )
+
+    if balance_affecting_change:
+        # Reverse old impact on the OLD account
+        old_account_obj = await db.get(Account, old_account_id)
+        if old_account_obj:
             if old_type == "income":
-                account.balance -= old_amount
+                old_account_obj.balance -= old_amount
             elif old_type == "expense":
-                account.balance += old_amount
-            # Apply new
+                old_account_obj.balance += old_amount
+        # Apply new impact on the NEW account (which is the same row as old
+        # if the txn didn't move — SQLAlchemy returns the cached instance,
+        # so the previous reverse and this apply compose correctly)
+        new_account_obj = await db.get(Account, txn.account_id)
+        if new_account_obj:
             if txn.type == "income":
-                account.balance += txn.amount
+                new_account_obj.balance += txn.amount
             elif txn.type == "expense":
-                account.balance -= txn.amount
+                new_account_obj.balance -= txn.amount
 
     await db.flush()
     return txn

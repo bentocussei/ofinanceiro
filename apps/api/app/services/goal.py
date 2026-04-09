@@ -87,12 +87,31 @@ async def create_goal(
 
 
 async def update_goal(db: AsyncSession, goal: Goal, data: GoalUpdate) -> Goal:
+    """Update a goal and keep its status consistent with the target.
+
+    Goals are aspirational — over-saving past the target is allowed (the
+    user can keep contributing to a "completed" emergency fund). What we
+    must keep consistent is the **status** field relative to current vs
+    target amount, in BOTH directions:
+
+        current >= target  → COMPLETED
+        current <  target  → ACTIVE   (re-activate from COMPLETED)
+
+    Without the symmetric branch, raising the target back above current
+    after a goal was auto-completed would leave the goal stuck in
+    COMPLETED with progress < 100%.
+    """
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(goal, field, value)
+
     if goal.current_amount >= goal.target_amount and goal.status == GoalStatus.ACTIVE:
         goal.status = GoalStatus.COMPLETED
         goal.completed_at = datetime.now(UTC)
+    elif goal.current_amount < goal.target_amount and goal.status == GoalStatus.COMPLETED:
+        goal.status = GoalStatus.ACTIVE
+        goal.completed_at = None
+
     await db.flush()
     return goal
 

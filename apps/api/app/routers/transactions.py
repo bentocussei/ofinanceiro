@@ -247,7 +247,10 @@ async def update_transaction(
     txn = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     if not txn:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "NOT_FOUND", "message": "Transacção não encontrada"})
-    await txn_service.update_transaction(db, txn, data)
+    try:
+        await txn_service.update_transaction(db, txn, data)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     fresh = await txn_service.get_transaction(db, txn_id, user.id, family_id=ctx.family_id)
     return _serialize(fresh or txn)
 

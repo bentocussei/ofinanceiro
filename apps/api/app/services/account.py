@@ -98,7 +98,22 @@ async def create_account(
 async def update_account(
     db: AsyncSession, account: Account, data: AccountUpdate
 ) -> Account:
+    """Update editable account metadata.
+
+    Defence in depth: `balance` is server-managed — it is derived from the
+    transaction history and must never be set directly via this endpoint.
+    Today AccountUpdate doesn't expose `balance`, so this guard is dormant,
+    but the moment someone adds the field for an "adjust balance" feature
+    the guard prevents silent overwrite of the running total. Any balance
+    correction must go through a real adjustment transaction.
+    """
     update_data = data.model_dump(exclude_unset=True)
+    if "balance" in update_data:
+        raise ValueError(
+            "O saldo da conta é calculado a partir das transacções e não "
+            "pode ser alterado directamente. Para corrigir o saldo, registe "
+            "uma transacção de ajuste."
+        )
     for field, value in update_data.items():
         setattr(account, field, value)
     await db.flush()

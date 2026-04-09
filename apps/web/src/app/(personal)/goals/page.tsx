@@ -230,7 +230,8 @@ export default function GoalsPage() {
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {activeGoals.map((g) => {
-              const pct = g.target_amount > 0 ? (g.current_amount / g.target_amount) * 100 : 0
+              const rawPct = g.target_amount > 0 ? (g.current_amount / g.target_amount) * 100 : 0
+              const pct = Math.max(0, Math.min(100, Math.round(rawPct)))
               return (
                 <div
                   key={g.id}
@@ -240,12 +241,12 @@ export default function GoalsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Target className="h-4 w-4 text-primary" />
                     <span className="text-sm font-semibold flex-1">{g.name}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{Math.round(pct)}%</span>
+                    <span className="text-xs text-muted-foreground font-mono">{pct}%</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-muted mb-2">
                     <div
                       className="h-2 rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${Math.min(pct, 100)}%` }}
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
                   <div className="flex items-baseline justify-between mb-3">

@@ -192,7 +192,12 @@ export function GoalDetailDialog({
 
   if (!item) return null
 
-  const pct = item.target_amount > 0 ? Math.round(item.current_amount / item.target_amount * 100) : 0
+  // Goals can legitimately exceed 100% (over-saving), but we never want to
+  // show "166% pago" or render a progress bar wider than full. Clamp to
+  // [0, 100] for display while keeping the raw value to detect "exceeded".
+  const rawPct = item.target_amount > 0 ? Math.round(item.current_amount / item.target_amount * 100) : 0
+  const pct = Math.max(0, Math.min(100, rawPct))
+  const exceededBy = rawPct > 100 ? rawPct - 100 : 0
   const isComplete = item.status === "completed"
 
   return (
@@ -295,10 +300,12 @@ export function GoalDetailDialog({
                 <div className="h-2.5 bg-muted rounded-full mb-1">
                   <div
                     className={`h-2.5 rounded-full ${isComplete ? "bg-green-500" : pct >= 75 ? "bg-amber-500" : "bg-blue-500"}`}
-                    style={{ width: `${Math.min(pct, 100)}%` }}
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="text-sm font-semibold text-muted-foreground">{pct}%</p>
+                <p className="text-sm font-semibold text-muted-foreground">
+                  {pct}%{exceededBy > 0 && ` — excedida em ${exceededBy}%`}
+                </p>
               </div>
 
               {/* Details grid */}
