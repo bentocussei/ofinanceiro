@@ -293,6 +293,176 @@ export const familyDashboardTour: DriveStep[] = [
 ]
 
 // ---------------------------------------------------------------------------
+// Accounts page
+// ---------------------------------------------------------------------------
+
+export const accountsTour: DriveStep[] = [
+  {
+    popover: {
+      title: "As tuas Contas",
+      description:
+        "Aqui geres todas as tuas contas — banco, carteira, mobile money, poupança. Cada conta tem o seu saldo actualizado automaticamente com cada transacção.",
+    },
+  },
+  {
+    element: '[data-tour="new-account"]',
+    popover: {
+      title: "Adicionar Conta",
+      description:
+        "Adiciona uma nova conta: banco (BAI, BFA, BIC...), numerário (carteira), mobile money (Multicaixa Express), ou poupança. Define o saldo inicial.",
+    },
+  },
+  {
+    element: '[data-tour="account-summary"]',
+    popover: {
+      title: "Resumo",
+      description:
+        "Saldo total de todas as contas. Clica numa conta para ver detalhes, editar ou transferir dinheiro entre contas.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Assets page (Património / Bens físicos)
+// ---------------------------------------------------------------------------
+
+export const assetsTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Património — Bens Físicos",
+      description:
+        "Regista os teus bens para teres uma visão completa do teu património: veículos, imóveis, electrónica, mobiliário. O valor actual soma ao teu Património Líquido no dashboard.",
+    },
+  },
+  {
+    element: '[data-tour="new-asset"]',
+    popover: {
+      title: "Registar Bem",
+      description:
+        "Adiciona um bem: nome, tipo (veículo, imóvel, electrónica...), valor de compra e valor actual estimado. O valor deprecia com o tempo — actualiza periodicamente.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Reports page
+// ---------------------------------------------------------------------------
+
+export const reportsTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Relatórios Financeiros",
+      description:
+        "Analisa as tuas finanças em profundidade: gastos por categoria, evolução mensal, taxa de poupança e património líquido. Também podes pedir relatórios ao Assistente — 'gera o relatório do mês'.",
+    },
+  },
+  {
+    element: '[data-tour="spending-chart"]',
+    popover: {
+      title: "Gastos por Categoria",
+      description:
+        "Vê para onde vai o teu dinheiro. As categorias com mais peso aparecem primeiro — identifica onde podes poupar.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Income Sources page (Rendimentos)
+// ---------------------------------------------------------------------------
+
+export const incomeSourcesTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Fontes de Rendimento",
+      description:
+        "Regista as tuas fontes de rendimento — salário, freelance, rendas, negócio. Ter esta informação ajuda o Assistente a calcular a tua taxa de poupança e dar conselhos mais precisos.",
+    },
+  },
+  {
+    element: '[data-tour="new-income-source"]',
+    popover: {
+      title: "Nova Fonte",
+      description:
+        "Adiciona uma fonte: nome, valor mensal estimado e frequência (mensal, semanal, irregular). Não cria transacções automaticamente — serve como referência.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Bills page (Contas a Pagar)
+// ---------------------------------------------------------------------------
+
+export const billsTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Contas a Pagar",
+      description:
+        "Gere as tuas facturas e contas recorrentes — água (EPAL), luz (ENDE), internet, DSTV, propinas. Define datas de vencimento e recebe lembretes antes de vencer.",
+    },
+  },
+  {
+    element: '[data-tour="new-bill"]',
+    popover: {
+      title: "Nova Conta a Pagar",
+      description:
+        "Adiciona uma factura: nome, valor, data de vencimento e frequência. O sistema avisa-te quando está a aproximar-se do vencimento.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Recurring Rules page (Recorrentes)
+// ---------------------------------------------------------------------------
+
+export const recurringRulesTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Transacções Recorrentes",
+      description:
+        "Define regras para transacções que se repetem — salário, renda, assinatura DSTV, propinas mensais. O sistema cria a transacção automaticamente no dia definido.",
+    },
+  },
+  {
+    element: '[data-tour="new-recurring"]',
+    popover: {
+      title: "Nova Regra Recorrente",
+      description:
+        "Cria uma regra: descrição, valor, categoria, conta, frequência (diária, semanal, mensal, anual) e dia de execução. A transacção é registada automaticamente.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Family Members page
+// ---------------------------------------------------------------------------
+
+export const familyMembersTour: DriveStep[] = [
+  {
+    popover: {
+      title: "Membros da Família",
+      description:
+        "Gere quem faz parte da tua família no O Financeiro. Cada membro pode registar transacções, contribuir para metas e ver os dados partilhados.",
+    },
+  },
+  {
+    element: '[data-tour="invite-code"]',
+    popover: {
+      title: "Código de Convite",
+      description:
+        "Partilha este código com familiares para se juntarem. Eles instalam a app, criam conta, e usam o código. Tu aprovas o pedido e eles ganham acesso ao contexto família.",
+    },
+  },
+  {
+    element: '[data-tour="members-list"]',
+    popover: {
+      title: "Lista de Membros",
+      description:
+        "Vê quem está na família, o papel de cada um (Admin, Adulto, Jovem) e as permissões. O Admin pode gerir membros e definir regras.",
+    },
+  },
+]
+
+// ---------------------------------------------------------------------------
 // Map tour ID → steps for easy lookup
 // ---------------------------------------------------------------------------
 
@@ -304,5 +474,12 @@ export const tourMap: Record<string, DriveStep[]> = {
   debts: debtsTour,
   investments: investmentsTour,
   assistant: assistantTour,
+  accounts: accountsTour,
+  assets: assetsTour,
+  reports: reportsTour,
+  "income-sources": incomeSourcesTour,
+  bills: billsTour,
+  "recurring-rules": recurringRulesTour,
   "family-dashboard": familyDashboardTour,
+  "family-members": familyMembersTour,
 }

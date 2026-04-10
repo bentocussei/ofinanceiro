@@ -17,6 +17,7 @@ import {
 import { incomeSourcesApi, type IncomeSource } from "@/lib/api/income-sources"
 import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 interface AccountOption {
   id: string
@@ -45,6 +46,7 @@ const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map(
 const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS.map((f) => [f.value, f.label]))
 
 export default function IncomeSourcesPage() {
+  useTour("income-sources")
   const [items, setItems] = useState<IncomeSource[]>([])
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [createOpen, setCreateOpen] = useState(false)
@@ -244,7 +246,7 @@ export default function IncomeSourcesPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Rendimentos</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" data-tour="new-income-source" />}>
             <Plus className="h-4 w-4 mr-1" /> Novo rendimento
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">

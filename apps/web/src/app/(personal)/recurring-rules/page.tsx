@@ -18,6 +18,7 @@ import { recurringRulesApi, type RecurringRule } from "@/lib/api/recurring-rules
 import { accountsApi } from "@/lib/api/accounts"
 import { categoriesApi } from "@/lib/api/categories"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 interface AccountOption {
   id: string
@@ -41,6 +42,7 @@ const FREQUENCY_OPTIONS = [
 const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS.map((f) => [f.value, f.label]))
 
 export default function RecurringRulesPage() {
+  useTour("recurring-rules")
   const [items, setItems] = useState<RecurringRule[]>([])
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [categories, setCategories] = useState<CategoryOption[]>([])
@@ -251,7 +253,7 @@ export default function RecurringRulesPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Recorrentes</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" data-tour="new-recurring" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova regra
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">

@@ -10,6 +10,7 @@ import { CreateAccountDialog } from "@/components/accounts/CreateAccountDialog"
 import { TransferDialog } from "@/components/accounts/TransferDialog"
 import { accountsApi, type Account, type AccountSummary } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Banco",
@@ -22,6 +23,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function AccountsPage() {
+  useTour("accounts")
   const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
 
@@ -39,7 +41,7 @@ export default function AccountsPage() {
         <h2 className="text-2xl font-bold tracking-tight">Contas</h2>
         <div className="hidden md:flex gap-2">
           <TransferDialog onTransferred={() => accountsApi.summary().then(setSummary)} />
-          <CreateAccountDialog onCreated={() => accountsApi.summary().then(setSummary)} />
+          <span data-tour="new-account"><CreateAccountDialog onCreated={() => accountsApi.summary().then(setSummary)} /></span>
         </div>
       </div>
 
@@ -49,7 +51,7 @@ export default function AccountsPage() {
       {summary && (
         <>
           {/* Summary */}
-          <div className="grid gap-4 md:grid-cols-3 mb-8">
+          <div data-tour="account-summary" className="grid gap-4 md:grid-cols-3 mb-8">
             <div className="rounded-xl bg-card p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Activos</p>
               <p className="text-xl font-mono font-bold text-green-500 mt-1">

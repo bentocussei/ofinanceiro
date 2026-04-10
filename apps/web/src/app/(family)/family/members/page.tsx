@@ -28,6 +28,7 @@ import {
   type JoinRequest,
 } from "@/lib/api/families"
 import { getContextHeader } from "@/lib/context"
+import { useTour } from "@/lib/tours"
 
 const RELATION_OPTIONS = [
   { value: "SPOUSE", label: "Cônjuge" },
@@ -74,6 +75,7 @@ function relativeTime(dateStr: string): string {
 type Tab = "members" | "requests"
 
 export default function FamilyMembersPage() {
+  useTour("family-members")
   const [family, setFamily] = useState<Family | null>(null)
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>("members")
@@ -321,7 +323,7 @@ export default function FamilyMembersPage() {
       {activeTab === "members" && (
         <>
           {/* Invite code card */}
-          <div className="rounded-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] mb-6">
+          <div data-tour="invite-code" className="rounded-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Código de convite</p>
@@ -368,7 +370,7 @@ export default function FamilyMembersPage() {
           </div>
 
           {/* Members list */}
-          <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
+          <div data-tour="members-list" className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
             {activeMembers.map((member) => {
               const RoleIcon = ROLE_ICONS[member.role] || User
               return (

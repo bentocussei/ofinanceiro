@@ -18,6 +18,7 @@ import { billsApi, type Bill } from "@/lib/api/bills"
 import { accountsApi } from "@/lib/api/accounts"
 import { categoriesApi, type Category } from "@/lib/api/categories"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 interface AccountOption {
   id: string
@@ -41,6 +42,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
 const FREQ_LABELS: Record<string, string> = Object.fromEntries(FREQUENCY_OPTIONS.map((f) => [f.value, f.label]))
 
 export default function BillsPage() {
+  useTour("bills")
   const [items, setItems] = useState<Bill[]>([])
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -281,7 +283,7 @@ export default function BillsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Contas a Pagar</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" data-tour="new-bill" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova conta
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
