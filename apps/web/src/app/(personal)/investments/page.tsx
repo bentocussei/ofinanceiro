@@ -23,6 +23,7 @@ import {
   type InvestmentInsight,
 } from "@/lib/api/investments"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -107,6 +108,7 @@ function DiversificationBar({ score }: { score: number }) {
 // ---------------------------------------------------------------------------
 
 export default function InvestmentsPage() {
+  useTour("investments")
   const [investments, setInvestments] = useState<Investment[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   // Derive from list so the modal sees fresh data after refetches.
@@ -309,7 +311,7 @@ export default function InvestmentsPage() {
             Simulador
           </Button>
           <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-            <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
+            <DialogTrigger render={<Button className="hidden md:inline-flex" data-tour="new-investment" />}>
               <Plus className="h-4 w-4 mr-1" /> Novo investimento
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">

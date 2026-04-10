@@ -153,7 +153,7 @@ export function Sidebar() {
           </button>
         ) : (
           <>
-            <div className="flex-1 min-w-0">
+            <div data-tour="context-switcher" className="flex-1 min-w-0">
               <ContextSwitcher collapsed={collapsed} />
             </div>
             <button
@@ -185,6 +185,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
+                  {...(item.href === "/assistant" ? { "data-tour": "sidebar-assistant" } : {})}
                   className={`relative flex items-center gap-3 rounded-md h-[38px] text-sm font-medium transition-colors mb-0.5 ${
                     collapsed ? "justify-center px-0" : "px-3"
                   } ${

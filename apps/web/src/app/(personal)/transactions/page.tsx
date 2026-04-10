@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { MobileFAB } from "@/components/layout/MobileFAB"
 import { PullToRefreshIndicator } from "@/components/layout/PullToRefreshIndicator"
 import { usePullToRefresh } from "@/lib/usePullToRefresh"
+import { useTour } from "@/lib/tours"
 import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
 import { TransactionDetailDialog } from "@/components/transactions/TransactionDetailDialog"
 import { transactionsApi, type Transaction } from "@/lib/api/transactions"
@@ -17,6 +18,7 @@ type TypeFilter = "all" | "expense" | "income" | "transfer"
 type PeriodFilter = "week" | "month" | "3months" | "year" | "all"
 
 export default function TransactionsPage() {
+  useTour("transactions")
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -110,7 +112,7 @@ export default function TransactionsPage() {
               Planilha
             </button>
           </div>
-          <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>+ Nova transacção</Button>
+          <Button data-tour="new-transaction" className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>+ Nova transacção</Button>
         </div>
       </div>
 
@@ -118,7 +120,7 @@ export default function TransactionsPage() {
       <CreateTransactionDialog open={createOpen} onOpenChange={setCreateOpen} hideTrigger onCreated={() => fetchTransactions(true)} />
 
       {/* Filters — horizontal scroll on mobile */}
-      <div className="-mx-4 px-4 md:mx-0 md:px-0 mb-4 overflow-x-auto md:overflow-visible scrollbar-hide">
+      <div data-tour="transaction-filters" className="-mx-4 px-4 md:mx-0 md:px-0 mb-4 overflow-x-auto md:overflow-visible scrollbar-hide">
         <div className="flex items-center gap-2 md:flex-wrap min-w-max md:min-w-0">
           {typeOptions.map((opt) => (
             <button

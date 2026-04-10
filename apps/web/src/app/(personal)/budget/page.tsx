@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { budgetsApi, type Budget, type BudgetStatus } from "@/lib/api/budgets"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 function getProgressColor(pct: number): string {
   if (pct >= 100) return "bg-red-500"
@@ -34,6 +35,7 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 export default function BudgetPage() {
+  useTour("budget")
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [statuses, setStatuses] = useState<Record<string, BudgetStatus>>({})
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null)
@@ -63,7 +65,7 @@ export default function BudgetPage() {
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Orcamentos</h2>
-        <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
+        <Button className="hidden md:inline-flex" data-tour="new-budget" onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
       <MobileFAB onClick={() => setCreateOpen(true)} label="Novo orcamento" />
       </div>
 

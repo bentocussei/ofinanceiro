@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { IconDisplay } from "@/components/common/IconDisplay"
+import { useTour } from "@/lib/tours"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
 import { onboardingApi } from "@/lib/api/onboarding"
 import { reportsApi, type PatrimonyData } from "@/lib/api/reports"
@@ -62,6 +63,7 @@ interface SpendingCategory {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardPage() {
+  useTour("dashboard")
   const router = useRouter()
   const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [patrimony, setPatrimony] = useState<PatrimonyData | null>(null)
@@ -137,7 +139,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* --- Património Hero (full width) --- */}
-      <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
+      <div data-tour="net-worth" className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
           Património Líquido
         </p>
@@ -211,7 +213,7 @@ export default function DashboardPage() {
         {/* Left Column */}
         <div className="space-y-6">
           {/* Cash Flow */}
-          <section>
+          <section data-tour="cashflow">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Fluxo de Caixa
             </h2>
@@ -240,7 +242,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Recent Transactions */}
-          <section>
+          <section data-tour="recent-transactions">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Transacções Recentes
@@ -304,7 +306,7 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Accounts */}
-          <section>
+          <section data-tour="accounts-summary">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Contas
@@ -357,7 +359,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Budget Progress */}
-          <section>
+          <section data-tour="budget-summary">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Orçamento
@@ -412,7 +414,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Goals */}
-          <section>
+          <section data-tour="goals-summary">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Metas

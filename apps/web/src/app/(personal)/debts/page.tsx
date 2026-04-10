@@ -20,6 +20,7 @@ import {
 import { debtsApi, type Debt, type DebtSimulation } from "@/lib/api/debts"
 import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 const TYPE_OPTIONS = [
   { value: "mortgage", label: "Hipoteca" },
@@ -46,6 +47,7 @@ const CREDITOR_TYPE_OPTIONS = [
 ]
 
 export default function DebtsPage() {
+  useTour("debts")
   const [debts, setDebts] = useState<Debt[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   // Store only the id and derive the live item from `debts`. After an edit
@@ -224,7 +226,7 @@ export default function DebtsPage() {
             Simular
           </Button>
           <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-            <DialogTrigger render={<Button className="hidden md:inline-flex" />}>
+            <DialogTrigger render={<Button className="hidden md:inline-flex" data-tour="new-debt" />}>
               <Plus className="h-4 w-4 mr-1" /> Nova dívida
             </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">

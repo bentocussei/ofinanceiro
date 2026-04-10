@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
+import { useTour } from "@/lib/tours"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
 import { budgetsApi } from "@/lib/api/budgets"
 import { reportsApi, type PatrimonyData } from "@/lib/api/reports"
@@ -28,6 +29,7 @@ interface MemberSpending {
 }
 
 export default function FamilyDashboardPage() {
+  useTour("family-dashboard")
   const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [patrimony, setPatrimony] = useState<PatrimonyData | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -88,7 +90,7 @@ export default function FamilyDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Património Familiar */}
-      <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
+      <div data-tour="family-net-worth" className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
           Património Familiar Líquido
         </p>
@@ -253,7 +255,7 @@ export default function FamilyDashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Shared Accounts */}
-          <section>
+          <section data-tour="family-accounts">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Contas Partilhadas
@@ -337,7 +339,7 @@ export default function FamilyDashboardPage() {
           </section>
 
           {/* Spending by Member */}
-          <section>
+          <section data-tour="family-members-spending">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Gastos por Membro
             </h2>
@@ -364,7 +366,7 @@ export default function FamilyDashboardPage() {
           </section>
 
           {/* Family Goals */}
-          <section>
+          <section data-tour="family-goals">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Metas Familiar

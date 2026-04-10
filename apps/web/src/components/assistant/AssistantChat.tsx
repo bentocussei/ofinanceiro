@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react"
 import { chatApi } from "@/lib/api/chat"
+import { useTour } from "@/lib/tours"
 import { InlineChart, type ChartConfig } from "@/components/assistant/InlineChart"
 import { MetricCards, type MetricConfig } from "@/components/assistant/MetricCards"
 
@@ -142,6 +143,7 @@ interface AssistantChatProps {
 }
 
 export function AssistantChat({ context }: AssistantChatProps) {
+  useTour("assistant")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -367,7 +369,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                 : "Pergunte qualquer coisa sobre as suas finanças. Posso consultar saldos, registar transacções, analisar gastos e muito mais."}
             </p>
 
-            <div className="hidden md:grid grid-cols-2 gap-2 w-full max-w-lg">
+            <div className="hidden md:grid grid-cols-2 gap-2 w-full max-w-lg" data-tour="quick-actions">
               {quickActions.map((action) => (
                 <button
                   key={action.label}
@@ -539,6 +541,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
               <input
                 ref={inputRef}
                 type="text"
+                data-tour="chat-input"
                 placeholder={
                   stagedFiles.length > 0
                     ? "Adicionar mensagem (opcional)..."

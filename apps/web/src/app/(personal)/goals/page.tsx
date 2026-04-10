@@ -18,9 +18,11 @@ import {
 import { goalsApi, type Goal } from "@/lib/api/goals"
 import { accountsApi } from "@/lib/api/accounts"
 import { formatKz } from "@/lib/format"
+import { useTour } from "@/lib/tours"
 
 
 export default function GoalsPage() {
+  useTour("goals")
   const [goals, setGoals] = useState<Goal[]>([])
   // Derive the open item from the live list so the modal sees fresh data
   // after refetches. See app/(personal)/debts/page.tsx for the rationale.
@@ -141,7 +143,7 @@ export default function GoalsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Metas</h2>
         <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) resetForm() }}>
-          <DialogTrigger render={<Button className="hidden md:inline-flex" size="sm" />}>
+          <DialogTrigger render={<Button className="hidden md:inline-flex" size="sm" data-tour="new-goal" />}>
             <Plus className="h-4 w-4 mr-1" /> Nova meta
           </DialogTrigger>
           <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
