@@ -610,56 +610,62 @@ CENA 4: Registar receita (20s)
   - Confirmar
   - Highlight: "Receitas também — só dizer"
 
+  ⚠️ A partir daqui, TUDO na mesma conversa — sem "Nova conversa" (ver L1)
+
 CENA 5: Análise de gastos (30s)
-  - Nova conversa
-  - Escrever: "quanto gastei este mês em combustível?"
+  - Escrever: "quanto gastei em alimentação este mês?"
   - Agente busca transacções, calcula total, apresenta breakdown
   - Highlight: "Analisa os teus gastos em qualquer categoria ou período"
 
 CENA 6: Consultar orçamento (20s)
-  - Nova conversa
   - Escrever: "como está o meu orçamento?"
   - Agente mostra status por categoria com alertas
   - Highlight: "Monitora o orçamento sem abrir nenhuma página"
 
 CENA 7: Verificar meta (20s)
-  - Escrever: "qual o estado da meta do carro?"
+  - Escrever: "como estão as minhas metas de poupança?"
   - Agente mostra progresso, valor restante, estimativa
   - Highlight: "Acompanha metas directamente no chat"
 
-CENA 8: Consulta "posso comprar?" (30s)
-  - Nova conversa
-  - Escrever: "posso comprar um sofá de 150000?"
+CENA 8: Consulta "posso comprar?" (30s) — try/catch no script
+  - Escrever: "posso comprar um televisor de 200000 Kz?"
   - Agente calcula: saldo actual, despesas mensais, impacto
   - Responde com recomendação fundamentada
   - Highlight: "Antes de comprar, pergunta ao assistente — ele analisa o impacto real"
 
-CENA 9: Score financeiro (20s)
-  - Nova conversa
+CENA 9: Score financeiro (20s) — try/catch no script
   - Escrever: "qual é o meu score financeiro?"
   - Agente calcula score 0-100 com factores detalhados
   - Highlight: "Recebe um score personalizado com recomendações concretas"
 
-CENA 10: Relatório do mês (30s)
-  - Nova conversa
-  - Escrever: "gera o relatório do mês"
+CENA 10: Relatório do mês (30s) — try/catch no script
+  - Escrever: "gera o relatório deste mês"
   - Agente gera: receitas, despesas, taxa poupança, top categorias
   - Highlight: "Relatório mensal completo em linguagem natural"
 
-CENA 11: Assistente familiar (30s)
-  - Switch para contexto família
-  - Abrir /family/assistant
-  - Escrever: "gastei 25000 com combustível"
-  - Agente regista na Conta Família automaticamente
-  - Highlight: "O assistente funciona em família — sabe distinguir pessoal e familiar"
+  ⚠️ FIM das interacções pessoais. Agora validar nas páginas (ver L8).
 
-CENA 12: Fluxo de caixa familiar (20s)
-  - Escrever: "como está o fluxo de caixa da família?"
-  - Agente mostra receitas vs despesas familiares
-  - Highlight: "Consulta as finanças da família no mesmo assistente"
+CENA 10b: Validação cruzada (60s)
+  - page.goto("/transactions") — ver despesa e receita registadas
+  - page.goto("/budget") — ver estado do orçamento
+  - page.goto("/goals") — ver progresso das metas
+  - page.goto("/debts") — ver dívidas
+  - page.goto("/accounts") — ver saldos actualizados
+  - page.goto("/dashboard") — visão geral final
+  - Highlight: "Tudo o que fizeste no chat reflecte-se nas páginas em tempo real"
 
-CENA 13: Encerramento (10s)
-  - Voltar ao dashboard
+  ⚠️ Switch para família. Nova conversa aqui SIM (mudança de contexto).
+
+CENA 11: Assistente familiar (45s) — conversa contínua
+  - Switch para contexto família (page.goto /family/assistant)
+  - Escrever: "gastei 18000 em gasolina para a família" → confirmar
+  - Escrever: "recebemos 120000 de rendimento de freelance na conta da família" → confirmar (⚠️ ver L3 — phrasing explícito)
+  - Escrever: "quanto temos de saldo familiar?"
+  - Highlight: "O assistente funciona em família — despesas E receitas partilhadas"
+
+CENA 12: Validação família (30s)
+  - page.goto("/family/transactions") — ver gastos e receitas familiares
+  - page.goto("/family/dashboard") — encerramento
   - Highlight: "Tudo isto — sem abrir uma única página. Só a conversar."
 ```
 
@@ -751,24 +757,144 @@ CENA 5: Sugestão de orçamento via assistente (20s)
 
 ---
 
+## Lições Aprendidas (gravação V02 + V11)
+
+Regras obrigatórias para todos os scripts, derivadas de erros reais
+encontrados durante a gravação dos primeiros 2 vídeos.
+
+### L1. Conversa contínua — NUNCA usar `newConversation()`
+
+**Problema:** `newConversation()` clica "Nova conversa" → limpa todo o chat → flash visual de tela vazia → pergunta nova → espera → resposta. No vídeo parece um bug.
+
+**Regra:** Todas as perguntas ao assistente devem ficar na mesma conversa. As mensagens acumulam-se como numa conversa real. O LLM recebe o histórico, o que até melhora as respostas (contexto).
+
+**Excepção:** Apenas usar `newConversation()` quando se muda de contexto (pessoal → família) ou quando o LLM está claramente confuso (raro).
+
+### L2. Navegação via `page.goto()` — NUNCA `page.click('a[href=...]')`
+
+**Problema:** Clicar em links da sidebar falha se o sidebar não expandiu, se o link não está visível (scroll), ou se um tour overlay está a bloquear.
+
+**Regra:** Usar sempre `page.goto("/path")` para navegar entre páginas. É determinístico e independente do estado da UI.
+
+### L3. Phrasing de receitas — ser explícito
+
+**Problema:** "A família recebeu 120000 de mesada" → LLM interpretou como "pagaram mesada ao filho" (despesa) e pediu esclarecimento → script ficou preso.
+
+**Regra para receitas:**
+- ✅ "recebi 75000 de um cliente pelo projecto mobile"
+- ✅ "recebemos 120000 de rendimento de freelance na conta da família"
+- ❌ "a família recebeu 120000 de mesada mensal" (ambíguo)
+- ❌ "entrou 50000 na conta" (muito vago)
+
+Padrão seguro: **"recebi/recebemos [valor] de [fonte] [pelo/por/na] [detalhe]"**
+
+### L4. Asserções — NUNCA exactas, SEMPRE regex + try/catch
+
+**Problema:** `expect(text="BAI Conta Ordem")` falha porque o LLM pode abreviar, formatar diferente, ou usar sinónimos.
+
+**Regras:**
+```typescript
+// ❌ ERRADO — texto exacto
+await expect(page.locator("text=BAI Conta Ordem")).toBeVisible()
+
+// ✅ CORRECTO — regex flexível
+await expect(page.locator("text=/BAI|BFA|Carteira|saldo/i").first()).toBeVisible({ timeout: 15000 })
+
+// ✅ CORRECTO — try/catch para cenas que dependem do LLM
+try {
+  await sendChat(page, "posso comprar um televisor?")
+  await page.waitForTimeout(5000)
+} catch { /* continue filming */ }
+```
+
+Cenas que usam o LLM (score, can_afford, relatório) devem SEMPRE estar em try/catch porque o LLM pode:
+- Demorar mais que o timeout
+- Retornar "Erro ao processar mensagem" (stream error)
+- Responder com formato inesperado
+
+### L5. Tours — marcar como vistos ANTES de gravar
+
+**Problema:** O guided tour (driver.js) aparece na primeira visita a cada página, bloqueando a interacção e poluindo o vídeo com popovers inesperados.
+
+**Regra:** O `login()` helper já faz `localStorage.clear()` — isto reseta os tours. O `dismissTour()` helper fecha qualquer tour que apareça. Mas para vídeos limpos, o ideal é pré-marcar todos os tours como vistos:
+
+```typescript
+await page.evaluate(() => {
+  const tours = [
+    "dashboard", "transactions", "budget", "goals", "debts",
+    "investments", "assets", "reports", "income-sources", "bills",
+    "recurring-rules", "assistant", "accounts",
+    "family-dashboard", "family-members"
+  ]
+  tours.forEach(t => localStorage.setItem(`tour_seen:${t}`, "1"))
+})
+```
+
+Ou, se o vídeo É sobre o tour (V02), deixar apenas o tour dessa página activo.
+
+### L6. Dados únicos por corrida
+
+**Problema:** Correr o script V11 duas vezes cria transacções duplicadas ("almoço Ponto Final 8500" aparece 2x).
+
+**Regra:** Cada corrida deve usar descrições/valores ligeiramente diferentes, OU os scripts devem fazer cleanup no final. Para vídeos, o mais simples é:
+- Usar descrições com timestamp: "Almoço Ponto Final (demo)"
+- Ou aceitar que cada corrida adiciona dados (e fazer cleanup manual depois)
+
+### L7. Timeouts generosos para LLM
+
+**Problema:** O LLM demora 5-15s por resposta. Com `waitForTimeout(2000)` o script avança antes da resposta terminar.
+
+**Regra mínima de espera por tipo de operação:**
+| Operação | Timeout mínimo |
+|---|---|
+| Consulta simples (saldo, lista) | 4s |
+| Registo + confirmação | 4s + 3s |
+| Análise (gastos, orçamento) | 5s |
+| Score / Can-afford / Relatório | 5-6s |
+| Navegação entre páginas | 2s |
+| Dismiss tour | 1.2s |
+
+### L8. Estrutura de cada vídeo com chat
+
+Todo vídeo que envolva o assistente deve seguir esta estrutura:
+
+```
+1. Login + navegar ao /assistant (ou /family/assistant)
+2. Todas as interacções no chat SEM sair da página
+   - Conversa contínua (sem newConversation)
+   - Despesas E receitas (nunca só despesas)
+   - try/catch nas operações complexas do LLM
+3. Navegar às páginas para validar (uma passada sequencial)
+   - page.goto() para cada página
+   - dismissTour() em cada
+   - waitForTimeout(2000-2500) para o user ler
+4. Dashboard no final (fecho visual)
+```
+
+---
+
 ## Notas de Produção
 
 ### Configuração Playwright para gravação
 
 ```typescript
-// playwright.config.ts para gravação de vídeo
-const config = {
-  use: {
-    video: {
-      mode: 'on',
-      size: { width: 1280, height: 720 },
-    },
-    viewport: { width: 1280, height: 720 },
-    launchOptions: {
-      slowMo: 100, // desacelerar para parecer humano
-    },
-  },
-};
+// No spec file (não precisa de config separado)
+test.use({
+  video: { mode: "on", size: { width: 1280, height: 720 } },
+  viewport: { width: 1280, height: 720 },
+  launchOptions: { slowMo: 80 },
+})
+```
+
+### Helpers disponíveis (`e2e/videos/helpers.ts`)
+
+```typescript
+login(page, phone)           // limpa localStorage, login, espera dashboard
+sendChat(page, message)      // preenche input, Enter, espera resposta
+newConversation(page)        // click "Nova conversa" (usar com cautela — ver L1)
+dismissTour(page)            // fecha tour driver.js se visível
+switchToFamily(page, name)   // click context switcher → família
+waitForChatResponse(page)    // espera "A preparar..." desaparecer
 ```
 
 ### Overlays e legendas
@@ -777,9 +903,10 @@ Cada cena tem um `Highlight` — este texto deve ser mostrado como card overlay 
 
 ### Ordem de gravação recomendada
 
-1. Preparar seed completo (Bloco A)
-2. Gravar V01 (registo — user novo temporário)
-3. Gravar V02-V10 (tour + funcionalidades — Cussei pessoal)
-4. Gravar V03 + V12 (família — Ana + Cussei)
-5. Gravar V11 (assistente — o mais importante, gravar por último quando tudo estiver estável)
-6. Gravar V13 (relatórios — depende de dados ricos existentes)
+1. Preparar seed completo (`scripts/seed_demo.py` + `scripts/seed_video_data.py`)
+2. Gravar V11 (assistente — o mais importante e o mais sensível ao LLM)
+3. Gravar V02 (tour pessoal — simples, sem LLM)
+4. Gravar V03 (tour família)
+5. Gravar V04-V10 (funcionalidades individuais)
+6. Gravar V01 (registo — precisa de user temporário)
+7. Gravar V12-V13 (família + relatórios)
