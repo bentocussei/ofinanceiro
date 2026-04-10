@@ -3,11 +3,13 @@
 
 from sqlalchemy import select
 
+from app.ai.agents._filters import scope_to_context, scope_transactions_to_context
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
 from app.ai.tools import ToolMeta, ToolRegistry
 from app.models.account import Account
+from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate
 from app.services.transaction import create_transaction, list_transactions
 
@@ -192,26 +194,33 @@ class TrackerAgent(BaseAgent):
     async def _add_transaction(self, args: dict, ctx: AgentContext) -> dict:
         import uuid as _uuid
 
-        # Select account: use account_id if provided, otherwise first account
+        # Select account: use account_id if provided, otherwise first account.
+        # The lookup must respect the agent's current context — in family
+        # context the right account (e.g. "Conta Família") is owned by a
+        # different family member, so filtering by user_id alone returns
+        # nothing and the fallback then picks the wrong personal account,
+        # producing the misleading "conta não encontrada" error downstream.
         account = None
         account_id_str = args.get("account_id")
         if account_id_str:
             try:
                 acc_uuid = _uuid.UUID(account_id_str)
-                result = await ctx.db.execute(
-                    select(Account).where(Account.id == acc_uuid, Account.user_id == ctx.user_id)
+                stmt = scope_to_context(
+                    select(Account).where(Account.id == acc_uuid),
+                    Account, ctx,
                 )
+                result = await ctx.db.execute(stmt)
                 account = result.scalar_one_or_none()
             except ValueError:
                 pass
 
         if not account:
-            # Fallback to first account
-            result = await ctx.db.execute(
-                select(Account).where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
-                .order_by(Account.sort_order)
-                .limit(1)
-            )
+            # Fallback to first account in the current context
+            stmt = scope_to_context(
+                select(Account).where(Account.is_archived.is_(False)),
+                Account, ctx,
+            ).order_by(Account.sort_order).limit(1)
+            result = await ctx.db.execute(stmt)
             account = result.scalar_one_or_none()
 
         if not account:
@@ -252,10 +261,12 @@ class TrackerAgent(BaseAgent):
         }
 
     async def _get_balance(self, ctx: AgentContext) -> dict:
-        result = await ctx.db.execute(
+        stmt = scope_to_context(
             select(Account.id, Account.name, Account.type, Account.balance, Account.currency)
-            .where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
+            .where(Account.is_archived.is_(False)),
+            Account, ctx,
         )
+        result = await ctx.db.execute(stmt)
         accounts = result.all()
 
         total = sum(a.balance for a in accounts)
@@ -277,7 +288,9 @@ class TrackerAgent(BaseAgent):
             filters.type = args["type"]
 
         limit = args.get("limit", 10)
-        txns, _ = await list_transactions(ctx.db, ctx.user_id, filters, limit=limit)
+        txns, _ = await list_transactions(
+            ctx.db, ctx.user_id, filters, limit=limit, family_id=ctx.family_id
+        )
 
         return {
             "count": len(txns),
@@ -304,9 +317,13 @@ class TrackerAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "transaction_id inválido"}
 
-        result = await ctx.db.execute(
-            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        stmt = scope_transactions_to_context(
+            select(Transaction)
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Transaction.id == txn_uuid),
+            ctx,
         )
+        result = await ctx.db.execute(stmt)
         txn = result.scalar_one_or_none()
         if not txn:
             return {"error": "Transacção não encontrada"}
@@ -343,9 +360,13 @@ class TrackerAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "transaction_id inválido"}
 
-        result = await ctx.db.execute(
-            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        stmt = scope_transactions_to_context(
+            select(Transaction)
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Transaction.id == txn_uuid),
+            ctx,
         )
+        result = await ctx.db.execute(stmt)
         txn = result.scalar_one_or_none()
         if not txn:
             return {"error": "Transacção não encontrada"}
@@ -366,10 +387,15 @@ class TrackerAgent(BaseAgent):
         except (ValueError, KeyError):
             return {"error": "transaction_id ou target_account_id inválido"}
 
-        # Find transaction (search across all user's transactions, not context-filtered)
-        result = await ctx.db.execute(
-            select(Transaction).where(Transaction.id == txn_uuid, Transaction.user_id == ctx.user_id)
+        # Find transaction in the current context (was previously a leaky
+        # user_id-only query — see _filters.py)
+        stmt = scope_transactions_to_context(
+            select(Transaction)
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Transaction.id == txn_uuid),
+            ctx,
         )
+        result = await ctx.db.execute(stmt)
         txn = result.scalar_one_or_none()
         if not txn:
             return {"error": "Transacção não encontrada"}
@@ -400,7 +426,9 @@ class TrackerAgent(BaseAgent):
 
         query = args.get("query", "")
         filters = TransactionFilter(search=query)
-        txns, _ = await list_transactions(ctx.db, ctx.user_id, filters, limit=10)
+        txns, _ = await list_transactions(
+            ctx.db, ctx.user_id, filters, limit=10, family_id=ctx.family_id
+        )
 
         return {
             "query": query,

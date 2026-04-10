@@ -4,10 +4,12 @@ from datetime import date, timedelta
 
 from sqlalchemy import func, select
 
+from app.ai.agents._filters import scope_to_context, scope_transactions_to_context
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
 from app.ai.tools import ToolMeta, ToolRegistry
+from app.models.account import Account
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.enums import TransactionType
@@ -111,12 +113,11 @@ class BudgetAgent(BaseAgent):
         return {"error": f"Tool '{tool_name}' desconhecida"}
 
     async def _check_budget(self, ctx: AgentContext) -> dict:
-        result = await ctx.db.execute(
-            select(Budget).where(
-                Budget.user_id == ctx.user_id,
-                Budget.is_active.is_(True),
-            ).order_by(Budget.period_start.desc()).limit(1)
-        )
+        stmt = scope_to_context(
+            select(Budget).where(Budget.is_active.is_(True)),
+            Budget, ctx,
+        ).order_by(Budget.period_start.desc()).limit(1)
+        result = await ctx.db.execute(stmt)
         budget = result.scalar_one_or_none()
         if not budget:
             return {"message": "Nenhum orçamento activo encontrado."}
@@ -148,15 +149,16 @@ class BudgetAgent(BaseAgent):
                 func.avg(Transaction.amount).label("avg"),
                 func.sum(Transaction.amount).label("total"),
             )
+            .join(Account, Transaction.account_id == Account.id)
             .join(Category, Transaction.category_id == Category.id, isouter=True)
             .where(
-                Transaction.user_id == ctx.user_id,
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date >= date_from,
             )
             .group_by(Category.name)
             .order_by(func.sum(Transaction.amount).desc())
         )
+        stmt = scope_transactions_to_context(stmt, ctx)
         result = await ctx.db.execute(stmt)
         rows = result.all()
 

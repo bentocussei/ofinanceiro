@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import func, select
 
+from app.ai.agents._filters import scope_to_context, scope_transactions_to_context
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
@@ -104,15 +105,16 @@ class AdvisorAgent(BaseAgent):
                 func.sum(Transaction.amount).label("total"),
                 func.count(Transaction.id).label("count"),
             )
+            .join(Account, Transaction.account_id == Account.id)
             .join(Category, Transaction.category_id == Category.id, isouter=True)
             .where(
-                Transaction.user_id == ctx.user_id,
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date >= date_from,
             )
             .group_by(Category.name, Category.icon)
             .order_by(func.sum(Transaction.amount).desc())
         )
+        stmt = scope_transactions_to_context(stmt, ctx)
 
         result = await ctx.db.execute(stmt)
         rows = result.all()
@@ -136,10 +138,12 @@ class AdvisorAgent(BaseAgent):
         }
 
     async def _get_balance(self, ctx: AgentContext) -> dict:
-        result = await ctx.db.execute(
+        stmt = scope_to_context(
             select(Account.name, Account.type, Account.balance)
-            .where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
+            .where(Account.is_archived.is_(False)),
+            Account, ctx,
         )
+        result = await ctx.db.execute(stmt)
         accounts = result.all()
         total = sum(a.balance for a in accounts)
 
@@ -161,12 +165,11 @@ class AdvisorAgent(BaseAgent):
                 func.sum(Transaction.amount).label("total"),
                 func.count(Transaction.id).label("count"),
             )
-            .where(
-                Transaction.user_id == ctx.user_id,
-                Transaction.transaction_date >= date_from,
-            )
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Transaction.transaction_date >= date_from)
             .group_by(Transaction.type)
         )
+        stmt = scope_transactions_to_context(stmt, ctx)
 
         result = await ctx.db.execute(stmt)
         rows = result.all()
@@ -191,24 +194,25 @@ class AdvisorAgent(BaseAgent):
         amount_kz = args.get("amount", 0)
         description = args.get("description", "item")
 
-        # Get current balance
-        result = await ctx.db.execute(
-            select(func.sum(Account.balance))
-            .where(Account.user_id == ctx.user_id, Account.is_archived.is_(False))
+        # Get current balance (context-aware)
+        bal_stmt = scope_to_context(
+            select(func.sum(Account.balance)).where(Account.is_archived.is_(False)),
+            Account, ctx,
         )
-        total_balance = result.scalar() or 0
+        total_balance = (await ctx.db.execute(bal_stmt)).scalar() or 0
 
-        # Get average monthly expenses (last 30 days)
+        # Get average monthly expenses (last 30 days, context-aware)
         date_from = date.today() - timedelta(days=30)
-        result = await ctx.db.execute(
+        exp_stmt = scope_transactions_to_context(
             select(func.sum(Transaction.amount))
+            .join(Account, Transaction.account_id == Account.id)
             .where(
-                Transaction.user_id == ctx.user_id,
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date >= date_from,
-            )
+            ),
+            ctx,
         )
-        monthly_expense = result.scalar() or 0
+        monthly_expense = (await ctx.db.execute(exp_stmt)).scalar() or 0
 
         amount_centavos = int(amount_kz * 100)
         balance_after = total_balance - amount_centavos

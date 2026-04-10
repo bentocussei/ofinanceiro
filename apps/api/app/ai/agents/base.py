@@ -12,12 +12,37 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass, field
+from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.compact import compact_messages, needs_compaction
 from app.ai.llm.base import LLMMessage, LLMResponse, ToolDefinition
 from app.ai.llm.router import LLMRouter, TaskType
+
+
+def _json_default(obj):
+    """JSON encoder fallback for types that ``json.dumps`` doesn't handle.
+
+    Tool results frequently contain Decimal values because PostgreSQL
+    returns ``numeric`` for ``SUM(BIGINT)`` and asyncpg maps that to
+    Python ``Decimal``. Without this fallback, every tool that does any
+    aggregate over a money column would crash with
+    ``TypeError: Object of type Decimal is not JSON serializable``,
+    and the chat router's blanket ``except Exception`` would mask the
+    real cause behind a generic "Erro ao processar mensagem".
+    """
+    if isinstance(obj, Decimal):
+        # Cast to float — money values are in centavos and well within
+        # double precision range. The downstream LLM only ever sees the
+        # rendered string, so float is correct.
+        return float(obj)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +266,7 @@ class BaseAgent:
                         abort = True
 
                 tool_calls_made.append({"name": tc.name, "arguments": tc.arguments, "result": result})
-                result_str = json.dumps(result, ensure_ascii=False)
+                result_str = json.dumps(result, ensure_ascii=False, default=_json_default)
                 if len(result_str) > 2000:
                     result_str = result_str[:2000] + '..."}'
                 messages.append(LLMMessage(role="tool", content=result_str, tool_call_id=tc.id, name=tc.name))
@@ -342,7 +367,7 @@ class BaseAgent:
                     result = {"error": f"Tool '{tc.name}' nao existe"}
                     messages.append(LLMMessage(
                         role="tool",
-                        content=json.dumps(result, ensure_ascii=False),
+                        content=json.dumps(result, ensure_ascii=False, default=_json_default),
                         tool_call_id=tc.id,
                         name=tc.name,
                     ))
@@ -352,7 +377,7 @@ class BaseAgent:
                     result = {"error": "Cancelado — operacao anterior falhou"}
                     messages.append(LLMMessage(
                         role="tool",
-                        content=json.dumps(result, ensure_ascii=False),
+                        content=json.dumps(result, ensure_ascii=False, default=_json_default),
                         tool_call_id=tc.id, name=tc.name,
                     ))
                     continue
@@ -370,7 +395,7 @@ class BaseAgent:
                 })
 
                 # Budget tool results: cap at 2000 chars
-                result_str = json.dumps(result, ensure_ascii=False)
+                result_str = json.dumps(result, ensure_ascii=False, default=_json_default)
                 if len(result_str) > 2000:
                     result_str = result_str[:2000] + '..."}'
                 messages.append(LLMMessage(

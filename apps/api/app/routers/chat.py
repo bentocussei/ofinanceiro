@@ -2,11 +2,14 @@
 
 import base64
 import json
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.ai.llm.factory import create_llm_router
 from app.ai.metering import check_quota, record_token_usage
@@ -274,7 +277,11 @@ async def stream_message(
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
-        except Exception:
+        except Exception as e:
+            # Log the full traceback so the underlying bug is visible in
+            # the API log instead of being silently masked behind the
+            # generic "Erro ao processar mensagem" SSE event.
+            logger.exception("chat stream failed: %s", e)
             yield f"data: {json.dumps({'type': 'error', 'content': 'Erro ao processar mensagem.'})}\n\n"
 
     return StreamingResponse(

@@ -150,16 +150,28 @@ async def _load_user_financial_context(
         sections.append("\n".join(cat_lines))
 
     # --- Recent transactions (last 7 days) ---
+    # Context-aware: in personal context show only this user's transactions
+    # on personal accounts; in family context show ALL family members'
+    # transactions on family accounts. Without this branching the LLM saw
+    # leaked rows from the wrong context and hallucinated wrong totals.
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     txn_query = (
         select(Transaction)
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.created_at >= seven_days_ago,
-        )
-        .order_by(Transaction.created_at.desc())
-        .limit(10)
+        .join(Account, Transaction.account_id == Account.id)
+        .where(Transaction.created_at >= seven_days_ago)
     )
+    if is_family and family_id_str:
+        try:
+            txn_query = txn_query.where(Account.family_id == uuid.UUID(family_id_str))
+        except ValueError:
+            txn_query = txn_query.where(
+                Transaction.user_id == user_id, Account.family_id.is_(None)
+            )
+    else:
+        txn_query = txn_query.where(
+            Transaction.user_id == user_id, Account.family_id.is_(None)
+        )
+    txn_query = txn_query.order_by(Transaction.created_at.desc()).limit(10)
     txns = await db.scalars(txn_query)
     transactions = list(txns.all())
     if transactions:
@@ -171,10 +183,20 @@ async def _load_user_financial_context(
             )
         sections.append("\n".join(txn_lines))
 
-    # --- Active budgets ---
-    budgets = await db.scalars(
-        select(Budget).where(Budget.user_id == user_id).limit(3)
-    )
+    # --- Active budgets (context-aware) ---
+    budget_query = select(Budget)
+    if is_family and family_id_str:
+        try:
+            budget_query = budget_query.where(Budget.family_id == uuid.UUID(family_id_str))
+        except ValueError:
+            budget_query = budget_query.where(
+                Budget.user_id == user_id, Budget.family_id.is_(None)
+            )
+    else:
+        budget_query = budget_query.where(
+            Budget.user_id == user_id, Budget.family_id.is_(None)
+        )
+    budgets = await db.scalars(budget_query.limit(3))
     budget_list = list(budgets.all())
     if budget_list:
         budget_lines = ["ORCAMENTOS ACTIVOS:"]
@@ -183,14 +205,20 @@ async def _load_user_financial_context(
         sections.append("\n".join(budget_lines))
 
     # --- Goals (context-aware: personal or family) ---
-    goal_query = select(Goal).where(Goal.user_id == user_id, Goal.status == "active")
+    # Family branch must NOT keep the user_id filter — other family members'
+    # goals belong to the family scope and should be visible to every member.
+    goal_query = select(Goal).where(Goal.status == "active")
     if is_family and family_id_str:
         try:
             goal_query = goal_query.where(Goal.family_id == uuid.UUID(family_id_str))
         except ValueError:
-            pass
+            goal_query = goal_query.where(
+                Goal.user_id == user_id, Goal.family_id.is_(None)
+            )
     else:
-        goal_query = goal_query.where(Goal.family_id.is_(None))
+        goal_query = goal_query.where(
+            Goal.user_id == user_id, Goal.family_id.is_(None)
+        )
     goals = await db.scalars(goal_query.limit(5))
     goal_list = list(goals.all())
     if goal_list:
@@ -203,16 +231,21 @@ async def _load_user_financial_context(
         sections.append("\n".join(goal_lines))
 
     # --- Debts (context-aware) ---
-    debt_query = select(Debt).where(Debt.user_id == user_id)
+    # Same fix as goals: drop the spurious user_id base filter so the family
+    # branch can return debts owned by any member.
+    debt_query = select(Debt)
     if is_family and family_id_str:
         try:
             debt_query = debt_query.where(Debt.family_id == uuid.UUID(family_id_str))
         except ValueError:
-            pass
+            debt_query = debt_query.where(
+                Debt.user_id == user_id, Debt.family_id.is_(None)
+            )
     else:
-        debt_query = debt_query.where(Debt.family_id.is_(None))
-    debts = await db.scalars(debt_query.limit(5)
-    )
+        debt_query = debt_query.where(
+            Debt.user_id == user_id, Debt.family_id.is_(None)
+        )
+    debts = await db.scalars(debt_query.limit(5))
     debt_list = list(debts.all())
     if debt_list:
         total_debt = sum(d.current_balance for d in debt_list)

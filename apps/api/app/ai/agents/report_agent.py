@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import func, select
 
+from app.ai.agents._filters import scope_to_context, scope_transactions_to_context
 from app.ai.agents.base import AgentContext, BaseAgent
 from app.ai.llm.base import ToolDefinition
 from app.ai.llm.router import TaskType
@@ -68,32 +69,36 @@ class ReportAgent(BaseAgent):
         else:
             end = date(year, month + 1, 1) - timedelta(days=1)
 
-        # Income
-        result = await ctx.db.execute(
-            select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                Transaction.user_id == ctx.user_id,
+        # Income (context-aware: aggregates ALL family members in family ctx)
+        income_stmt = scope_transactions_to_context(
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
                 Transaction.type == TransactionType.INCOME,
                 Transaction.transaction_date.between(start, end),
-            )
+            ),
+            ctx,
         )
-        income = result.scalar() or 0
+        income = (await ctx.db.execute(income_stmt)).scalar() or 0
 
-        # Expenses
-        result = await ctx.db.execute(
-            select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                Transaction.user_id == ctx.user_id,
+        # Expenses (same scoping)
+        expenses_stmt = scope_transactions_to_context(
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date.between(start, end),
-            )
+            ),
+            ctx,
         )
-        expenses = result.scalar() or 0
+        expenses = (await ctx.db.execute(expenses_stmt)).scalar() or 0
 
         # Top categories
-        stmt = (
+        cat_stmt = (
             select(Category.name, func.sum(Transaction.amount).label("total"))
+            .join(Account, Transaction.account_id == Account.id)
             .join(Category, Transaction.category_id == Category.id, isouter=True)
             .where(
-                Transaction.user_id == ctx.user_id,
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date.between(start, end),
             )
@@ -101,7 +106,8 @@ class ReportAgent(BaseAgent):
             .order_by(func.sum(Transaction.amount).desc())
             .limit(5)
         )
-        result = await ctx.db.execute(stmt)
+        cat_stmt = scope_transactions_to_context(cat_stmt, ctx)
+        result = await ctx.db.execute(cat_stmt)
         top_categories = [{"name": r.name or "Outros", "total_kz": r.total / 100} for r in result.all()]
 
         return {
@@ -120,12 +126,11 @@ class ReportAgent(BaseAgent):
         factors = []
 
         # Factor 1: Has savings (balance > 0)
-        result = await ctx.db.execute(
-            select(func.sum(Account.balance)).where(
-                Account.user_id == ctx.user_id, Account.is_archived.is_(False)
-            )
+        bal_stmt = scope_to_context(
+            select(func.sum(Account.balance)).where(Account.is_archived.is_(False)),
+            Account, ctx,
         )
-        balance = result.scalar() or 0
+        balance = (await ctx.db.execute(bal_stmt)).scalar() or 0
         if balance > 0:
             score += 10
             factors.append("Saldo positivo (+10)")
@@ -135,23 +140,27 @@ class ReportAgent(BaseAgent):
 
         # Factor 2: Savings rate > 10%
         month_ago = date.today() - timedelta(days=30)
-        result = await ctx.db.execute(
-            select(func.sum(Transaction.amount)).where(
-                Transaction.user_id == ctx.user_id,
+        income_stmt = scope_transactions_to_context(
+            select(func.sum(Transaction.amount))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
                 Transaction.type == TransactionType.INCOME,
                 Transaction.transaction_date >= month_ago,
-            )
+            ),
+            ctx,
         )
-        income = result.scalar() or 0
+        income = (await ctx.db.execute(income_stmt)).scalar() or 0
 
-        result = await ctx.db.execute(
-            select(func.sum(Transaction.amount)).where(
-                Transaction.user_id == ctx.user_id,
+        expenses_stmt = scope_transactions_to_context(
+            select(func.sum(Transaction.amount))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
                 Transaction.type == TransactionType.EXPENSE,
                 Transaction.transaction_date >= month_ago,
-            )
+            ),
+            ctx,
         )
-        expenses = result.scalar() or 0
+        expenses = (await ctx.db.execute(expenses_stmt)).scalar() or 0
 
         if income > 0:
             savings_rate = (income - expenses) / income
@@ -168,10 +177,11 @@ class ReportAgent(BaseAgent):
         # Factor 3: Has active goals
         from app.models.goal import Goal
 
-        result = await ctx.db.execute(
-            select(func.count()).where(Goal.user_id == ctx.user_id, Goal.status == "active")
+        goal_stmt = scope_to_context(
+            select(func.count(Goal.id)).where(Goal.status == "active"),
+            Goal, ctx,
         )
-        goal_count = result.scalar() or 0
+        goal_count = (await ctx.db.execute(goal_stmt)).scalar() or 0
         if goal_count > 0:
             score += 10
             factors.append(f"{goal_count} meta(s) activa(s) (+10)")
@@ -179,10 +189,11 @@ class ReportAgent(BaseAgent):
         # Factor 4: Has budget
         from app.models.budget import Budget
 
-        result = await ctx.db.execute(
-            select(func.count()).where(Budget.user_id == ctx.user_id, Budget.is_active.is_(True))
+        budget_stmt = scope_to_context(
+            select(func.count(Budget.id)).where(Budget.is_active.is_(True)),
+            Budget, ctx,
         )
-        budget_count = result.scalar() or 0
+        budget_count = (await ctx.db.execute(budget_stmt)).scalar() or 0
         if budget_count > 0:
             score += 10
             factors.append("Orçamento activo (+10)")
