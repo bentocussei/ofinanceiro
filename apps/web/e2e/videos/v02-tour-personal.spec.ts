@@ -31,7 +31,7 @@ test.describe("V02 — Tour Pessoal", () => {
     await page.click('a[href="/transactions"]')
     await page.waitForTimeout(1500)
     await dismissTour(page)
-    await expect(page.locator("text=Transacções")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Transacções" })).toBeVisible({ timeout: 5000 })
     await page.waitForTimeout(2500)
 
     // --- Contas ---
