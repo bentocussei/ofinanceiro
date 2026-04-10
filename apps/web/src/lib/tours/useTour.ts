@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { driver } from "driver.js"
+import { useEffect } from "react"
+import { driver, type Driver } from "driver.js"
 import "driver.js/dist/driver.css"
 import { tourMap } from "./definitions"
 import { hasSeenTour, markTourSeen } from "./storage"
@@ -26,13 +26,7 @@ import { hasSeenTour, markTourSeen } from "./storage"
  *                 resolve correctly)
  */
 export function useTour(tourId: string, delay = 800): void {
-  const started = useRef(false)
-
   useEffect(() => {
-    // Already ran this effect (StrictMode double-invoke guard)
-    if (started.current) return
-    started.current = true
-
     // Already seen this tour
     if (hasSeenTour(tourId)) return
 
@@ -40,8 +34,10 @@ export function useTour(tourId: string, delay = 800): void {
     const steps = tourMap[tourId]
     if (!steps || steps.length === 0) return
 
+    let d: Driver | null = null
+
     const timer = setTimeout(() => {
-      const d = driver({
+      d = driver({
         showProgress: true,
         animate: true,
         smoothScroll: true,
@@ -57,12 +53,17 @@ export function useTour(tourId: string, delay = 800): void {
         steps,
         onDestroyStarted: () => {
           markTourSeen(tourId)
-          d.destroy()
+          d?.destroy()
         },
       })
       d.drive()
     }, delay)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      // If the component unmounts while the tour is showing (e.g.
+      // navigation), clean up the driver overlay.
+      d?.destroy()
+    }
   }, [tourId, delay])
 }
