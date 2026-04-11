@@ -1,7 +1,8 @@
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, SmallInteger, String, Text
-from sqlalchemy.dialects.postgresql import ENUM, JSONB
+from sqlalchemy import Boolean, ForeignKey, SmallInteger, String, Text
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -37,6 +38,15 @@ class User(BaseModel):
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column()
+
+    # Referral system
+    referral_code: Mapped[str | None] = mapped_column(
+        String(20), unique=True, index=True
+    )
+    referred_by: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     # Relationships
     accounts: Mapped[list["Account"]] = relationship(  # noqa: F821

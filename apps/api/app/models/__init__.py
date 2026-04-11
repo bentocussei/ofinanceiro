@@ -1,6 +1,7 @@
 from app.models.account import Account
 from app.models.asset import Asset
 from app.models.base import Base, BaseModel
+from app.models.broadcast import Broadcast, BroadcastRecipient
 from app.models.bill import Bill
 from app.models.budget import Budget, BudgetItem
 from app.models.category import Category
@@ -50,6 +51,7 @@ from app.models.family import Family, FamilyInvite, FamilyMember
 from app.models.module_addon import ModuleAddon
 from app.models.payment import Payment
 from app.models.payment_method import PaymentMethod
+from app.models.feedback import Feedback
 from app.models.finance_settings import FinanceSettings
 from app.models.finance_snapshot import FinanceSnapshot
 from app.models.goal import Goal, GoalContribution
@@ -69,6 +71,7 @@ from app.models.permission import (
 from app.models.plan import Plan
 from app.models.promotion import Promotion, PromotionUsage
 from app.models.recurring_rule import RecurringRule
+from app.models.referral import Referral
 from app.models.subscription import Subscription, SubscriptionAddon, UserSubscription
 from app.models.tag import Tag
 from app.models.transaction import Transaction
@@ -117,6 +120,8 @@ __all__ = [
     # Models
     "Account",
     "AdminRole",
+    "Broadcast",
+    "BroadcastRecipient",
     "AdminRolePermission",
     "AdminUser",
     "AdminUserRevokedPermission",
@@ -136,6 +141,7 @@ __all__ = [
     "FamilyInvite",
     "FamilyMember",
     "ModuleAddon",
+    "Feedback",
     "FinanceSettings",
     "FinanceSnapshot",
     "Goal",
@@ -154,6 +160,7 @@ __all__ = [
     "PromotionUsage",
     "Receipt",
     "RecurringRule",
+    "Referral",
     "Subscription",
     "SubscriptionAddon",
     "Tag",

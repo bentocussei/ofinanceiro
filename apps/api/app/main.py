@@ -52,6 +52,7 @@ from app.routers import (
     education,
     expense_splits,
     families,
+    feedback_router,
     files,
     finance_settings,
     goals,
@@ -66,6 +67,7 @@ from app.routers import (
     onboarding,
     permissions_router,
     recurring_rules,
+    referrals,
     reports,
     score,
     snapshots,
@@ -250,4 +252,6 @@ app.include_router(expense_splits.router)
 app.include_router(tags.router)
 app.include_router(tools.router)
 app.include_router(permissions_router.router)
+app.include_router(referrals.router)
+app.include_router(feedback_router.router)
 app.include_router(webhooks.router)
