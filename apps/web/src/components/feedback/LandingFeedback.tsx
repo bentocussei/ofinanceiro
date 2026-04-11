@@ -118,10 +118,6 @@ export function LandingFeedback() {
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
               O que dizem os utilizadores
             </p>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl mb-4">
-              Avaliado pelos angolanos
-            </h2>
-
             {avgRating !== null && ratingCount > 0 ? (
               <div className="flex items-center gap-4">
                 <div>
@@ -129,7 +125,7 @@ export function LandingFeedback() {
                     {avgRating.toFixed(1)}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    de 5 estrelas
+                    / 5
                   </p>
                 </div>
                 <div className="space-y-1">
