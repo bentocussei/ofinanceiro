@@ -4,18 +4,11 @@ import { Copy, Gift, Share2, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { referralsApi, type ReferralStats } from "@/lib/api/referrals"
 
 export function ReferralCard() {
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [loading, setLoading] = useState(true)
-
-  // Apply referral code state
-  const [friendCode, setFriendCode] = useState("")
-  const [applying, setApplying] = useState(false)
-  const [applyResult, setApplyResult] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
     referralsApi
@@ -51,24 +44,6 @@ export function ReferralCard() {
       } catch {
         toast.error("Nao foi possivel copiar")
       }
-    }
-  }
-
-  async function handleApplyCode() {
-    const code = friendCode.trim().toUpperCase()
-    if (!code) return
-    setApplying(true)
-    setApplyResult(null)
-    try {
-      const res = await referralsApi.apply(code)
-      setApplyResult({ success: true, message: res.message || `+${res.bonus_days} dias gratis adicionados` })
-      setFriendCode("")
-      toast.success(res.message || "Codigo aplicado com sucesso")
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao aplicar codigo"
-      setApplyResult({ success: false, message: msg })
-    } finally {
-      setApplying(false)
     }
   }
 
@@ -148,34 +123,6 @@ export function ReferralCard() {
         </div>
       </div>
 
-      {/* Apply friend's code */}
-      <div className="border-t border-border pt-4">
-        <p className="text-xs font-medium text-muted-foreground mb-2">Usar codigo de amigo</p>
-        <div className="flex gap-2">
-          <Input
-            value={friendCode}
-            onChange={(e) => setFriendCode(e.target.value.toUpperCase())}
-            placeholder="Ex: JOAO123"
-            className="font-mono text-sm h-9"
-            maxLength={16}
-            onKeyDown={(e) => e.key === "Enter" && handleApplyCode()}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleApplyCode}
-            disabled={applying || !friendCode.trim()}
-            className="shrink-0 h-9 px-4"
-          >
-            {applying ? "A aplicar..." : "Aplicar"}
-          </Button>
-        </div>
-        {applyResult && (
-          <p className={`mt-2 text-xs ${applyResult.success ? "text-primary" : "text-destructive"}`}>
-            {applyResult.message}
-          </p>
-        )}
-      </div>
     </div>
   )
 }

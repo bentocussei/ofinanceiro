@@ -8,6 +8,7 @@ class RegisterRequest(BaseModel):
     email: str | None = Field(None, max_length=255)
     country: str = Field("AO", max_length=2, description="Código ISO do país (AO, MZ, CV, etc.)")
     promo_code: str | None = Field(None, max_length=50, description="Código promocional opcional")
+    referral_code: str | None = Field(None, max_length=20, description="Código de referência de um amigo (via ?ref= na URL)")
 
 
 class LoginRequest(BaseModel):

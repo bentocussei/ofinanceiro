@@ -101,6 +101,61 @@ async def register(
             # Não bloquear o registo se a promoção falhar
             pass
 
+    # Aplicar referral: código de amigo vindo de ?ref= na URL de registo.
+    # Silencioso — se inválido, ignora. Se válido, ambos ganham dias grátis.
+    referral_msg = ""
+    if data.referral_code:
+        try:
+            from sqlalchemy import select, func
+            from app.models.referral import Referral
+
+            code = data.referral_code.strip().upper()
+            referrer = await db.scalar(
+                select(User).where(func.upper(User.referral_code) == code)
+            )
+            if referrer and referrer.id != user.id:
+                from datetime import timedelta
+
+                BONUS_DAYS = 30
+                MAX_REFERRALS = 12
+
+                referrer_count = await db.scalar(
+                    select(func.count(Referral.id)).where(Referral.referrer_id == referrer.id)
+                ) or 0
+
+                if referrer_count < MAX_REFERRALS:
+                    # Create referral record
+                    referral = Referral(
+                        referrer_id=referrer.id,
+                        referred_id=user.id,
+                        referral_code=code,
+                        bonus_days_granted=BONUS_DAYS,
+                    )
+                    db.add(referral)
+                    user.referred_by = referrer.id
+
+                    # Extend trial for referrer (current subscription)
+                    from app.models.subscription import UserSubscription
+                    referrer_sub = await db.scalar(
+                        select(UserSubscription)
+                        .where(
+                            UserSubscription.user_id == referrer.id,
+                            UserSubscription.status.in_(["active", "trialing"]),
+                        )
+                        .order_by(UserSubscription.created_at.desc())
+                        .limit(1)
+                    )
+                    if referrer_sub:
+                        if referrer_sub.trial_end_date:
+                            referrer_sub.trial_end_date += timedelta(days=BONUS_DAYS)
+                        elif referrer_sub.end_date:
+                            referrer_sub.end_date += timedelta(days=BONUS_DAYS)
+
+                    referral_msg = f" Foste convidado por {referrer.name.split()[0]} — ambos ganharam {BONUS_DAYS} dias grátis!"
+                    logger.info("Referral applied: %s referred by %s", phone, referrer.phone)
+        except Exception as e:
+            logger.warning("Referral application failed for %s: %s", phone, e)
+
     # Enviar email de boas-vindas se o utilizador forneceu email
     if data.email:
         try:
@@ -110,7 +165,6 @@ async def register(
             pass
 
     # Enviar OTP para verificação do telefone
-    # NÃO retornar tokens — utilizador só recebe tokens após verificar OTP
     try:
         otp = generate_otp()
         print(f"[REGISTER OTP] Gerado OTP {otp} para {phone}")
@@ -123,7 +177,7 @@ async def register(
         print(f"[REGISTER OTP] ERRO para {phone}: {e}")
         logger.warning("Falha ao enviar OTP no registo para %s: %s", phone, e)
 
-    return MessageResponse(message="Conta criada. Verifique o código enviado por SMS.")
+    return MessageResponse(message=f"Conta criada. Verifique o código enviado por SMS.{referral_msg}")
 
 
 @router.post("/login", response_model=TokenResponse)

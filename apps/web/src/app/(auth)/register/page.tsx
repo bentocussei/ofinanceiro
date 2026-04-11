@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Loader2, CheckCircle, Gift, ArrowRight, Smartphone, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
@@ -25,8 +25,10 @@ function maskPhone(phone: string): string {
   return `${prefix}${middle}${suffix}`
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get("ref") ?? undefined
   const [step, setStep] = useState<Step>("form")
 
   // Step 1: Form state
@@ -102,7 +104,7 @@ export default function RegisterPage() {
 
     const validPromo = hasPromoCode && promoValidation ? promoCode.trim() : undefined
 
-    const success = await register(phone, name, undefined, countryCode, undefined, validPromo)
+    const success = await register(phone, name, undefined, countryCode, undefined, validPromo, referralCode)
     if (success) {
       setCountdown(60)
       setStep("otp")
@@ -205,6 +207,15 @@ export default function RegisterPage() {
       {step === "form" && (
         <>
           <h2 className="mb-6 text-center text-lg font-semibold">Criar conta</h2>
+
+          {referralCode && (
+            <div className="mb-4 flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+              <Gift className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <p className="text-sm text-primary">
+                Foste convidado por um amigo! Ambos ganharão 30 dias grátis após o registo.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
@@ -456,5 +467,13 @@ export default function RegisterPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   )
 }

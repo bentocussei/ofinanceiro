@@ -63,12 +63,14 @@ export async function register(
   country?: string,
   email?: string,
   promoCode?: string,
+  referralCode?: string,
 ): Promise<boolean> {
   try {
     const body: Record<string, string> = { phone, name, country: country || "AO" }
     if (password) body.password = password
     if (email) body.email = email
     if (promoCode) body.promo_code = promoCode
+    if (referralCode) body.referral_code = referralCode
     // Register NÃO retorna tokens — apenas cria user e envia OTP
     // Tokens são emitidos apenas após verificação OTP
     await apiFetch<{ message: string }>("/api/v1/auth/register", {

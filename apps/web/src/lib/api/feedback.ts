@@ -3,7 +3,7 @@ import { apiFetch } from "./client"
 export type FeedbackType = "rating" | "suggestion" | "complaint"
 
 export interface FeedbackPayload {
-  feedback_type: FeedbackType
+  type: FeedbackType
   rating?: number
   message?: string
   contact_name?: string
