@@ -5,6 +5,7 @@ export interface ReferralStats {
   total_referrals: number
   bonus_days_earned: number
   max_referrals: number
+  share_message: string
 }
 
 export const referralsApi = {

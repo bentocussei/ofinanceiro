@@ -30,7 +30,7 @@ export function ReferralCard() {
 
   async function handleShare() {
     if (!stats?.referral_code) return
-    const text = `Usa o meu codigo de convite ${stats.referral_code} no O Financeiro e ganha dias gratis! https://ofinanceiro.ao/register`
+    const text = stats.share_message || `Usa o meu codigo de convite ${stats.referral_code} no O Financeiro e ganha dias gratis! https://ofinanceiro.app/register?ref=${stats.referral_code}`
     if (navigator.share) {
       try {
         await navigator.share({ text })
