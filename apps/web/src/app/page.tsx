@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ScreenshotGrid } from "@/components/landing/ScreenshotGrid"
 import { ThemeToggle } from "@/components/landing/ThemeToggle"
 import { LogoFull } from "@/components/Logo"
+import { LandingFeedback } from "@/components/feedback/LandingFeedback"
 import {
   ArrowRight,
   BarChart3,
@@ -436,6 +437,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Feedback */}
+      <LandingFeedback />
 
       {/* Footer */}
       <footer className="border-t border-border py-4">

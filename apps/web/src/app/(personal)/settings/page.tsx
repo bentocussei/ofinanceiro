@@ -3,6 +3,7 @@
 import {
   Camera,
   CreditCard,
+  Gift,
   Mail,
   Phone,
   ShieldCheck,
@@ -21,10 +22,11 @@ import { InstallAppTab } from "@/components/settings/InstallAppTab"
 import { SecurityTab } from "@/components/settings/SecurityTab"
 import { SubscriptionTab } from "@/components/settings/SubscriptionTab"
 import { TagsTab } from "@/components/settings/TagsTab"
+import { ReferralCard } from "@/components/referral/ReferralCard"
 import { usersApi } from "@/lib/api/users"
 import { getCurrentUser, type UserProfile } from "@/lib/auth"
 
-type TabId = "profile" | "subscription" | "tags" | "security" | "install"
+type TabId = "profile" | "subscription" | "referrals" | "tags" | "security" | "install"
 
 interface TabDef {
   id: TabId
@@ -36,6 +38,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: "profile", label: "Perfil", icon: User },
   { id: "subscription", label: "Subscricao", icon: CreditCard },
+  { id: "referrals", label: "Convites", icon: Gift },
   { id: "tags", label: "Etiquetas", icon: TagIcon },
   { id: "security", label: "Seguranca", icon: ShieldCheck },
   { id: "install", label: "Instalar app", icon: Smartphone, mobileOnly: true },
@@ -108,6 +111,11 @@ export default function SettingsPage() {
       {/* Tab content */}
       {tab === "profile" && <ProfileTab user={user} onUserUpdate={() => getCurrentUser().then(setUser)} />}
       {tab === "subscription" && <SubscriptionTab user={user} />}
+      {tab === "referrals" && (
+        <div className="max-w-lg">
+          <ReferralCard />
+        </div>
+      )}
       {tab === "tags" && <TagsTab />}
       {tab === "security" && <SecurityTab />}
       {tab === "install" && <InstallAppTab />}

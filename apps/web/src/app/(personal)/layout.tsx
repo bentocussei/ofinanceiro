@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/layout/sidebar"
 import { MobileNav } from "@/components/layout/MobileNav"
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget"
 import { PermissionProvider } from "@/providers/PermissionProvider"
 import { usePathname } from "next/navigation"
 
@@ -28,6 +29,7 @@ export default function DashboardLayout({
           )}
         </main>
       </div>
+      <FeedbackWidget />
     </PermissionProvider>
   )
 }

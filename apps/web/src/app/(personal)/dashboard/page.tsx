@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
+import { ReferralCard } from "@/components/referral/ReferralCard"
 import { IconDisplay } from "@/components/common/IconDisplay"
 import { useTour } from "@/lib/tours"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
@@ -467,6 +468,9 @@ export default function DashboardPage() {
               />
             )}
           </section>
+
+          {/* Referral */}
+          <ReferralCard />
 
           {/* Spending by Category */}
           <section>
