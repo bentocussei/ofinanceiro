@@ -1,8 +1,12 @@
 /**
- * V09 — Investimentos
+ * V09 — Investimentos (view + detalhe + dashboard)
  *
- * Mostra o portfólio de investimentos do Cussei (Depósito a prazo,
- * Obrigações do Tesouro, Poupança BFA) com performance e detalhe.
+ * Login Cussei → /investments
+ * 1. VIEW: portfólio com performance
+ * 2. DETAIL: clicar num investimento
+ * 3. VIEW: detalhes (taxa, datas, valor)
+ * 4. CLOSE detalhe
+ * 5. Dashboard
  *
  * Executar:
  *   npx playwright test e2e/videos/v09-investments.spec.ts --headed
@@ -18,8 +22,8 @@ test.use({
 })
 
 test.describe("V09 — Investimentos", () => {
-  test("visualizar portfólio e detalhe", async ({ page }) => {
-    // Login como Cussei
+  test("visualizar portfólio e detalhe de investimento", async ({ page }) => {
+    // ---- Login ----
     await login(page, "923456789")
 
     // Marcar todos os tours como vistos
@@ -32,7 +36,7 @@ test.describe("V09 — Investimentos", () => {
     await dismissTour(page)
 
     // =================================================================
-    // PORTFÓLIO DE INVESTIMENTOS
+    // 1. VIEW — PORTFÓLIO DE INVESTIMENTOS
     // =================================================================
     await page.goto("/investments")
     await page.waitForTimeout(2000)
@@ -42,13 +46,17 @@ test.describe("V09 — Investimentos", () => {
     await expect(
       page.locator("text=/[Dd]epósito|[Oo]brigações|[Pp]oupança|[Ii]nvestimento/").first()
     ).toBeVisible({ timeout: 6000 })
-    await page.waitForTimeout(3000) // apreciar o portfólio com performance
+    await page.waitForTimeout(2500) // apreciar o portfólio
+
+    // Percorrer para mostrar todos os investimentos
+    await page.mouse.wheel(0, 200)
+    await page.waitForTimeout(1000)
+    await page.mouse.wheel(0, -200)
+    await page.waitForTimeout(800)
 
     // =================================================================
-    // DETALHE DE UM INVESTIMENTO
+    // 2. DETAIL — DEPÓSITO A PRAZO
     // =================================================================
-
-    // Tentar clicar no Depósito a prazo primeiro
     const depositInv = page.locator("text=/[Dd]epósito [Aa] [Pp]razo|[Dd]epósito/").first()
     const firstInv = page.locator("[data-testid*='investment'], .investment-card, [href*='/investments/']").first()
 
@@ -57,23 +65,36 @@ test.describe("V09 — Investimentos", () => {
       : firstInv
 
     if (await invToClick.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Tentar clicar no cartão pai
-      const invParent = invToClick.locator(
-        "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'investment')]"
-      ).first()
-      const parentVisible = await invParent.isVisible({ timeout: 1000 }).catch(() => false)
-
-      if (parentVisible) {
-        await invParent.click()
-      } else {
+      try {
+        const invParent = invToClick.locator(
+          "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'investment')]"
+        ).first()
+        if (await invParent.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await invParent.click()
+        } else {
+          await invToClick.click()
+        }
+      } catch {
         await invToClick.click()
       }
 
       await page.waitForTimeout(2000)
       await dismissTour(page)
-      await page.waitForTimeout(3000) // apreciar o detalhe do investimento
 
-      // Fechar detalhe / voltar à lista
+      // =================================================================
+      // 3. VIEW — DETALHES: TAXA, DATAS, VALOR
+      // =================================================================
+      await page.waitForTimeout(2500) // apreciar taxa de juro, datas e valor actual
+
+      // Percorrer para ver mais detalhes
+      await page.mouse.wheel(0, 200)
+      await page.waitForTimeout(1000)
+      await page.mouse.wheel(0, -200)
+      await page.waitForTimeout(800)
+
+      // =================================================================
+      // 4. CLOSE — FECHAR DETALHE
+      // =================================================================
       const backBtn = page.getByRole("button", { name: /[Vv]oltar|[Ff]echar/ })
       if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await backBtn.click()
@@ -89,5 +110,14 @@ test.describe("V09 — Investimentos", () => {
     await page.waitForTimeout(2000)
     await dismissTour(page)
     await page.waitForTimeout(2000)
+
+    // =================================================================
+    // 5. DASHBOARD — ENCERRAMENTO
+    // =================================================================
+    await page.goto("/dashboard")
+    await page.waitForTimeout(2000)
+    await dismissTour(page)
+    await expect(page.locator("text=Património Líquido")).toBeVisible({ timeout: 6000 })
+    await page.waitForTimeout(3000) // pausa final no dashboard
   })
 })

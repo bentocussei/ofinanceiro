@@ -1,9 +1,14 @@
 /**
- * V08 — Gestão de Dívidas
+ * V08 — Dívidas (view + pagamento + simulação + dashboard)
  *
- * Mostra as dívidas pessoais do Cussei (Empréstimo automóvel e
- * Empréstimo do João), o detalhe de uma dívida e a simulação de
- * amortização se disponível.
+ * Login Cussei → /debts
+ * 1. VIEW: lista com dívidas e saldos
+ * 2. DETAIL: clicar "Empréstimo automóvel"
+ * 3. PAYMENT: preencher 50.000 Kz (5.000.000 centavos), seleccionar conta, clicar Pagar
+ * 4. VERIFY: saldo actualizado
+ * 5. SIMULATION: clicar Simular se disponível
+ * 6. CLOSE detalhe
+ * 7. Dashboard
  *
  * Executar:
  *   npx playwright test e2e/videos/v08-debts.spec.ts --headed
@@ -19,8 +24,8 @@ test.use({
 })
 
 test.describe("V08 — Dívidas", () => {
-  test("visualizar dívidas e simulação", async ({ page }) => {
-    // Login como Cussei
+  test("visualizar dívidas, registar pagamento e simular", async ({ page }) => {
+    // ---- Login ----
     await login(page, "923456789")
 
     // Marcar todos os tours como vistos
@@ -33,7 +38,7 @@ test.describe("V08 — Dívidas", () => {
     await dismissTour(page)
 
     // =================================================================
-    // LISTA DE DÍVIDAS
+    // 1. VIEW — LISTA DE DÍVIDAS
     // =================================================================
     await page.goto("/debts")
     await page.waitForTimeout(2000)
@@ -41,13 +46,11 @@ test.describe("V08 — Dívidas", () => {
 
     // Verificar que há dívidas visíveis
     await expect(page.locator("text=/[Ee]mpréstimo|[Dd]ívida/").first()).toBeVisible({ timeout: 6000 })
-    await page.waitForTimeout(3000) // apreciar a lista com saldos e progresso
+    await page.waitForTimeout(3000) // apreciar lista com saldos e progresso de amortização
 
     // =================================================================
-    // DETALHE DE UMA DÍVIDA
+    // 2. DETAIL — EMPRÉSTIMO AUTOMÓVEL
     // =================================================================
-
-    // Clicar na primeira dívida (de preferência o empréstimo automóvel)
     const autoDebt = page.locator("text=/[Aa]utomóvel|[Aa]uto/").first()
     const firstDebt = page.locator("[data-testid*='debt'], .debt-card, [href*='/debts/']").first()
 
@@ -55,49 +58,124 @@ test.describe("V08 — Dívidas", () => {
       ? autoDebt
       : firstDebt
 
-    if (await debtToClick.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Tentar clicar no cartão pai
-      const debtParent = debtToClick.locator(
-        "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'debt')]"
-      ).first()
-      const parentVisible = await debtParent.isVisible({ timeout: 1000 }).catch(() => false)
+    let debtOpened = false
 
-      if (parentVisible) {
-        await debtParent.click()
-      } else {
+    if (await debtToClick.isVisible({ timeout: 3000 }).catch(() => false)) {
+      try {
+        const debtParent = debtToClick.locator(
+          "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'debt')]"
+        ).first()
+        if (await debtParent.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await debtParent.click()
+        } else {
+          await debtToClick.click()
+        }
+        debtOpened = true
+      } catch {
         await debtToClick.click()
+        debtOpened = true
       }
 
       await page.waitForTimeout(2000)
       await dismissTour(page)
-      await page.waitForTimeout(3000) // apreciar o detalhe da dívida
+      await page.waitForTimeout(2500) // apreciar o detalhe da dívida
 
       // =================================================================
-      // SIMULAÇÃO DE AMORTIZAÇÃO
+      // 3. PAYMENT — REGISTAR PAGAMENTO DE 50.000 Kz
       // =================================================================
-      const simulateBtn = page.getByRole("button", { name: /[Ss]imul/ })
-      if (await simulateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await simulateBtn.click()
-        await page.waitForTimeout(2000)
-        await page.waitForTimeout(2500) // mostrar a simulação
-        const closeSimBtn = page.getByRole("button", { name: /[Ff]echar|[Vv]oltar|[Ff]echar [Ss]imulação/ })
-        if (await closeSimBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await closeSimBtn.click()
-          await page.waitForTimeout(1000)
+      if (debtOpened) {
+        try {
+          const pagarBtn = page.getByRole("button", { name: /[Pp]agar|[Rr]egist|[Aa]mortiz/ })
+          if (await pagarBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await pagarBtn.click()
+            await page.waitForTimeout(1200)
+
+            // Preencher valor — 50.000 Kz (5.000.000 centavos)
+            const amountInput = page.getByRole("spinbutton", { name: /[Vv]alor|[Mm]ontante/ })
+            if (await amountInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+              await amountInput.fill("5000000")
+              await page.waitForTimeout(700)
+            } else {
+              await page.evaluate(() => {
+                const inputs = document.querySelectorAll('input[type="number"]')
+                for (const e of inputs) {
+                  const el = e as HTMLInputElement
+                  if (!el.value) {
+                    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!
+                    setter.call(el, "5000000")
+                    el.dispatchEvent(new Event("input", { bubbles: true }))
+                    break
+                  }
+                }
+              })
+              await page.waitForTimeout(700)
+            }
+
+            // Seleccionar conta (se disponível)
+            try {
+              const accountSelect = page.getByRole("combobox", { name: /[Cc]onta/ })
+              if (await accountSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await accountSelect.click()
+                await page.waitForTimeout(500)
+                const firstOption = page.getByRole("option").first()
+                if (await firstOption.isVisible({ timeout: 1500 }).catch(() => false)) {
+                  await firstOption.click()
+                  await page.waitForTimeout(500)
+                }
+              }
+            } catch { /* continuar */ }
+
+            await page.waitForTimeout(1000) // mostrar formulário preenchido
+
+            // Confirmar pagamento
+            const confirmBtn = page.getByRole("button", { name: /[Pp]agar|[Gg]uardar|[Cc]onfirmar|[Ss]alvar/ })
+            if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+              await confirmBtn.click()
+              await page.waitForTimeout(2000) // mostrar actualização do saldo
+            } else {
+              await page.keyboard.press("Escape")
+              await page.waitForTimeout(1000)
+            }
+          }
+        } catch { /* continuar */ }
+
+        // =================================================================
+        // 4. VERIFY — SALDO ACTUALIZADO
+        // =================================================================
+        await page.waitForTimeout(2000) // mostrar o saldo após pagamento
+
+        // =================================================================
+        // 5. SIMULATION — SIMULAR AMORTIZAÇÃO
+        // =================================================================
+        try {
+          const simulateBtn = page.getByRole("button", { name: /[Ss]imul/ })
+          if (await simulateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await simulateBtn.click()
+            await page.waitForTimeout(2000)
+            await page.waitForTimeout(2500) // mostrar a tabela de amortização
+
+            const closeSimBtn = page.getByRole("button", { name: /[Ff]echar|[Vv]oltar|[Ff]echar [Ss]imulação/ })
+            if (await closeSimBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+              await closeSimBtn.click()
+              await page.waitForTimeout(1000)
+            } else {
+              await page.keyboard.press("Escape")
+              await page.waitForTimeout(1000)
+            }
+          }
+        } catch { /* continuar */ }
+
+        // =================================================================
+        // 6. CLOSE — FECHAR DETALHE
+        // =================================================================
+        const backBtn = page.getByRole("button", { name: /[Vv]oltar|[Ff]echar/ })
+        if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await backBtn.click()
+          await page.waitForTimeout(1500)
         } else {
           await page.keyboard.press("Escape")
           await page.waitForTimeout(1000)
         }
-      }
-
-      // Fechar detalhe / voltar à lista
-      const backBtn = page.getByRole("button", { name: /[Vv]oltar|[Ff]echar/ })
-      if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await backBtn.click()
-        await page.waitForTimeout(1500)
-      } else {
-        await page.keyboard.press("Escape")
-        await page.waitForTimeout(1000)
       }
     }
 
@@ -106,5 +184,14 @@ test.describe("V08 — Dívidas", () => {
     await page.waitForTimeout(2000)
     await dismissTour(page)
     await page.waitForTimeout(2000)
+
+    // =================================================================
+    // 7. DASHBOARD — ENCERRAMENTO
+    // =================================================================
+    await page.goto("/dashboard")
+    await page.waitForTimeout(2000)
+    await dismissTour(page)
+    await expect(page.locator("text=Património Líquido")).toBeVisible({ timeout: 6000 })
+    await page.waitForTimeout(3000) // pausa final no dashboard
   })
 })

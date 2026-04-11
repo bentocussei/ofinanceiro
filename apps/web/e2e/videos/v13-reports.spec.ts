@@ -1,9 +1,13 @@
 /**
- * V13 — Relatórios e Score Financeiro
+ * V13 — Relatórios + Score Financeiro (view + chat IA + dashboard)
  *
- * Mostra os relatórios de gastos por categoria, depois vai ao assistente
- * para pedir o score financeiro e uma sugestão de orçamento.
- * Encerra no dashboard.
+ * Login Cussei → /reports
+ * 1. VIEW: gráfico de gastos por categoria
+ * 2. /assistant: conversa contínua:
+ *    - "qual é o meu score financeiro?" (try/catch)
+ *    - "sugere-me um orçamento baseado nos meus gastos" (try/catch)
+ *    - "gera o relatório deste mês" (try/catch)
+ * 3. /dashboard: encerramento
  *
  * Executar:
  *   npx playwright test e2e/videos/v13-reports.spec.ts --headed
@@ -19,8 +23,8 @@ test.use({
 })
 
 test.describe("V13 — Relatórios e Score Financeiro", () => {
-  test("relatórios, score e sugestão de orçamento", async ({ page }) => {
-    // Login como Cussei
+  test("relatórios, score financeiro e sugestão de orçamento", async ({ page }) => {
+    // ---- Login ----
     await login(page, "923456789")
 
     // Marcar todos os tours como vistos
@@ -33,7 +37,7 @@ test.describe("V13 — Relatórios e Score Financeiro", () => {
     await dismissTour(page)
 
     // =================================================================
-    // RELATÓRIOS — GASTOS POR CATEGORIA
+    // 1. VIEW — RELATÓRIOS: GASTOS POR CATEGORIA
     // =================================================================
     await page.goto("/reports")
     await page.waitForTimeout(2000)
@@ -43,52 +47,63 @@ test.describe("V13 — Relatórios e Score Financeiro", () => {
     await expect(
       page.locator("text=/[Rr]elatório|[Gg]astos|[Cc]ategoria|[Dd]espesas/").first()
     ).toBeVisible({ timeout: 6000 })
-    await page.waitForTimeout(3000) // apreciar o gráfico de gastos por categoria
+    await page.waitForTimeout(2500) // apreciar o gráfico de gastos por categoria
 
     // Interagir com filtros de período se disponíveis
-    const monthFilter = page.getByRole("button", { name: /[Ee]ste [Mm]ês|[Mm]ês [Aa]ctual/ }).or(
-      page.getByRole("tab", { name: /[Mm]ês/ })
-    )
-    if (await monthFilter.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await monthFilter.click()
-      await page.waitForTimeout(1500)
-    }
+    try {
+      const monthFilter = page.getByRole("button", { name: /[Ee]ste [Mm]ês|[Mm]ês [Aa]ctual/ }).or(
+        page.getByRole("tab", { name: /[Mm]ês/ })
+      )
+      if (await monthFilter.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await monthFilter.click()
+        await page.waitForTimeout(1500)
+      }
+    } catch { /* continuar */ }
 
-    await page.waitForTimeout(2000)
+    // Percorrer para mostrar mais gráficos
+    await page.mouse.wheel(0, 300)
+    await page.waitForTimeout(1500)
+    await page.mouse.wheel(0, -300)
+    await page.waitForTimeout(1000)
+
+    await page.waitForTimeout(1500)
 
     // =================================================================
-    // ASSISTENTE — SCORE FINANCEIRO
+    // 2. ASSISTENTE — CONVERSA SOBRE FINANÇAS
     // =================================================================
     await page.goto("/assistant")
     await page.waitForTimeout(2000)
     await dismissTour(page)
+    await page.waitForTimeout(1000)
 
     // Pergunta 1: Score financeiro
     try {
       await sendChat(page, "qual é o meu score financeiro?")
       await page.waitForTimeout(5000)
-    } catch {
-      // LLM pode falhar — continuar
-    }
+    } catch { /* LLM pode falhar — continuar */ }
 
-    // Pergunta 2: Sugestão de orçamento (na mesma conversa — L1)
+    // Pergunta 2: Sugestão de orçamento (mesma conversa — L1: sem newConversation)
     try {
-      await sendChat(page, "sugere-me um orçamento para o próximo mês")
+      await sendChat(page, "sugere-me um orçamento baseado nos meus gastos")
       await page.waitForTimeout(5000)
-    } catch {
-      // continuar
-    }
+    } catch { /* continuar */ }
+
+    // Pergunta 3: Gerar relatório do mês
+    try {
+      await sendChat(page, "gera o relatório deste mês")
+      await page.waitForTimeout(5000)
+    } catch { /* continuar */ }
 
     // Pausa para ler a resposta
     await page.waitForTimeout(2000)
 
     // =================================================================
-    // ENCERRAMENTO — DASHBOARD
+    // 3. DASHBOARD — ENCERRAMENTO
     // =================================================================
     await page.goto("/dashboard")
     await page.waitForTimeout(2000)
     await dismissTour(page)
     await expect(page.locator("text=Património Líquido")).toBeVisible({ timeout: 6000 })
-    await page.waitForTimeout(3000) // pausa final
+    await page.waitForTimeout(3000) // pausa final no dashboard
   })
 })

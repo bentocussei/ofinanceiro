@@ -1,8 +1,12 @@
 /**
- * V10 — Património (Bens Físicos)
+ * V10 — Bens Físicos / Património (view + detalhe + dashboard)
  *
- * Mostra os bens físicos do Cussei (Toyota Hilux, equipamento informático,
- * mobiliário), o detalhe de um bem e o impacto no patrimônio do dashboard.
+ * Login Cussei → /assets
+ * 1. VIEW: lista com Toyota, equipamento, mobiliário
+ * 2. DETAIL: clicar num bem
+ * 3. VIEW: detalhes do bem
+ * 4. CLOSE detalhe
+ * 5. Dashboard para ver o patrimônio total
  *
  * Executar:
  *   npx playwright test e2e/videos/v10-assets.spec.ts --headed
@@ -18,8 +22,8 @@ test.use({
 })
 
 test.describe("V10 — Bens Físicos (Património)", () => {
-  test("visualizar bens e impacto no patrimônio", async ({ page }) => {
-    // Login como Cussei
+  test("visualizar bens físicos e impacto no patrimônio", async ({ page }) => {
+    // ---- Login ----
     await login(page, "923456789")
 
     // Marcar todos os tours como vistos
@@ -32,7 +36,7 @@ test.describe("V10 — Bens Físicos (Património)", () => {
     await dismissTour(page)
 
     // =================================================================
-    // LISTA DE BENS
+    // 1. VIEW — LISTA DE BENS FÍSICOS
     // =================================================================
     await page.goto("/assets")
     await page.waitForTimeout(2000)
@@ -44,36 +48,58 @@ test.describe("V10 — Bens Físicos (Património)", () => {
     ).toBeVisible({ timeout: 6000 })
     await page.waitForTimeout(2500) // apreciar a lista de bens
 
-    // =================================================================
-    // DETALHE DE UM BEM
-    // =================================================================
+    // Percorrer para mostrar todos os bens
+    await page.mouse.wheel(0, 200)
+    await page.waitForTimeout(1000)
+    await page.mouse.wheel(0, -200)
+    await page.waitForTimeout(800)
 
-    // Tentar clicar no Toyota Hilux
+    // =================================================================
+    // 2. DETAIL — CLICAR NO TOYOTA (ou primeiro bem)
+    // =================================================================
     const toyotaAsset = page.locator("text=/[Tt]oyota/").first()
     const firstAsset = page.locator("[data-testid*='asset'], .asset-card, [href*='/assets/']").first()
+    const anyRow = page.locator("tr[data-row]").first()
+
+    let assetOpened = false
 
     const assetToClick = await toyotaAsset.isVisible({ timeout: 2000 }).catch(() => false)
       ? toyotaAsset
-      : firstAsset
+      : (await firstAsset.isVisible({ timeout: 2000 }).catch(() => false) ? firstAsset : anyRow)
 
     if (await assetToClick.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Tentar clicar no cartão pai
-      const assetParent = assetToClick.locator(
-        "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'asset')]"
-      ).first()
-      const parentVisible = await assetParent.isVisible({ timeout: 1000 }).catch(() => false)
-
-      if (parentVisible) {
-        await assetParent.click()
-      } else {
+      try {
+        const assetParent = assetToClick.locator(
+          "xpath=ancestor::*[@role='button' or @role='link' or contains(@class,'card') or contains(@class,'asset')]"
+        ).first()
+        if (await assetParent.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await assetParent.click()
+        } else {
+          await assetToClick.click()
+        }
+        assetOpened = true
+      } catch {
         await assetToClick.click()
+        assetOpened = true
       }
 
       await page.waitForTimeout(2000)
       await dismissTour(page)
-      await page.waitForTimeout(2500) // apreciar o detalhe do bem
 
-      // Fechar detalhe / voltar à lista
+      // =================================================================
+      // 3. VIEW — DETALHES DO BEM
+      // =================================================================
+      await page.waitForTimeout(2500) // apreciar: valor, depreciação, ano de aquisição
+
+      // Percorrer para mostrar mais detalhes
+      await page.mouse.wheel(0, 200)
+      await page.waitForTimeout(1000)
+      await page.mouse.wheel(0, -200)
+      await page.waitForTimeout(800)
+
+      // =================================================================
+      // 4. CLOSE — FECHAR DETALHE
+      // =================================================================
       const backBtn = page.getByRole("button", { name: /[Vv]oltar|[Ff]echar/ })
       if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await backBtn.click()
@@ -84,8 +110,11 @@ test.describe("V10 — Bens Físicos (Património)", () => {
       }
     }
 
+    // Pausa final na lista de bens
+    await page.waitForTimeout(1500)
+
     // =================================================================
-    // DASHBOARD — PATRIMÔNIO TOTAL INCLUI BENS
+    // 5. DASHBOARD — VER PATRIMÔNIO TOTAL COM BENS
     // =================================================================
     await page.goto("/dashboard")
     await page.waitForTimeout(2000)

@@ -1,8 +1,14 @@
 /**
- * V04 — Gestão de Contas
+ * V04 — Gestão de Contas (CRUD completo)
  *
- * Mostra a lista de contas, criação de nova conta Multicaixa Express,
- * detalhe de uma conta e o impacto nos totais do dashboard.
+ * Login Cussei → /accounts
+ * 1. VIEW: lista com 3 contas e saldos
+ * 2. CREATE: Nova conta "Multicaixa Express" (mobile_money, 5.000 Kz)
+ * 3. VERIFY: nova conta aparece na lista
+ * 4. DETAIL: clicar numa conta para ver detalhe
+ * 5. EDIT: alterar nome ou instituição, guardar
+ * 6. CLOSE: fechar detalhe
+ * 7. Dashboard: ver totais actualizados
  *
  * Executar:
  *   npx playwright test e2e/videos/v04-accounts.spec.ts --headed
@@ -18,8 +24,8 @@ test.use({
 })
 
 test.describe("V04 — Gestão de Contas", () => {
-  test("criar e gerir contas bancárias", async ({ page }) => {
-    // Login como Cussei
+  test("CRUD completo de contas bancárias", async ({ page }) => {
+    // ---- Login ----
     await login(page, "923456789")
 
     // Marcar todos os tours como vistos
@@ -32,15 +38,15 @@ test.describe("V04 — Gestão de Contas", () => {
     await dismissTour(page)
 
     // =================================================================
-    // LISTA DE CONTAS
+    // 1. VIEW — LISTA DE CONTAS
     // =================================================================
     await page.goto("/accounts")
     await page.waitForTimeout(2000)
     await dismissTour(page)
-    await page.waitForTimeout(2500) // mostrar contas existentes
+    await page.waitForTimeout(2500) // mostrar contas existentes com saldos
 
     // =================================================================
-    // CRIAR NOVA CONTA
+    // 2. CREATE — NOVA CONTA
     // =================================================================
 
     // Abrir diálogo de nova conta
@@ -49,7 +55,6 @@ test.describe("V04 — Gestão de Contas", () => {
       await newAccountBtn.click()
       await page.waitForTimeout(1500)
     } else {
-      // Tentar o botão "+" ou FAB
       const fabBtn = page.locator("button[aria-label*='conta'], button[title*='conta']").first()
       if (await fabBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await fabBtn.click()
@@ -58,85 +63,165 @@ test.describe("V04 — Gestão de Contas", () => {
     }
 
     // Preencher nome da conta
-    const nameInput = page.getByRole("textbox", { name: /[Nn]ome/ })
-    if (await nameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await nameInput.fill("Multicaixa Express")
-      await page.waitForTimeout(700)
-    }
-
-    // Seleccionar tipo de conta (mobile_money / carteira digital)
-    const typeSelect = page.getByRole("combobox", { name: /[Tt]ipo/ })
-    if (await typeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await typeSelect.click()
-      await page.waitForTimeout(500)
-      // Procurar opção de mobile money / carteira digital
-      const mobileMoneyOpt = page.getByRole("option", { name: /[Mm]obile|[Cc]arteira|[Dd]igital/ })
-      if (await mobileMoneyOpt.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await mobileMoneyOpt.click()
+    try {
+      const nameInput = page.getByRole("textbox", { name: /[Nn]ome/ })
+      if (await nameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await nameInput.fill("Multicaixa Express")
+        await page.waitForTimeout(700)
       } else {
-        await page.keyboard.press("Escape")
-      }
-      await page.waitForTimeout(500)
-    }
-
-    // Preencher saldo inicial
-    const balanceInput = page.getByRole("spinbutton", { name: /[Ss]aldo/ })
-    if (await balanceInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await balanceInput.fill("500000")
-      await page.waitForTimeout(700)
-    } else {
-      const balanceAlt = page.locator("input[name='balance'], input[placeholder*='aldo']").first()
-      if (await balanceAlt.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await balanceAlt.fill("500000")
+        await page.evaluate(() => {
+          const inputs = document.querySelectorAll('input[type="text"]')
+          for (const e of inputs) {
+            const el = e as HTMLInputElement
+            if (!el.value && (el.placeholder?.toLowerCase().includes("nome") || el.name?.toLowerCase().includes("name"))) {
+              const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!
+              setter.call(el, "Multicaixa Express")
+              el.dispatchEvent(new Event("input", { bubbles: true }))
+              break
+            }
+          }
+        })
         await page.waitForTimeout(700)
       }
-    }
+    } catch { /* continuar */ }
+
+    // Seleccionar tipo de conta (mobile_money / carteira digital)
+    try {
+      const typeSelect = page.getByRole("combobox", { name: /[Tt]ipo/ })
+      if (await typeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await typeSelect.click()
+        await page.waitForTimeout(500)
+        const mobileOpt = page.getByRole("option", { name: /[Mm]obile|[Cc]arteira|[Dd]igital/ })
+        if (await mobileOpt.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await mobileOpt.click()
+        } else {
+          await page.keyboard.press("Escape")
+        }
+        await page.waitForTimeout(500)
+      }
+    } catch { /* continuar */ }
+
+    // Preencher saldo inicial — usar evaluate para inputs base-ui
+    try {
+      const balanceInput = page.getByRole("spinbutton", { name: /[Ss]aldo/ })
+      if (await balanceInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await balanceInput.fill("500000")
+        await page.waitForTimeout(700)
+      } else {
+        await page.evaluate(() => {
+          const inputs = document.querySelectorAll('input[type="number"]')
+          for (const e of inputs) {
+            const el = e as HTMLInputElement
+            if (!el.value) {
+              const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!
+              setter.call(el, "500000")
+              el.dispatchEvent(new Event("input", { bubbles: true }))
+              break
+            }
+          }
+        })
+        await page.waitForTimeout(700)
+      }
+    } catch { /* continuar */ }
 
     // Pausa para mostrar o formulário preenchido
     await page.waitForTimeout(1500)
 
     // Confirmar criação
-    const saveBtn = page.getByRole("button", { name: /[Cc]riar|[Ss]alvar|[Gg]uardar|[Aa]dicionar/ })
-    if (await saveBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await saveBtn.click()
-      await page.waitForTimeout(2000)
-    } else {
-      await page.keyboard.press("Escape")
-      await page.waitForTimeout(1000)
-    }
-
-    // Mostrar a lista actualizada com a nova conta
-    await page.waitForTimeout(2000)
+    try {
+      const saveBtn = page.getByRole("button", { name: /[Cc]riar|[Ss]alvar|[Gg]uardar|[Aa]dicionar/ })
+      if (await saveBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await saveBtn.click()
+        await page.waitForTimeout(2000) // mostrar o resultado
+      } else {
+        await page.keyboard.press("Escape")
+        await page.waitForTimeout(1000)
+      }
+    } catch { /* continuar */ }
 
     // =================================================================
-    // DETALHE DE UMA CONTA
+    // 3. VERIFY — NOVA CONTA NA LISTA
     // =================================================================
+    await page.waitForTimeout(2000) // apreciar a lista com a nova conta
 
-    // Clicar na primeira conta para ver o detalhe
+    // =================================================================
+    // 4. DETAIL — CLICAR NUMA CONTA
+    // =================================================================
     const firstAccount = page.locator("[data-tour='account-card'], .account-card, [href*='/accounts/']").first()
-    if (await firstAccount.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await firstAccount.click()
+    const anyRow = page.locator("tr[data-row]").first()
+
+    const accountEl = await firstAccount.isVisible({ timeout: 2000 }).catch(() => false)
+      ? firstAccount
+      : anyRow
+
+    if (await accountEl.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await accountEl.click()
       await page.waitForTimeout(2000)
       await dismissTour(page)
-      await page.waitForTimeout(2500)
+      await page.waitForTimeout(2000) // apreciar o detalhe da conta
 
-      // Voltar à lista
-      const backBtn = page.getByRole("button", { name: /[Vv]oltar|[Bb]ack/ })
-      if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await backBtn.click()
+      // =================================================================
+      // 5. EDIT — ALTERAR NOME OU INSTITUIÇÃO
+      // =================================================================
+      try {
+        const editBtn = page.getByRole("button", { name: /[Ee]ditar|[Ee]dit/ })
+        if (await editBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await editBtn.click()
+          await page.waitForTimeout(1200)
+
+          // Alterar o nome ou a instituição
+          const nameField = page.getByRole("textbox", { name: /[Nn]ome/ })
+          if (await nameField.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await nameField.selectText()
+            await nameField.fill("Multicaixa Express Pro")
+            await page.waitForTimeout(800)
+          } else {
+            // Tentar alterar a instituição
+            const instField = page.getByRole("textbox", { name: /[Ii]nstituição|[Bb]anco/ })
+            if (await instField.isVisible({ timeout: 1500 }).catch(() => false)) {
+              await instField.selectText()
+              await instField.fill("Multicaixa")
+              await page.waitForTimeout(800)
+            }
+          }
+
+          await page.waitForTimeout(1000)
+
+          // Guardar edição
+          const saveEditBtn = page.getByRole("button", { name: /[Gg]uardar|[Ss]alvar|[Aa]ctualizar|[Uu]pdate/ })
+          if (await saveEditBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await saveEditBtn.click()
+            await page.waitForTimeout(1500) // mostrar a actualização
+          } else {
+            await page.keyboard.press("Escape")
+            await page.waitForTimeout(800)
+          }
+        }
+      } catch { /* continuar */ }
+
+      // =================================================================
+      // 6. CLOSE — FECHAR DETALHE
+      // =================================================================
+      await page.waitForTimeout(1000)
+      const closeBtn = page.getByRole("button", { name: /[Ff]echar|[Vv]oltar/ })
+      if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await closeBtn.click()
       } else {
-        await page.goto("/accounts")
+        await page.keyboard.press("Escape")
       }
       await page.waitForTimeout(1500)
     }
 
+    // Pausa para ver a lista actualizada
+    await page.waitForTimeout(1500)
+
     // =================================================================
-    // DASHBOARD — VERIFICAR TOTAIS ACTUALIZADOS
+    // 7. DASHBOARD — TOTAIS ACTUALIZADOS
     // =================================================================
     await page.goto("/dashboard")
     await page.waitForTimeout(2000)
     await dismissTour(page)
     await expect(page.locator("text=Património Líquido")).toBeVisible({ timeout: 6000 })
-    await page.waitForTimeout(3000) // pausa final
+    await page.waitForTimeout(3000) // pausa final no dashboard
   })
 })
