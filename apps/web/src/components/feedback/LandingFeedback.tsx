@@ -124,9 +124,6 @@ export function LandingFeedback() {
                   <p className="text-5xl font-bold font-mono tracking-tight">
                     {avgRating.toFixed(1)}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    / 5
-                  </p>
                 </div>
                 <div className="space-y-1">
                   <StarRating value={Math.round(avgRating)} size="lg" />
