@@ -97,7 +97,7 @@ export function FeedbackWidget() {
         complaint: "complaint",
       }
       await feedbackApi.submit({
-        feedback_type: typeMap[tab],
+        type: typeMap[tab],
         rating: tab === "rating" ? rating : undefined,
         message: message.trim() || undefined,
         contact_name: contactName.trim() || undefined,

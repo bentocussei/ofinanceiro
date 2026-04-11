@@ -81,7 +81,7 @@ export function LandingFeedback() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          feedback_type: "rating",
+          type: "rating",
           rating,
           message: message.trim() || undefined,
           contact_name: name.trim() || undefined,
