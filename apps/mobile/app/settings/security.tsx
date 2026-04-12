@@ -1,0 +1,156 @@
+import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import { useState } from 'react'
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useColorScheme,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+
+import { apiFetch } from '../../lib/api'
+
+export default function SecurityScreen() {
+  const isDark = useColorScheme() === 'dark'
+  const router = useRouter()
+
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleChangePassword() {
+    if (!newPassword.trim()) {
+      Alert.alert('Erro', 'Preencha a nova senha')
+      return
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas nao coincidem')
+      return
+    }
+    Keyboard.dismiss()
+    setSaving(true)
+    try {
+      await apiFetch('/api/v1/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          current_password: currentPassword || null,
+          new_password: newPassword,
+        }),
+      })
+      Alert.alert('Sucesso', 'Senha alterada com sucesso')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Erro ao alterar senha')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const bg = isDark ? '#000' : '#f5f5f5'
+  const card = isDark ? '#1a1a1a' : '#fff'
+  const text = isDark ? '#fff' : '#000'
+  const muted = isDark ? '#888' : '#666'
+  const border = isDark ? '#333' : '#e5e5e5'
+  const accent = isDark ? '#fff' : '#000'
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <Pressable onPress={() => router.back()} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={24} color={text} />
+            </Pressable>
+            <Text style={[styles.title, { color: text }]}>Seguranca</Text>
+          </View>
+
+          <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
+            <Text style={[styles.sectionLabel, { color: text }]}>Alterar senha</Text>
+
+            <Text style={[styles.label, { color: muted }]}>Senha actual (se tiver)</Text>
+            <TextInput
+              style={[styles.input, { borderColor: border, color: text }]}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="Deixe vazio se nao definiu"
+              placeholderTextColor={muted}
+              secureTextEntry
+            />
+
+            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Nova senha</Text>
+            <TextInput
+              style={[styles.input, { borderColor: border, color: text }]}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Minimo 6 caracteres"
+              placeholderTextColor={muted}
+              secureTextEntry
+            />
+
+            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Confirmar nova senha</Text>
+            <TextInput
+              style={[styles.input, { borderColor: border, color: text }]}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Repita a nova senha"
+              placeholderTextColor={muted}
+              secureTextEntry
+            />
+
+            <Pressable
+              style={[styles.saveBtn, { backgroundColor: accent }, saving && { opacity: 0.6 }]}
+              onPress={handleChangePassword}
+              disabled={saving}
+            >
+              <Text style={[styles.saveBtnText, { color: isDark ? '#000' : '#fff' }]}>
+                {saving ? 'A alterar...' : 'Alterar senha'}
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  backBtn: { padding: 4, marginRight: 12 },
+  title: { fontSize: 22, fontWeight: '700' },
+  card: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, padding: 20 },
+  sectionLabel: { fontSize: 17, fontWeight: '600', marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '500', marginBottom: 8 },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  saveBtn: {
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  saveBtnText: { fontSize: 16, fontWeight: '600' },
+})

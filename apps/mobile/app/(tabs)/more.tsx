@@ -29,7 +29,7 @@ export default function MoreScreen() {
         <MenuItem icon="newspaper-outline" label="Notícias" isDark={isDark} onPress={() => router.push('/news')} />
         <MenuItem icon="school-outline" label="Educação" isDark={isDark} onPress={() => router.push('/education')} />
         <MenuItem icon="notifications-outline" label="Notificações" isDark={isDark} onPress={() => router.push('/notifications')} />
-        <MenuItem icon="settings-outline" label="Configurações" isDark={isDark} />
+        <MenuItem icon="settings-outline" label="Configurações" isDark={isDark} onPress={() => router.push('/settings')} />
 
         <Pressable style={styles.logoutRow} onPress={logout}>
           <Ionicons name="log-out-outline" size={22} color="#ef4444" />
