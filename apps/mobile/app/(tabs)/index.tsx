@@ -13,8 +13,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import ContextSwitcher from '../../components/common/ContextSwitcher'
 import FAB from '../../components/common/FAB'
 import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
+import { isFamilyContext } from '../../lib/context'
 import { formatKz, formatRelativeDate } from '../../lib/format'
 import { useAccountsStore } from '../../stores/accounts'
 import { Transaction, useTransactionsStore } from '../../stores/transactions'
@@ -85,6 +87,7 @@ export default function HomeScreen() {
               <Text style={[styles.greeting, isDark && styles.textLight]}>
                 O Financeiro
               </Text>
+              <ContextSwitcher onContextChange={onRefresh} />
             </View>
 
             <View style={[styles.balanceCard, isDark && styles.cardDark]}>
@@ -142,7 +145,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   containerDark: { backgroundColor: '#000' },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   greeting: { fontSize: 24, fontWeight: '700', color: '#000' },
   balanceCard: {
     marginHorizontal: 16, marginVertical: 12, padding: 20,

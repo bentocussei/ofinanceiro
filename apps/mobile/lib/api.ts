@@ -5,6 +5,8 @@
 
 import * as SecureStore from 'expo-secure-store'
 
+import { getContextHeader } from './context'
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000'
 
 const TOKEN_KEY = 'access_token'
@@ -55,6 +57,7 @@ export async function apiFetch<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Context': getContextHeader(),
     ...(options.headers as Record<string, string>),
   }
 

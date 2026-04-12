@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 
+import { loadContext } from '../lib/context'
 import { useAuthStore } from '../stores/auth'
 
 export { ErrorBoundary } from 'expo-router'
@@ -38,7 +39,7 @@ export default function RootLayout() {
   const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth)
 
   useEffect(() => {
-    checkAuth().finally(() => {
+    Promise.all([checkAuth(), loadContext()]).finally(() => {
       SplashScreen.hideAsync()
     })
   }, [])
