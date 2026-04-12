@@ -7,8 +7,11 @@ import { useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 
+import { isBiometricEnabled, authenticate } from '../lib/biometrics'
 import { loadContext } from '../lib/context'
+import { registerForPushNotifications } from '../lib/pushNotifications'
 import { useAuthStore } from '../stores/auth'
+import { hasCompletedOnboarding } from './onboarding'
 
 export { ErrorBoundary } from 'expo-router'
 
@@ -24,11 +27,19 @@ function useProtectedRoute() {
     if (isCheckingAuth) return
 
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'register'
+    const inOnboarding = segments[0] === 'onboarding'
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/login')
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)')
+    } else if (isAuthenticated && inAuthGroup && !inOnboarding) {
+      // Check onboarding
+      hasCompletedOnboarding().then((done) => {
+        if (done) {
+          router.replace('/(tabs)')
+        } else {
+          router.replace('/onboarding')
+        }
+      })
     }
   }, [isAuthenticated, isCheckingAuth, segments])
 }
@@ -39,9 +50,27 @@ export default function RootLayout() {
   const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth)
 
   useEffect(() => {
-    Promise.all([checkAuth(), loadContext()]).finally(() => {
+    async function init() {
+      await Promise.all([checkAuth(), loadContext()])
+
+      // Biometric check after auth
+      const isAuth = useAuthStore.getState().isAuthenticated
+      if (isAuth) {
+        const bioEnabled = await isBiometricEnabled()
+        if (bioEnabled) {
+          const success = await authenticate('Autentique-se para abrir O Financeiro')
+          if (!success) {
+            // User failed biometric — log them out
+            useAuthStore.getState().logout()
+          }
+        }
+        // Register push notifications in background
+        registerForPushNotifications().catch(() => {})
+      }
+
       SplashScreen.hideAsync()
-    })
+    }
+    init()
   }, [])
 
   useProtectedRoute()
@@ -54,6 +83,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
         </Stack>
         <StatusBar style="auto" />

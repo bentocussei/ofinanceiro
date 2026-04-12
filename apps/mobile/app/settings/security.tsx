@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Alert,
   Keyboard,
@@ -9,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -17,6 +18,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import {
+  isBiometricAvailable,
+  getBiometricType,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  authenticate,
+} from '../../lib/biometrics'
 
 export default function SecurityScreen() {
   const isDark = useColorScheme() === 'dark'
@@ -26,6 +34,32 @@ export default function SecurityScreen() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Biometrics
+  const [bioAvailable, setBioAvailable] = useState(false)
+  const [bioType, setBioType] = useState<string | null>(null)
+  const [bioEnabled, setBioEnabled] = useState(false)
+
+  useEffect(() => {
+    async function checkBio() {
+      const available = await isBiometricAvailable()
+      setBioAvailable(available)
+      if (available) {
+        setBioType(await getBiometricType())
+        setBioEnabled(await isBiometricEnabled())
+      }
+    }
+    checkBio()
+  }, [])
+
+  async function handleToggleBiometric(value: boolean) {
+    if (value) {
+      const success = await authenticate('Active a biometria para proteger a app')
+      if (!success) return
+    }
+    await setBiometricEnabled(value)
+    setBioEnabled(value)
+  }
 
   async function handleChangePassword() {
     if (!newPassword.trim()) {
@@ -125,6 +159,35 @@ export default function SecurityScreen() {
               </Text>
             </Pressable>
           </View>
+
+          {/* Biometric auth */}
+          {bioAvailable && (
+            <View style={[styles.card, { backgroundColor: card, borderColor: border, marginTop: 16 }]}>
+              <Text style={[styles.sectionLabel, { color: text }]}>Biometria</Text>
+              <View style={styles.bioRow}>
+                <View style={styles.bioInfo}>
+                  <Ionicons
+                    name={bioType === 'Face ID' ? 'scan-outline' : 'finger-print-outline'}
+                    size={22}
+                    color={muted}
+                  />
+                  <View>
+                    <Text style={[styles.bioLabel, { color: text }]}>
+                      {bioType || 'Biometria'}
+                    </Text>
+                    <Text style={[styles.bioDesc, { color: muted }]}>
+                      Proteger abertura da app
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={bioEnabled}
+                  onValueChange={handleToggleBiometric}
+                  trackColor={{ false: isDark ? '#333' : '#e5e5e5', true: '#22c55e' }}
+                />
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -153,4 +216,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   saveBtnText: { fontSize: 16, fontWeight: '600' },
+  bioRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bioInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  bioLabel: { fontSize: 15, fontWeight: '500' },
+  bioDesc: { fontSize: 12, marginTop: 2 },
 })
