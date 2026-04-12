@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import ContextSwitcher from '../../components/common/ContextSwitcher'
 import FAB from '../../components/common/FAB'
+import FeedbackSheet from '../../components/feedback/FeedbackSheet'
+import ReferralCard from '../../components/referral/ReferralCard'
 import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
 import { isFamilyContext } from '../../lib/context'
 import { formatKz, formatRelativeDate } from '../../lib/format'
@@ -26,6 +28,7 @@ export default function HomeScreen() {
   const isDark = colorScheme === 'dark'
   const router = useRouter()
   const txnSheetRef = useRef<BottomSheet>(null)
+  const feedbackRef = useRef<BottomSheet>(null)
 
   const { summary, fetchSummary } = useAccountsStore()
   const { transactions, fetchTransactions, isLoading } = useTransactionsStore()
@@ -134,10 +137,23 @@ export default function HomeScreen() {
             </Text>
           </View>
         }
+        ListFooterComponent={
+          <View style={styles.footer}>
+            <ReferralCard />
+            <Pressable
+              style={[styles.feedbackBtn, isDark && styles.feedbackBtnDark]}
+              onPress={() => feedbackRef.current?.expand()}
+            >
+              <Ionicons name="chatbubble-outline" size={16} color={isDark ? '#aaa' : '#666'} />
+              <Text style={[styles.feedbackText, isDark && styles.textMuted]}>Dar feedback</Text>
+            </Pressable>
+          </View>
+        }
       />
 
       <FAB onPress={() => txnSheetRef.current?.expand()} />
       <CreateTransactionSheet ref={txnSheetRef} onCreated={onRefresh} />
+      <FeedbackSheet ref={feedbackRef} />
     </SafeAreaView>
   )
 }
@@ -180,6 +196,14 @@ const styles = StyleSheet.create({
   txnAmount: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyText: { fontSize: 16, color: '#999' },
+  footer: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 100, gap: 12 },
+  feedbackBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 12, borderRadius: 10,
+    backgroundColor: '#fff', borderWidth: 0.5, borderColor: '#e5e5e5',
+  },
+  feedbackBtnDark: { backgroundColor: '#1a1a1a', borderColor: '#333' },
+  feedbackText: { fontSize: 13, color: '#666' },
   textLight: { color: '#fff' },
   textMuted: { color: '#999' },
 })
