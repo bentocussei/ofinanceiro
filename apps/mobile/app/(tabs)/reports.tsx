@@ -116,7 +116,23 @@ export default function ReportsScreen() {
           </View>
         )}
 
-        {/* Spending by category — bar representation */}
+        {/* Savings rate */}
+        {summary && summary.income > 0 && (
+          <View style={[styles.savingsCard, isDark && styles.cardDark]}>
+            <Ionicons name="trending-up-outline" size={20} color={summary.balance >= 0 ? '#22c55e' : '#ef4444'} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.summaryLabel, isDark && styles.textMuted]}>Taxa de poupanca</Text>
+              <Text style={[styles.savingsValue, { color: summary.balance >= 0 ? '#22c55e' : '#ef4444' }]}>
+                {Math.round((summary.balance / summary.income) * 100)}%
+              </Text>
+            </View>
+            <Text style={[styles.savingsHint, isDark && styles.textMuted]}>
+              {summary.balance >= 0 ? 'Bom trabalho!' : 'Gastas mais do que ganhas'}
+            </Text>
+          </View>
+        )}
+
+        {/* Spending by category */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, isDark && styles.textLight]}>Gastos por categoria</Text>
         </View>
@@ -187,6 +203,12 @@ const styles = StyleSheet.create({
   balanceValue: { fontSize: 24, fontWeight: '700', fontFamily: 'monospace' },
   income: { color: '#22c55e' },
   expense: { color: '#ef4444' },
+  savingsCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 20,
+  },
+  savingsValue: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace' },
+  savingsHint: { fontSize: 12 },
   sectionHeader: { paddingHorizontal: 20, marginBottom: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
   categoryList: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 12 },

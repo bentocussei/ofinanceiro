@@ -211,6 +211,20 @@ export default function FamilyScreen() {
             {family.members.filter((m) => m.is_active).length} membros
           </Text>
         }
+        ListFooterComponent={
+          <View style={styles.familyActions}>
+            <Pressable style={[styles.actionRow, isDark && styles.cardDark]} onPress={() => router.push('/family/members')}>
+              <Ionicons name="people-outline" size={20} color={isDark ? '#aaa' : '#555'} />
+              <Text style={[styles.actionLabel, isDark && styles.textLight]}>Gerir membros</Text>
+              <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
+            </Pressable>
+            <Pressable style={[styles.actionRow, isDark && styles.cardDark]} onPress={() => router.push('/family/expense-splits')}>
+              <Ionicons name="receipt-outline" size={20} color={isDark ? '#aaa' : '#555'} />
+              <Text style={[styles.actionLabel, isDark && styles.textLight]}>Divisao de despesas</Text>
+              <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
+            </Pressable>
+          </View>
+        }
       />
     </SafeAreaView>
   )
@@ -263,6 +277,12 @@ const styles = StyleSheet.create({
   memberInfo: { flex: 1 },
   memberName: { fontSize: 15, fontWeight: '500', color: '#000' },
   memberRole: { fontSize: 12, color: '#999', marginTop: 1 },
+  familyActions: { paddingTop: 20, gap: 8 },
+  actionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    padding: 16, backgroundColor: '#fff', borderRadius: 12,
+  },
+  actionLabel: { flex: 1, fontSize: 15, color: '#000' },
   textLight: { color: '#fff' },
   textMuted: { color: '#999' },
 })
