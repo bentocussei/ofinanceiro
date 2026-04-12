@@ -25,6 +25,7 @@ export default function MoreScreen() {
         <MenuItem icon="receipt-outline" label="Contas a Pagar" isDark={isDark} onPress={() => router.push('/bills')} />
         <MenuItem icon="repeat-outline" label="Recorrentes" isDark={isDark} onPress={() => router.push('/recurring-rules')} />
         <MenuItem icon="trending-up-outline" label="Investimentos" isDark={isDark} onPress={() => router.push('/investments')} />
+        <MenuItem icon="cube-outline" label="Património" isDark={isDark} onPress={() => router.push('/assets')} />
         <MenuItem icon="people-outline" label="Família" isDark={isDark} onPress={() => router.push('/family')} />
         <MenuItem icon="newspaper-outline" label="Notícias" isDark={isDark} onPress={() => router.push('/news')} />
         <MenuItem icon="school-outline" label="Educação" isDark={isDark} onPress={() => router.push('/education')} />

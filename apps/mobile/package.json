@@ -13,6 +13,7 @@
     "@react-navigation/native": "^7.1.33",
     "@tanstack/react-query": "^5.95.2",
     "expo": "55.0.10-canary-20260328-bdc6273",
+    "expo-clipboard": "55.0.10-canary-20260328-bdc6273",
     "expo-constants": "55.0.10-canary-20260328-bdc6273",
     "expo-font": "55.0.5-canary-20260328-bdc6273",
     "expo-haptics": "^55.0.10-canary-20260328-bdc6273",
