@@ -43,10 +43,11 @@ const STATUS_LABELS: Record<string, string> = {
 export default function BillsScreen() {
   const isDark = useColorScheme() === 'dark'
   const router = useRouter()
-  const { bills, isLoading, fetchBills, createBill, payBill, deleteBill } = useBillsStore()
+  const { bills, isLoading, fetchBills, createBill, updateBill, payBill, deleteBill } = useBillsStore()
   const sheetRef = useRef<BottomSheet>(null)
   const snapPoints = useMemo(() => ['85%'], [])
 
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [dueDay, setDueDay] = useState('')
@@ -57,10 +58,24 @@ export default function BillsScreen() {
   const onRefresh = useCallback(() => fetchBills(), [])
 
   const resetForm = () => {
-    setName(''); setAmount(''); setDueDay(''); setFrequency('monthly')
+    setEditingId(null); setName(''); setAmount(''); setDueDay(''); setFrequency('monthly')
   }
 
-  const handleCreate = async () => {
+  const openEdit = (bill: Bill) => {
+    setEditingId(bill.id)
+    setName(bill.name)
+    setAmount(String(bill.amount / 100))
+    setDueDay(String(bill.due_day))
+    setFrequency(bill.frequency)
+    sheetRef.current?.expand()
+  }
+
+  const openCreate = () => {
+    resetForm()
+    sheetRef.current?.expand()
+  }
+
+  const handleSubmit = async () => {
     if (!name.trim()) { Alert.alert('Erro', 'O nome é obrigatório'); return }
     if (!amount || parseFloat(amount) <= 0) { Alert.alert('Erro', 'Defina o valor'); return }
     if (!dueDay || parseInt(dueDay) < 1 || parseInt(dueDay) > 31) {
@@ -69,17 +84,22 @@ export default function BillsScreen() {
 
     setIsSubmitting(true)
     try {
-      await createBill({
+      const data = {
         name: name.trim(),
         amount: Math.round(parseFloat(amount) * 100),
         due_day: parseInt(dueDay),
         frequency,
-      })
+      }
+      if (editingId) {
+        await updateBill(editingId, data)
+      } else {
+        await createBill(data)
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       resetForm()
       sheetRef.current?.close()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível criar a conta')
+      Alert.alert('Erro', error.message || 'Erro ao guardar')
     } finally {
       setIsSubmitting(false)
     }
@@ -124,6 +144,7 @@ export default function BillsScreen() {
     return (
       <Pressable
         style={[styles.card, isDark && styles.cardDark]}
+        onPress={() => openEdit(item)}
         onLongPress={() => handleDelete(item)}
       >
         <View style={styles.cardHeader}>
@@ -174,7 +195,7 @@ export default function BillsScreen() {
         <Text style={[styles.title, isDark && styles.textLight]}>Contas a Pagar</Text>
         <Pressable
           style={[styles.addBtnHeader, isDark && styles.addBtnDark]}
-          onPress={() => sheetRef.current?.expand()}
+          onPress={openCreate}
         >
           <Ionicons name="add" size={20} color="#3b82f6" />
         </Pressable>
@@ -252,10 +273,10 @@ export default function BillsScreen() {
 
           <Pressable
             style={[styles.submitBtn, isSubmitting && styles.submitDisabled]}
-            onPress={handleCreate}
+            onPress={handleSubmit}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitText}>{isSubmitting ? 'A criar...' : 'Criar conta'}</Text>
+            <Text style={styles.submitText}>{isSubmitting ? 'A guardar...' : editingId ? 'Guardar alteracoes' : 'Criar conta'}</Text>
           </Pressable>
         </BottomSheetScrollView>
       </BottomSheet>

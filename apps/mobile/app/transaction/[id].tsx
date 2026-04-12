@@ -17,11 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { apiFetch } from '../../lib/api'
 import { formatKz, formatDateFull } from '../../lib/format'
 import { useTransactionsStore } from '../../stores/transactions'
+import { useCategoriesStore, Category } from '../../stores/categories'
 
 interface TransactionDetail {
   id: string
   account_id: string
   category_id: string | null
+  category_name?: string
   amount: number
   type: 'income' | 'expense' | 'transfer'
   description: string | null
@@ -40,48 +42,70 @@ export default function TransactionDetailScreen() {
   const router = useRouter()
   const isDark = useColorScheme() === 'dark'
   const { deleteTransaction } = useTransactionsStore()
+  const { categories, fetchCategories, getParentCategories } = useCategoriesStore()
 
   const [txn, setTxn] = useState<TransactionDetail | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editDescription, setEditDescription] = useState('')
-  const [editAmount, setEditAmount] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Edit fields
+  const [editDescription, setEditDescription] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [editMerchant, setEditMerchant] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null)
+
   useEffect(() => {
+    fetchCategories()
     if (id) {
       apiFetch<TransactionDetail>(`/api/v1/transactions/${id}`)
         .then((data) => {
           setTxn(data)
-          setEditDescription(data.description || '')
-          setEditAmount(String(data.amount / 100))
+          populateEditFields(data)
           setIsLoading(false)
         })
         .catch(() => {
           setIsLoading(false)
-          Alert.alert('Erro', 'Transacção não encontrada')
+          Alert.alert('Erro', 'Transaccao nao encontrada')
           router.back()
         })
     }
   }, [id])
+
+  function populateEditFields(data: TransactionDetail) {
+    setEditDescription(data.description || '')
+    setEditAmount(String(data.amount / 100))
+    setEditMerchant(data.merchant || '')
+    setEditNotes(data.notes || '')
+    setEditDate(data.transaction_date?.slice(0, 10) || '')
+    setEditCategoryId(data.category_id)
+  }
 
   const handleSave = async () => {
     if (!txn) return
     setIsSaving(true)
     try {
       const amountCentavos = Math.round(parseFloat(editAmount) * 100)
+      const body: Record<string, unknown> = {}
+      if (editDescription.trim() !== (txn.description || '')) body.description = editDescription.trim() || null
+      if (amountCentavos > 0 && amountCentavos !== txn.amount) body.amount = amountCentavos
+      if (editMerchant.trim() !== (txn.merchant || '')) body.merchant = editMerchant.trim() || null
+      if (editNotes.trim() !== (txn.notes || '')) body.notes = editNotes.trim() || null
+      if (editDate && editDate !== txn.transaction_date?.slice(0, 10)) body.transaction_date = editDate
+      if (editCategoryId !== txn.category_id) body.category_id = editCategoryId
+
       const updated = await apiFetch<TransactionDetail>(`/api/v1/transactions/${txn.id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          description: editDescription.trim() || undefined,
-          amount: amountCentavos > 0 ? amountCentavos : undefined,
-        }),
+        body: JSON.stringify(body),
       })
       setTxn(updated)
+      populateEditFields(updated)
       setIsEditing(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível actualizar')
+      Alert.alert('Erro', error.message || 'Nao foi possivel actualizar')
     } finally {
       setIsSaving(false)
     }
@@ -89,7 +113,7 @@ export default function TransactionDetailScreen() {
 
   const handleDelete = () => {
     if (!txn) return
-    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar esta transacção?', [
+    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar esta transaccao?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -115,17 +139,27 @@ export default function TransactionDetailScreen() {
 
   if (!txn) return null
 
+  const availableCategories = getParentCategories(txn.type === 'transfer' ? undefined : txn.type)
+  const categoryName = categories.find((c) => c.id === txn.category_id)?.name
+
+  const bg = isDark ? '#000' : '#f5f5f5'
+  const card = isDark ? '#1a1a1a' : '#fff'
+  const text = isDark ? '#fff' : '#000'
+  const muted = isDark ? '#888' : '#666'
+  const border = isDark ? '#333' : '#e5e5e5'
+  const accent = isDark ? '#fff' : '#000'
+
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={text} />
         </Pressable>
-        <Text style={[styles.headerTitle, isDark && styles.textLight]}>Detalhe</Text>
+        <Text style={[styles.headerTitle, { color: text }]}>Detalhe</Text>
         <View style={styles.headerActions}>
-          <Pressable onPress={() => setIsEditing(!isEditing)} style={styles.actionBtn}>
-            <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={isDark ? '#fff' : '#000'} />
+          <Pressable onPress={() => { setIsEditing(!isEditing); if (isEditing && txn) populateEditFields(txn) }} style={styles.actionBtn}>
+            <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={text} />
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.actionBtn}>
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
@@ -133,98 +167,179 @@ export default function TransactionDetailScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* Amount */}
-        <View style={[styles.amountCard, isDark && styles.cardDark]}>
+        <View style={[styles.amountCard, { backgroundColor: card }]}>
           <Text style={[styles.typeLabel, txn.type === 'income' ? styles.income : styles.expense]}>
-            {txn.type === 'income' ? 'Receita' : txn.type === 'expense' ? 'Despesa' : 'Transferência'}
+            {txn.type === 'income' ? 'Receita' : txn.type === 'expense' ? 'Despesa' : 'Transferencia'}
           </Text>
           {isEditing ? (
             <TextInput
-              style={[styles.amountEdit, isDark && styles.textLight]}
+              style={[styles.amountEdit, { color: text }]}
               value={editAmount}
               onChangeText={setEditAmount}
               keyboardType="numeric"
+              placeholder="0"
+              placeholderTextColor={muted}
             />
           ) : (
-            <Text style={[styles.amount, isDark && styles.textLight]}>
+            <Text style={[styles.amount, { color: text }]}>
               {txn.type === 'income' ? '+' : '-'}{formatKz(txn.amount)}
             </Text>
           )}
-          <Text style={[styles.date, isDark && styles.textMuted]}>
-            {formatDateFull(txn.transaction_date)}
-          </Text>
-        </View>
-
-        {/* Details */}
-        <View style={[styles.detailCard, isDark && styles.cardDark]}>
-          <DetailRow label="Descrição" isDark={isDark}>
-            {isEditing ? (
-              <TextInput
-                style={[styles.editInput, isDark && styles.editInputDark]}
-                value={editDescription}
-                onChangeText={setEditDescription}
-                placeholder="Descrição"
-                placeholderTextColor="#999"
-              />
-            ) : (
-              <Text style={[styles.detailValue, isDark && styles.textLight]}>
-                {txn.description || '—'}
-              </Text>
-            )}
-          </DetailRow>
-
-          {txn.merchant && (
-            <DetailRow label="Comerciante" isDark={isDark}>
-              <Text style={[styles.detailValue, isDark && styles.textLight]}>{txn.merchant}</Text>
-            </DetailRow>
-          )}
-
-          {txn.notes && (
-            <DetailRow label="Notas" isDark={isDark}>
-              <Text style={[styles.detailValue, isDark && styles.textLight]}>{txn.notes}</Text>
-            </DetailRow>
-          )}
-
-          {txn.tags.length > 0 && (
-            <DetailRow label="Tags" isDark={isDark}>
-              <View style={styles.tagsRow}>
-                {txn.tags.map((tag) => (
-                  <View key={tag} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </DetailRow>
-          )}
-
-          <DetailRow label="Recorrente" isDark={isDark}>
-            <Text style={[styles.detailValue, isDark && styles.textLight]}>
-              {txn.is_recurring ? 'Sim' : 'Não'}
+          {!isEditing && (
+            <Text style={[styles.date, { color: muted }]}>
+              {formatDateFull(txn.transaction_date)}
             </Text>
-          </DetailRow>
+          )}
         </View>
 
-        {/* Save button in edit mode */}
-        {isEditing && (
-          <Pressable
-            style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
-            onPress={handleSave}
-            disabled={isSaving}
-          >
-            <Text style={styles.saveBtnText}>{isSaving ? 'A guardar...' : 'Guardar alterações'}</Text>
-          </Pressable>
-        )}
+        {/* Edit form / Details */}
+        <View style={[styles.detailCard, { backgroundColor: card }]}>
+          {isEditing ? (
+            <>
+              {/* Description */}
+              <EditField label="Descricao" isDark={isDark}>
+                <TextInput
+                  style={[styles.editInput, { borderColor: border, color: text }]}
+                  value={editDescription}
+                  onChangeText={setEditDescription}
+                  placeholder="Descricao"
+                  placeholderTextColor={muted}
+                />
+              </EditField>
+
+              {/* Date */}
+              <EditField label="Data (AAAA-MM-DD)" isDark={isDark}>
+                <TextInput
+                  style={[styles.editInput, { borderColor: border, color: text }]}
+                  value={editDate}
+                  onChangeText={setEditDate}
+                  placeholder="2026-04-12"
+                  placeholderTextColor={muted}
+                  keyboardType="numbers-and-punctuation"
+                />
+              </EditField>
+
+              {/* Category */}
+              <EditField label="Categoria" isDark={isDark}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+                  <Pressable
+                    style={[
+                      styles.catChip,
+                      { borderColor: border },
+                      !editCategoryId && { backgroundColor: accent },
+                    ]}
+                    onPress={() => setEditCategoryId(null)}
+                  >
+                    <Text style={[
+                      styles.catChipText,
+                      { color: !editCategoryId ? (isDark ? '#000' : '#fff') : muted },
+                    ]}>
+                      Nenhuma
+                    </Text>
+                  </Pressable>
+                  {availableCategories.map((cat) => (
+                    <Pressable
+                      key={cat.id}
+                      style={[
+                        styles.catChip,
+                        { borderColor: border },
+                        editCategoryId === cat.id && { backgroundColor: accent },
+                      ]}
+                      onPress={() => setEditCategoryId(cat.id)}
+                    >
+                      <Text style={[
+                        styles.catChipText,
+                        { color: editCategoryId === cat.id ? (isDark ? '#000' : '#fff') : muted },
+                      ]}>
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </EditField>
+
+              {/* Merchant */}
+              <EditField label="Comerciante" isDark={isDark}>
+                <TextInput
+                  style={[styles.editInput, { borderColor: border, color: text }]}
+                  value={editMerchant}
+                  onChangeText={setEditMerchant}
+                  placeholder="Nome do comerciante"
+                  placeholderTextColor={muted}
+                />
+              </EditField>
+
+              {/* Notes */}
+              <EditField label="Notas" isDark={isDark}>
+                <TextInput
+                  style={[styles.editInput, styles.editTextArea, { borderColor: border, color: text }]}
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  placeholder="Notas adicionais"
+                  placeholderTextColor={muted}
+                  multiline
+                  numberOfLines={3}
+                />
+              </EditField>
+
+              {/* Save */}
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: accent }, isSaving && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                disabled={isSaving}
+              >
+                <Text style={[styles.saveBtnText, { color: isDark ? '#000' : '#fff' }]}>
+                  {isSaving ? 'A guardar...' : 'Guardar alteracoes'}
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <DetailRow label="Descricao" value={txn.description || '—'} isDark={isDark} />
+              <DetailRow label="Data" value={formatDateFull(txn.transaction_date)} isDark={isDark} />
+              {categoryName && <DetailRow label="Categoria" value={categoryName} isDark={isDark} />}
+              {txn.merchant && <DetailRow label="Comerciante" value={txn.merchant} isDark={isDark} />}
+              {txn.notes && <DetailRow label="Notas" value={txn.notes} isDark={isDark} />}
+              {txn.tags.length > 0 && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: muted }]}>Tags</Text>
+                  <View style={styles.tagsRow}>
+                    {txn.tags.map((tag) => (
+                      <View key={tag} style={[styles.tag, { backgroundColor: isDark ? '#333' : '#f0f0f0' }]}>
+                        <Text style={[styles.tagText, { color: muted }]}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              <DetailRow label="Recorrente" value={txn.is_recurring ? 'Sim' : 'Nao'} isDark={isDark} />
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-function DetailRow({ label, isDark, children }: { label: string; isDark: boolean; children: React.ReactNode }) {
+function EditField({ label, isDark, children }: { label: string; isDark: boolean; children: React.ReactNode }) {
+  const muted = isDark ? '#888' : '#666'
+  return (
+    <View style={styles.editFieldBlock}>
+      <Text style={[styles.editFieldLabel, { color: muted }]}>{label}</Text>
+      {children}
+    </View>
+  )
+}
+
+function DetailRow({ label, value, isDark }: { label: string; value: string; isDark: boolean }) {
+  const muted = isDark ? '#888' : '#666'
+  const text = isDark ? '#fff' : '#000'
   return (
     <View style={styles.detailRow}>
-      <Text style={[styles.detailLabel, isDark && styles.textMuted]}>{label}</Text>
-      {children}
+      <Text style={[styles.detailLabel, { color: muted }]}>{label}</Text>
+      <Text style={[styles.detailValue, { color: text }]}>{value}</Text>
     </View>
   )
 }
@@ -239,40 +354,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '600' },
   headerActions: { flexDirection: 'row', gap: 12 },
   actionBtn: { padding: 4 },
-  content: { padding: 16, gap: 16 },
-  amountCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center',
-  },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  content: { padding: 16, gap: 16, paddingBottom: 40 },
+  amountCard: { borderRadius: 16, padding: 24, alignItems: 'center' },
   typeLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  amount: { fontSize: 36, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
+  amount: { fontSize: 36, fontWeight: '700', fontFamily: 'monospace' },
   amountEdit: {
     fontSize: 36, fontWeight: '700', fontFamily: 'monospace', textAlign: 'center',
-    borderBottomWidth: 2, borderBottomColor: '#3b82f6', paddingVertical: 4, color: '#000',
+    borderBottomWidth: 2, borderBottomColor: '#3b82f6', paddingVertical: 4,
   },
-  date: { fontSize: 14, color: '#999', marginTop: 8 },
-  detailCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16 },
+  date: { fontSize: 14, marginTop: 8 },
+  detailCard: { borderRadius: 16, padding: 16 },
   detailRow: { paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  detailLabel: { fontSize: 12, color: '#999', marginBottom: 4 },
-  detailValue: { fontSize: 15, color: '#000' },
+  detailLabel: { fontSize: 12, marginBottom: 4 },
+  detailValue: { fontSize: 15 },
+  editFieldBlock: { marginBottom: 16 },
+  editFieldLabel: { fontSize: 12, fontWeight: '500', marginBottom: 6 },
   editInput: {
-    fontSize: 15, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 8, color: '#000',
+    fontSize: 15, borderWidth: 1, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
   },
-  editInputDark: { borderColor: '#333', color: '#fff' },
+  editTextArea: { minHeight: 70, textAlignVertical: 'top' },
+  catScroll: { marginBottom: 4 },
+  catChip: {
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
+    borderWidth: 1, marginRight: 8,
+  },
+  catChipText: { fontSize: 13, fontWeight: '500' },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: { backgroundColor: '#f0f0f0', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  tagText: { fontSize: 12, color: '#666' },
+  tag: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  tagText: { fontSize: 12 },
   income: { color: '#22c55e' },
   expense: { color: '#ef4444' },
-  saveBtn: {
-    backgroundColor: '#3b82f6', borderRadius: 12, paddingVertical: 16, alignItems: 'center',
-  },
+  saveBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
+  saveBtnText: { fontSize: 16, fontWeight: '600' },
   textMuted: { color: '#999' },
 })

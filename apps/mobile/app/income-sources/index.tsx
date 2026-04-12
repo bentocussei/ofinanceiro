@@ -39,10 +39,11 @@ const FREQUENCIES = [
 export default function IncomeSourcesScreen() {
   const isDark = useColorScheme() === 'dark'
   const router = useRouter()
-  const { sources, isLoading, fetchSources, createSource, deleteSource } = useIncomeSourcesStore()
+  const { sources, isLoading, fetchSources, createSource, updateSource, deleteSource } = useIncomeSourcesStore()
   const sheetRef = useRef<BottomSheet>(null)
   const snapPoints = useMemo(() => ['85%'], [])
 
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [type, setType] = useState('salary')
   const [expectedAmount, setExpectedAmount] = useState('')
@@ -54,27 +55,44 @@ export default function IncomeSourcesScreen() {
   const onRefresh = useCallback(() => fetchSources(), [])
 
   const resetForm = () => {
-    setName(''); setType('salary'); setExpectedAmount(''); setFrequency('monthly'); setDayOfMonth('')
+    setEditingId(null); setName(''); setType('salary'); setExpectedAmount(''); setFrequency('monthly'); setDayOfMonth('')
   }
 
-  const handleCreate = async () => {
-    if (!name.trim()) { Alert.alert('Erro', 'O nome é obrigatório'); return }
+  const openEdit = (item: IncomeSource) => {
+    setEditingId(item.id)
+    setName(item.name)
+    setType(item.type)
+    setExpectedAmount(String(item.expected_amount / 100))
+    setFrequency(item.frequency)
+    setDayOfMonth(item.day_of_month ? String(item.day_of_month) : '')
+    sheetRef.current?.expand()
+  }
+
+  const openCreate = () => { resetForm(); sheetRef.current?.expand() }
+
+  const handleSubmit = async () => {
+    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatorio'); return }
     if (!expectedAmount || parseFloat(expectedAmount) <= 0) { Alert.alert('Erro', 'Defina o valor esperado'); return }
 
     setIsSubmitting(true)
     try {
-      await createSource({
+      const data = {
         name: name.trim(),
         type,
         expected_amount: Math.round(parseFloat(expectedAmount) * 100),
         frequency,
         day_of_month: dayOfMonth ? parseInt(dayOfMonth) : undefined,
-      })
+      }
+      if (editingId) {
+        await updateSource(editingId, data)
+      } else {
+        await createSource(data)
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       resetForm()
       sheetRef.current?.close()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível criar o rendimento')
+      Alert.alert('Erro', error.message || 'Erro ao guardar')
     } finally {
       setIsSubmitting(false)
     }
@@ -102,6 +120,7 @@ export default function IncomeSourcesScreen() {
   const renderItem = ({ item }: { item: IncomeSource }) => (
     <Pressable
       style={[styles.card, isDark && styles.cardDark]}
+      onPress={() => openEdit(item)}
       onLongPress={() => handleDelete(item)}
     >
       <View style={styles.cardHeader}>
@@ -144,7 +163,7 @@ export default function IncomeSourcesScreen() {
         <Text style={[styles.title, isDark && styles.textLight]}>Rendimentos</Text>
         <Pressable
           style={[styles.addBtn, isDark && styles.addBtnDark]}
-          onPress={() => sheetRef.current?.expand()}
+          onPress={openCreate}
         >
           <Ionicons name="add" size={20} color="#3b82f6" />
         </Pressable>
@@ -235,10 +254,10 @@ export default function IncomeSourcesScreen() {
 
           <Pressable
             style={[styles.submitBtn, isSubmitting && styles.submitDisabled]}
-            onPress={handleCreate}
+            onPress={handleSubmit}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitText}>{isSubmitting ? 'A criar...' : 'Criar rendimento'}</Text>
+            <Text style={styles.submitText}>{isSubmitting ? 'A guardar...' : editingId ? 'Guardar alteracoes' : 'Criar rendimento'}</Text>
           </Pressable>
         </BottomSheetScrollView>
       </BottomSheet>

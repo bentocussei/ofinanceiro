@@ -36,10 +36,11 @@ const FREQUENCIES = [
 export default function RecurringRulesScreen() {
   const isDark = useColorScheme() === 'dark'
   const router = useRouter()
-  const { rules, isLoading, fetchRules, createRule, deleteRule } = useRecurringRulesStore()
+  const { rules, isLoading, fetchRules, createRule, updateRule, deleteRule } = useRecurringRulesStore()
   const sheetRef = useRef<BottomSheet>(null)
   const snapPoints = useMemo(() => ['85%'], [])
 
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
@@ -51,27 +52,44 @@ export default function RecurringRulesScreen() {
   const onRefresh = useCallback(() => fetchRules(), [])
 
   const resetForm = () => {
-    setDescription(''); setAmount(''); setType('expense'); setFrequency('monthly'); setNextDueDate('')
+    setEditingId(null); setDescription(''); setAmount(''); setType('expense'); setFrequency('monthly'); setNextDueDate('')
   }
 
-  const handleCreate = async () => {
-    if (!description.trim()) { Alert.alert('Erro', 'A descrição é obrigatória'); return }
+  const openEdit = (rule: RecurringRule) => {
+    setEditingId(rule.id)
+    setDescription(rule.description)
+    setAmount(String(rule.amount / 100))
+    setType(rule.type)
+    setFrequency(rule.frequency)
+    setNextDueDate(rule.next_due_date?.slice(0, 10) || '')
+    sheetRef.current?.expand()
+  }
+
+  const openCreate = () => { resetForm(); sheetRef.current?.expand() }
+
+  const handleSubmit = async () => {
+    if (!description.trim()) { Alert.alert('Erro', 'A descricao e obrigatoria'); return }
     if (!amount || parseFloat(amount) <= 0) { Alert.alert('Erro', 'Defina o valor'); return }
 
     setIsSubmitting(true)
     try {
-      await createRule({
+      const data = {
         description: description.trim(),
         amount: Math.round(parseFloat(amount) * 100),
         type,
         frequency,
         next_due_date: nextDueDate.trim() || undefined,
-      })
+      }
+      if (editingId) {
+        await updateRule(editingId, data)
+      } else {
+        await createRule(data)
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       resetForm()
       sheetRef.current?.close()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível criar a regra')
+      Alert.alert('Erro', error.message || 'Erro ao guardar')
     } finally {
       setIsSubmitting(false)
     }
@@ -99,6 +117,7 @@ export default function RecurringRulesScreen() {
     return (
       <Pressable
         style={[styles.card, isDark && styles.cardDark]}
+        onPress={() => openEdit(item)}
         onLongPress={() => handleDelete(item)}
       >
         <View style={styles.cardHeader}>
@@ -145,7 +164,7 @@ export default function RecurringRulesScreen() {
         <Text style={[styles.title, isDark && styles.textLight]}>Recorrentes</Text>
         <Pressable
           style={[styles.addBtnHeader, isDark && styles.addBtnDark]}
-          onPress={() => sheetRef.current?.expand()}
+          onPress={openCreate}
         >
           <Ionicons name="add" size={20} color="#3b82f6" />
         </Pressable>
@@ -235,10 +254,10 @@ export default function RecurringRulesScreen() {
 
           <Pressable
             style={[styles.submitBtn, isSubmitting && styles.submitDisabled]}
-            onPress={handleCreate}
+            onPress={handleSubmit}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitText}>{isSubmitting ? 'A criar...' : 'Criar regra'}</Text>
+            <Text style={styles.submitText}>{isSubmitting ? 'A guardar...' : editingId ? 'Guardar alteracoes' : 'Criar regra'}</Text>
           </Pressable>
         </BottomSheetScrollView>
       </BottomSheet>

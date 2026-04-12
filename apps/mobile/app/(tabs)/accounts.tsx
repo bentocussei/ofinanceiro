@@ -74,6 +74,7 @@ export default function AccountsScreen() {
   const renderAccount = ({ item }: { item: Account }) => (
     <Pressable
       style={[styles.accountRow, isDark && styles.rowDark]}
+      onPress={() => router.push(`/accounts/${item.id}`)}
       onLongPress={() => handleAccountAction(item)}
     >
       <View style={styles.accountIcon}><IconDisplay name={item.type} size={24} color={isDark ? '#fff' : '#000'} /></View>
