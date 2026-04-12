@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
-import { useColorScheme } from 'react-native'
+import { Platform, useColorScheme } from 'react-native'
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()
   const tint = colorScheme === 'dark' ? '#fff' : '#000'
-  const inactive = colorScheme === 'dark' ? '#666' : '#999'
+  const inactive = colorScheme === 'dark' ? '#555' : '#aaa'
+  const bg = colorScheme === 'dark' ? '#000' : '#fff'
 
   return (
     <Tabs
@@ -13,10 +14,19 @@ export default function TabLayout() {
         tabBarActiveTintColor: tint,
         tabBarInactiveTintColor: inactive,
         tabBarStyle: {
+          backgroundColor: bg,
           borderTopWidth: 0.5,
-          borderTopColor: colorScheme === 'dark' ? '#333' : '#e5e5e5',
+          borderTopColor: colorScheme === 'dark' ? '#222' : '#e5e5e5',
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 84 : 64,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
         },
         headerShown: false,
+        animation: 'shift',
       }}
     >
       <Tabs.Screen

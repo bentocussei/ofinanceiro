@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import ContextSwitcher from '../../components/common/ContextSwitcher'
 import FAB from '../../components/common/FAB'
+import FadeInView from '../../components/common/FadeInView'
 import FeedbackSheet from '../../components/feedback/FeedbackSheet'
 import ReferralCard from '../../components/referral/ReferralCard'
 import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
@@ -93,6 +94,7 @@ export default function HomeScreen() {
               <ContextSwitcher onContextChange={onRefresh} />
             </View>
 
+            <FadeInView delay={100}>
             <View style={[styles.balanceCard, isDark && styles.cardDark]}>
               <Text style={[styles.balanceLabel, isDark && styles.textMuted]}>
                 Saldo total
@@ -118,7 +120,9 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
+            </FadeInView>
 
+            <FadeInView delay={250}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, isDark && styles.textLight]}>
                 Últimas transacções
@@ -127,6 +131,7 @@ export default function HomeScreen() {
                 <Text style={styles.seeAll}>Ver todas</Text>
               </Pressable>
             </View>
+            </FadeInView>
           </View>
         }
         ListEmptyComponent={

@@ -80,11 +80,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationDuration: 250,
+          }}
+        >
+          <Stack.Screen name="login" options={{ animation: 'fade' }} />
+          <Stack.Screen name="register" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
