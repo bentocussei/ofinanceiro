@@ -5,6 +5,15 @@
 **Branch**: `phase-1/mobile/full-parity`
 **Base**: A app tem 27 ecrãs, 16 stores Zustand, 9 componentes. Dashboard, contas, transacções, chat, orçamentos, metas, dívidas, investimentos, contas a pagar, rendimentos, recorrentes, família, educação, notícias, notificações já existem. Falta auth, settings, contexto pessoal/família, edição em vários módulos, e features mobile-only.
 
+### Progresso
+- [x] Fase 1 — Auth (login, register, OTP, auth guard)
+- [x] Fase 2 — Settings (perfil, segurança, subscrição, tags, sobre)
+- [x] Fase 3 — Contexto pessoal/família (switcher, X-Context header)
+- [ ] Fase 4 — Completar CRUD em módulos existentes
+- [x] Fase 5 — Ecrãs em falta (assets, referral, feedback) — parcial
+- [ ] Fase 6 — Features mobile-only (push, biometria, câmara)
+- [ ] Fase 7 — Polish e qualidade
+
 ---
 
 ## Fase 1 — Auth e Protecção de Rotas (P0)
