@@ -9,8 +9,8 @@
 - [x] Fase 1 — Auth (login, register, OTP, auth guard)
 - [x] Fase 2 — Settings (perfil, segurança, subscrição, tags, sobre)
 - [x] Fase 3 — Contexto pessoal/família (switcher, X-Context header)
-- [ ] Fase 4 — Completar CRUD em módulos existentes
-- [x] Fase 5 — Ecrãs em falta (assets, referral, feedback) — parcial
+- [x] Fase 4 — CRUD: update methods em 5 stores, detalhe dívidas + investimentos
+- [x] Fase 5 — Ecrãs em falta (assets, referral, feedback)
 - [ ] Fase 6 — Features mobile-only (push, biometria, câmara)
 - [ ] Fase 7 — Polish e qualidade
 
