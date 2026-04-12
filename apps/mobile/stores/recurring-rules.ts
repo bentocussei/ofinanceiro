@@ -18,6 +18,7 @@ interface RecurringRulesState {
   isLoading: boolean
   fetchRules: () => Promise<void>
   createRule: (data: Record<string, unknown>) => Promise<RecurringRule>
+  updateRule: (id: string, data: Record<string, unknown>) => Promise<void>
   deleteRule: (id: string) => Promise<void>
 }
 
@@ -42,6 +43,15 @@ export const useRecurringRulesStore = create<RecurringRulesState>((set) => ({
     })
     set((state) => ({ rules: [rule, ...state.rules] }))
     return rule
+  },
+
+  updateRule: async (id, data) => {
+    await apiFetch(`/api/v1/recurring-rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    const rules = await apiFetch<RecurringRule[]>('/api/v1/recurring-rules/')
+    set({ rules })
   },
 
   deleteRule: async (id) => {

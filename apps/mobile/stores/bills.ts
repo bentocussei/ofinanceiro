@@ -19,6 +19,7 @@ interface BillsState {
   isLoading: boolean
   fetchBills: () => Promise<void>
   createBill: (data: Record<string, unknown>) => Promise<Bill>
+  updateBill: (id: string, data: Record<string, unknown>) => Promise<void>
   payBill: (id: string) => Promise<void>
   deleteBill: (id: string) => Promise<void>
 }
@@ -44,6 +45,14 @@ export const useBillsStore = create<BillsState>((set, get) => ({
     })
     set((state) => ({ bills: [bill, ...state.bills] }))
     return bill
+  },
+
+  updateBill: async (id, data) => {
+    await apiFetch(`/api/v1/bills/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    await get().fetchBills()
   },
 
   payBill: async (id) => {

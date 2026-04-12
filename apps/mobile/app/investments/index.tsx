@@ -48,6 +48,7 @@ export default function InvestmentsScreen() {
     return (
       <Pressable
         style={[styles.card, isDark && styles.cardDark]}
+        onPress={() => router.push(`/investments/${item.id}`)}
         onLongPress={() => handleDelete(item)}
       >
         <View style={styles.cardHeader}>

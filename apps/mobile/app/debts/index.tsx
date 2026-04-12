@@ -60,6 +60,7 @@ export default function DebtsScreen() {
   const renderDebt = ({ item }: { item: Debt }) => (
     <Pressable
       style={[styles.card, isDark && styles.cardDark]}
+      onPress={() => router.push(`/debts/${item.id}`)}
       onLongPress={() => handleDelete(item)}
     >
       <View style={styles.cardHeader}>

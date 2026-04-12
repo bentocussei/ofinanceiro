@@ -11,6 +11,7 @@ interface DebtsState {
   debts: Debt[]; isLoading: boolean
   fetchDebts: () => Promise<void>
   createDebt: (data: Record<string, unknown>) => Promise<Debt>
+  updateDebt: (id: string, data: Record<string, unknown>) => Promise<void>
   registerPayment: (debtId: string, amount: number, date: string) => Promise<void>
   deleteDebt: (id: string) => Promise<void>
 }
@@ -26,6 +27,11 @@ export const useDebtsStore = create<DebtsState>((set, get) => ({
     const debt = await apiFetch<Debt>('/api/v1/debts/', { method: 'POST', body: JSON.stringify(data) })
     set((s) => ({ debts: [debt, ...s.debts] })); return debt
   },
+  updateDebt: async (id, data) => {
+    await apiFetch(`/api/v1/debts/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+    await get().fetchDebts()
+  },
+
   registerPayment: async (debtId, amount, date) => {
     await apiFetch(`/api/v1/debts/${debtId}/payment`, { method: 'POST', body: JSON.stringify({ amount, payment_date: date }) })
     await get().fetchDebts()
