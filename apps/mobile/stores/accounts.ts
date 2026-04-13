@@ -29,13 +29,7 @@ interface AccountsState {
   isLoading: boolean
   fetchAccounts: () => Promise<void>
   fetchSummary: () => Promise<void>
-  createAccount: (data: {
-    name: string
-    type: string
-    balance?: number
-    icon?: string
-    institution?: string
-  }) => Promise<Account>
+  createAccount: (data: Record<string, unknown>) => Promise<Account>
 }
 
 export const useAccountsStore = create<AccountsState>((set) => ({

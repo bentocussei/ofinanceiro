@@ -24,14 +24,7 @@ interface TransactionsState {
   hasMore: boolean
   isLoading: boolean
   fetchTransactions: (reset?: boolean) => Promise<void>
-  createTransaction: (data: {
-    account_id: string
-    amount: number
-    type: string
-    description?: string
-    category_id?: string
-    transaction_date?: string
-  }) => Promise<Transaction>
+  createTransaction: (data: Record<string, unknown>) => Promise<Transaction>
   deleteTransaction: (id: string) => Promise<void>
 }
 

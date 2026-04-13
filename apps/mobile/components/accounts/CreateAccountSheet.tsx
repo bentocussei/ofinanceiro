@@ -44,11 +44,14 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
   const [type, setType] = useState('bank')
   const [institution, setInstitution] = useState('')
   const [balance, setBalance] = useState('')
+  const [currency, setCurrency] = useState('AOA')
+  const [holderName, setHolderName] = useState('')
   const [iban, setIban] = useState('')
   const [nib, setNib] = useState('')
   const [swift, setSwift] = useState('')
   const [usageType, setUsageType] = useState('personal')
   const [creditLimit, setCreditLimit] = useState('')
+  const [lowBalanceAlert, setLowBalanceAlert] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const reset = () => {
@@ -56,11 +59,14 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
     setType('bank')
     setInstitution('')
     setBalance('')
+    setCurrency('AOA')
+    setHolderName('')
     setIban('')
     setNib('')
     setSwift('')
     setUsageType('personal')
     setCreditLimit('')
+    setLowBalanceAlert('')
   }
 
   const handleSubmit = useCallback(async () => {
@@ -75,14 +81,17 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
       await createAccount({
         name: name.trim(),
         type,
+        currency,
         institution: institution.trim() || undefined,
         balance: balanceCentavos,
         icon: type,
+        holder_name: holderName.trim() || undefined,
         iban: iban.trim() || undefined,
         nib: nib.trim() || undefined,
         swift: swift.trim() || undefined,
         usage_type: usageType,
         credit_limit: type === 'credit_card' && creditLimit ? Math.round(parseFloat(creditLimit) * 100) : undefined,
+        low_balance_alert: lowBalanceAlert ? Math.round(parseFloat(lowBalanceAlert) * 100) : undefined,
       })
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       reset()
@@ -159,6 +168,30 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
           placeholderTextColor="#999"
           value={institution}
           onChangeText={setInstitution}
+        />
+
+        {/* Moeda */}
+        <Text style={labelStyle}>Moeda</Text>
+        <View style={styles.typeGrid}>
+          {['AOA', 'USD', 'EUR', 'MZN', 'CVE'].map((c) => (
+            <Pressable
+              key={c}
+              style={[styles.typeOption, isDark && styles.typeOptionDark, currency === c && styles.typeSelected]}
+              onPress={() => setCurrency(c)}
+            >
+              <Text style={[styles.typeLabel, currency === c && styles.typeLabelSelected]}>{c}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Titular */}
+        <Text style={labelStyle}>Titular da conta (opcional)</Text>
+        <TextInput
+          style={inputStyle}
+          placeholder="Nome do titular"
+          placeholderTextColor="#999"
+          value={holderName}
+          onChangeText={setHolderName}
         />
 
         {/* Saldo inicial */}
@@ -245,6 +278,17 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
             />
           </>
         )}
+
+        {/* Alerta saldo baixo */}
+        <Text style={labelStyle}>Alerta de saldo baixo (Kz)</Text>
+        <TextInput
+          style={inputStyle}
+          placeholder="0 (desactivado)"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          value={lowBalanceAlert}
+          onChangeText={setLowBalanceAlert}
+        />
 
         {/* Submit */}
         <Pressable
