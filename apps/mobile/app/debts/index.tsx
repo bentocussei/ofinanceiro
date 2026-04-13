@@ -136,13 +136,21 @@ export default function DebtsScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
         </Pressable>
-        <Text style={[styles.title, isDark && styles.textLight]}>Dívidas</Text>
-        <Pressable
-          style={[styles.addBtn, isDark && styles.addBtnDark]}
-          onPress={() => router.push('/debts/create')}
-        >
-          <Ionicons name="add" size={20} color="#3b82f6" />
-        </Pressable>
+        <Text style={[styles.title, isDark && styles.textLight]}>Dividas</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            style={[styles.addBtn, isDark && styles.addBtnDark]}
+            onPress={() => router.push('/debts/simulator')}
+          >
+            <Ionicons name="calculator-outline" size={18} color="#f59e0b" />
+          </Pressable>
+          <Pressable
+            style={[styles.addBtn, isDark && styles.addBtnDark]}
+            onPress={() => router.push('/debts/create')}
+          >
+            <Ionicons name="add" size={20} color="#3b82f6" />
+          </Pressable>
+        </View>
       </View>
 
       <FlatList

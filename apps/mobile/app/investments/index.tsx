@@ -102,12 +102,20 @@ export default function InvestmentsScreen() {
           <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Investimentos</Text>
-        <Pressable
-          style={[styles.addBtn, isDark && styles.addBtnDark]}
-          onPress={() => router.push('/investments/create')}
-        >
-          <Ionicons name="add" size={20} color="#3b82f6" />
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            style={[styles.addBtn, isDark && styles.addBtnDark]}
+            onPress={() => router.push('/investments/simulator')}
+          >
+            <Ionicons name="calculator-outline" size={18} color="#f59e0b" />
+          </Pressable>
+          <Pressable
+            style={[styles.addBtn, isDark && styles.addBtnDark]}
+            onPress={() => router.push('/investments/create')}
+          >
+            <Ionicons name="add" size={20} color="#3b82f6" />
+          </Pressable>
+        </View>
       </View>
 
       <FlatList
