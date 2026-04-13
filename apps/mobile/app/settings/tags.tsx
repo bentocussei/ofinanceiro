@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface Tag {
   id: string
@@ -29,12 +30,13 @@ export default function TagsScreen() {
   const [newTag, setNewTag] = useState('')
   const [adding, setAdding] = useState(false)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   useEffect(() => {
     fetchTags()
@@ -123,7 +125,7 @@ export default function TagsScreen() {
             <Ionicons name="pricetag" size={16} color={item.color || muted} />
             <Text style={[styles.tagName, { color: text }]}>{item.name}</Text>
             <Pressable onPress={() => handleDelete(item)}>
-              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
             </Pressable>
           </View>
         )}

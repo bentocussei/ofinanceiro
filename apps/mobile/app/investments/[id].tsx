@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Investment, useInvestmentsStore } from '../../stores/investments'
 
 export default function InvestmentDetailScreen() {
@@ -31,12 +32,13 @@ export default function InvestmentDetailScreen() {
   const [editCurrentValue, setEditCurrentValue] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   useEffect(() => {
     if (id) {
@@ -115,7 +117,7 @@ export default function InvestmentDetailScreen() {
             <Ionicons name={editing ? 'close' : 'pencil'} size={20} color={text} />
           </Pressable>
           <Pressable onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -142,7 +144,7 @@ export default function InvestmentDetailScreen() {
                 onPress={handleSave}
                 disabled={saving}
               >
-                <Text style={[styles.saveBtnText, { color: isDark ? '#000' : '#fff' }]}>
+                <Text style={[styles.saveBtnText, { color: isDark ? colors.dark.bg : colors.light.bg }]}>
                   {saving ? 'A guardar...' : 'Guardar'}
                 </Text>
               </Pressable>
@@ -165,14 +167,14 @@ export default function InvestmentDetailScreen() {
                 </View>
               </View>
 
-              <View style={[styles.returnCard, { backgroundColor: isDark ? '#111' : '#f9f9f9' }]}>
+              <View style={[styles.returnCard, { backgroundColor: tc.cardAlt }]}>
                 <Ionicons
                   name={isPositive ? 'trending-up' : 'trending-down'}
                   size={20}
-                  color={isPositive ? '#22c55e' : '#ef4444'}
+                  color={isPositive ? colors.success : colors.error}
                 />
                 <View>
-                  <Text style={[styles.returnAmount, { color: isPositive ? '#22c55e' : '#ef4444' }]}>
+                  <Text style={[styles.returnAmount, { color: isPositive ? colors.success : colors.error }]}>
                     {isPositive ? '+' : ''}{formatKz(returnAmount)}
                   </Text>
                   <Text style={[styles.returnPct, { color: muted }]}>

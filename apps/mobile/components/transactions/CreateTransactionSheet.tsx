@@ -16,6 +16,7 @@ import {
 import AmountInput from '../common/AmountInput'
 import IconDisplay from '../common/IconDisplay'
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 import { useAccountsStore } from '../../stores/accounts'
 import { useCategoriesStore } from '../../stores/categories'
 import { useTransactionsStore } from '../../stores/transactions'
@@ -26,11 +27,21 @@ interface Tag {
   color?: string
 }
 
-interface Props {
-  onCreated?: () => void
+export interface TransactionPrefill {
+  amount?: number // in centavos
+  description?: string
+  merchant?: string
+  date?: string
+  category?: string
+  type?: 'expense' | 'income'
 }
 
-const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) => {
+interface Props {
+  onCreated?: () => void
+  prefill?: TransactionPrefill | null
+}
+
+const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, prefill }, ref) => {
   const isDark = useColorScheme() === 'dark'
   const snapPoints = useMemo(() => ['92%'], [])
   const { accounts } = useAccountsStore()
@@ -59,6 +70,16 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
     fetchCategories()
     apiFetch<Tag[]>('/api/v1/tags/').then(setTags).catch(() => {})
   }, [])
+
+  // Apply prefill data (e.g., from receipt scanner OCR)
+  useEffect(() => {
+    if (!prefill) return
+    if (prefill.amount) setAmount((prefill.amount / 100).toString())
+    if (prefill.description) setDescription(prefill.description)
+    if (prefill.merchant) setMerchant(prefill.merchant)
+    if (prefill.date) setDate(prefill.date)
+    if (prefill.type) setType(prefill.type)
+  }, [prefill])
 
   const parentCategories = getParentCategories(type)
   const activeAccount = selectedAccount || accounts[0]?.id
@@ -128,11 +149,12 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
     )
   }
 
-  const bg = isDark ? '#1a1a1a' : '#fff'
-  const inputBg = isDark ? '#111' : '#f9f9f9'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#999' : '#666'
+  const tc = themeColors(isDark)
+  const bg = tc.card
+  const inputBg = tc.input
+  const border = tc.border
+  const text = tc.text
+  const muted = isDark ? tc.textMuted : tc.textSecondary
 
   return (
     <BottomSheet
@@ -141,7 +163,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
       snapPoints={snapPoints}
       enablePanDownToClose
       backgroundStyle={{ backgroundColor: bg }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? '#666' : '#ccc' }}
+      handleIndicatorStyle={{ backgroundColor: tc.handle }}
     >
       <BottomSheetScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.title, { color: text }]}>Nova transaccao</Text>
@@ -243,7 +265,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
               ]}
               onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
             >
-              <IconDisplay name={cat.name} size={18} color={selectedCategory === cat.id ? '#3b82f6' : muted} />
+              <IconDisplay name={cat.name} size={18} color={selectedCategory === cat.id ? colors.primary : muted} />
               <Text style={[
                 styles.categoryLabel,
                 { color: muted },
@@ -317,7 +339,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
                 <Switch
                   value={isPrivate}
                   onValueChange={setIsPrivate}
-                  trackColor={{ false: isDark ? '#333' : '#e5e5e5', true: '#3b82f6' }}
+                  trackColor={{ false: tc.border, true: colors.primary }}
                 />
               </View>
               <View style={styles.flagItem}>
@@ -325,7 +347,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated }, re
                 <Switch
                   value={needsReview}
                   onValueChange={setNeedsReview}
-                  trackColor={{ false: isDark ? '#333' : '#e5e5e5', true: '#f59e0b' }}
+                  trackColor={{ false: tc.border, true: colors.warning }}
                 />
               </View>
             </View>
@@ -371,18 +393,18 @@ const styles = StyleSheet.create({
   typeBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1,
   },
-  typeBtnText: { fontSize: 15, fontWeight: '600', color: '#999' },
-  typeBtnTextActive: { color: '#fff' },
-  expenseActive: { backgroundColor: '#ef4444', borderColor: '#ef4444' },
-  incomeActive: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
+  typeBtnText: { fontSize: 15, fontWeight: '600', color: colors.light.textMuted },
+  typeBtnTextActive: { color: colors.dark.text },
+  expenseActive: { backgroundColor: colors.error, borderColor: colors.error },
+  incomeActive: { backgroundColor: colors.success, borderColor: colors.success },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1,
   },
-  chipSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   chipText: { fontSize: 13 },
-  chipTextSelected: { color: '#3b82f6', fontWeight: '600' },
+  chipTextSelected: { color: colors.primary, fontWeight: '600' },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryChip: {
     alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8,
@@ -396,8 +418,8 @@ const styles = StyleSheet.create({
   flagItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   flagLabel: { fontSize: 14 },
   submitBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
-  submitExpense: { backgroundColor: '#ef4444' },
-  submitIncome: { backgroundColor: '#22c55e' },
+  submitExpense: { backgroundColor: colors.error },
+  submitIncome: { backgroundColor: colors.success },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
 })

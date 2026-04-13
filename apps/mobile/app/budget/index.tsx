@@ -19,10 +19,20 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Budget, BudgetStatus, useBudgetsStore } from '../../stores/budgets'
+
+const METHOD_LABELS: Record<string, string> = {
+  'category': 'Por Categoria',
+  '50_30_20': '50/30/20',
+  'envelope': 'Envelopes',
+  'flex': 'Flexivel',
+  'zero_based': 'Base Zero',
+}
 
 export default function BudgetScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { budgets, isLoading, fetchBudgets, deleteBudget } = useBudgetsStore()
   const [statuses, setStatuses] = useState<Record<string, BudgetStatus>>({})
@@ -60,14 +70,15 @@ export default function BudgetScreen() {
   }
 
   const getProgressColor = (pct: number) => {
-    if (pct >= 100) return '#ef4444'
-    if (pct >= 90) return '#f97316'
-    if (pct >= 70) return '#f59e0b'
-    return '#22c55e'
+    if (pct >= 100) return colors.error
+    if (pct >= 90) return colors.orange
+    if (pct >= 70) return colors.warning
+    return colors.success
   }
 
   const renderBudget = ({ item }: { item: Budget }) => {
     const status = statuses[item.id]
+    const methodLabel = item.method ? METHOD_LABELS[item.method] || item.method : null
 
     return (
       <Pressable
@@ -75,15 +86,22 @@ export default function BudgetScreen() {
         onPress={() => router.push(`/budget/${item.id}`)}
         onLongPress={() => handleDelete(item)}
       >
-        <View style={styles.budgetHeader}>
-          <Text style={[styles.budgetName, isDark && styles.textLight]}>
-            {item.name || 'Orçamento'}
-          </Text>
+        <View style={styles.topRow}>
+          {methodLabel && (
+            <View style={styles.methodBadge}>
+              <Text style={styles.methodBadgeText}>{methodLabel}</Text>
+            </View>
+          )}
           {status && (
             <Text style={[styles.daysLeft, isDark && styles.textMuted]}>
               {status.days_remaining}d restantes
             </Text>
           )}
+        </View>
+        <View style={styles.budgetHeader}>
+          <Text style={[styles.budgetName, isDark && styles.textLight]}>
+            {item.name || 'Orçamento'}
+          </Text>
         </View>
 
         {status && (
@@ -117,7 +135,7 @@ export default function BudgetScreen() {
               <View key={cat.category_id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={[styles.itemName, isDark && styles.textLight]}>
-                    <IconDisplay name={cat.category_name} size={13} color={isDark ? '#fff' : '#000'} /> {cat.category_name}
+                    <IconDisplay name={cat.category_name} size={13} color={tc.text} /> {cat.category_name}
                   </Text>
                   <Text style={[styles.itemValues, isDark && styles.textMuted]}>
                     {formatKz(cat.spent)} / {formatKz(cat.limit_amount)}
@@ -152,14 +170,14 @@ export default function BudgetScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Orçamentos</Text>
         <Pressable
           style={[styles.addBtn, isDark && styles.addBtnDark]}
           onPress={() => router.push('/budget/create')}
         >
-          <Ionicons name="add" size={20} color="#3b82f6" />
+          <Ionicons name="add" size={20} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -171,7 +189,7 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="pie-chart-outline" size={48} color={isDark ? '#666' : '#ccc'} />
+            <Ionicons name="pie-chart-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>
               Nenhum orçamento criado
             </Text>
@@ -186,45 +204,59 @@ export default function BudgetScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
   backBtn: { padding: 4 },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
   addBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: '#eff6ff',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  addBtnDark: { backgroundColor: '#1e3a5f' },
+  addBtnDark: { backgroundColor: colors.brand },
   list: { padding: 16, gap: 12 },
   budgetCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
+    backgroundColor: colors.light.card, borderRadius: 16, padding: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  cardDark: { backgroundColor: colors.dark.card },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  methodBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  methodBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  budgetName: { fontSize: 16, fontWeight: '600', color: '#000' },
-  daysLeft: { fontSize: 12, color: '#999' },
+  budgetName: { fontSize: 16, fontWeight: '600', color: colors.light.text },
+  daysLeft: { fontSize: 12, color: colors.light.textMuted },
   totalRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 6 },
-  totalSpent: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
-  totalLimit: { fontSize: 14, color: '#999', fontFamily: 'monospace', marginLeft: 4 },
-  progressBarBg: { height: 8, backgroundColor: '#f0f0f0', borderRadius: 4, marginBottom: 4 },
+  totalSpent: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
+  totalLimit: { fontSize: 14, color: colors.light.textMuted, fontFamily: 'monospace', marginLeft: 4 },
+  progressBarBg: { height: 8, backgroundColor: colors.light.separator, borderRadius: 4, marginBottom: 4 },
   progressBarFill: { height: 8, borderRadius: 4 },
   percentText: { fontSize: 12, fontWeight: '600', marginBottom: 12 },
   itemRow: { paddingVertical: 6 },
   itemInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  itemName: { fontSize: 13, color: '#000' },
-  itemValues: { fontSize: 12, fontFamily: 'monospace', color: '#999' },
-  itemBarBg: { height: 4, backgroundColor: '#f0f0f0', borderRadius: 2 },
+  itemName: { fontSize: 13, color: colors.light.text },
+  itemValues: { fontSize: 12, fontFamily: 'monospace', color: colors.light.textMuted },
+  itemBarBg: { height: 4, backgroundColor: colors.light.separator, borderRadius: 2 },
   itemBarFill: { height: 4, borderRadius: 2 },
-  moreItems: { fontSize: 12, color: '#999', marginTop: 8, textAlign: 'center' },
+  moreItems: { fontSize: 12, color: colors.light.textMuted, marginTop: 8, textAlign: 'center' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8, paddingHorizontal: 40 },
-  emptyText: { fontSize: 16, color: '#999' },
-  emptySubtext: { fontSize: 13, color: '#ccc', textAlign: 'center' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 16, color: colors.light.textMuted },
+  emptySubtext: { fontSize: 13, color: colors.light.handle, textAlign: 'center' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

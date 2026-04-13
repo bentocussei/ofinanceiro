@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 
 import IconDisplay from '../common/IconDisplay'
+import { colors, themeColors } from '../../lib/tokens'
 import { useAccountsStore } from '../../stores/accounts'
 
 const ACCOUNT_TYPES = [
@@ -104,6 +105,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
     }
   }, [name, type, institution, balance, iban, nib, swift, usageType, creditLimit])
 
+  const tc = themeColors(isDark)
   const inputStyle = [styles.input, isDark && styles.inputDark]
   const labelStyle = [styles.label, isDark && styles.textLight]
 
@@ -114,7 +116,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
       snapPoints={snapPoints}
       enablePanDownToClose
       backgroundStyle={isDark ? styles.sheetDark : styles.sheet}
-      handleIndicatorStyle={{ backgroundColor: isDark ? '#666' : '#ccc' }}
+      handleIndicatorStyle={{ backgroundColor: tc.handle }}
     >
       <BottomSheetScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.title, isDark && styles.textLight]}>Nova conta</Text>
@@ -124,10 +126,9 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="Ex: BAI - Conta Corrente"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={name}
           onChangeText={setName}
-          autoFocus
         />
 
         {/* Tipo */}
@@ -146,7 +147,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
               }}
             >
-              <IconDisplay name={t.value} size={16} color={type === t.value ? '#3b82f6' : '#666'} />
+              <IconDisplay name={t.value} size={16} color={type === t.value ? colors.primary : tc.textSecondary} />
               <Text
                 style={[
                   styles.typeLabel,
@@ -165,7 +166,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="Ex: BAI, BFA, Multicaixa Express"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={institution}
           onChangeText={setInstitution}
         />
@@ -189,7 +190,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="Nome do titular"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={holderName}
           onChangeText={setHolderName}
         />
@@ -199,7 +200,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="0"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           keyboardType="numeric"
           value={balance}
           onChangeText={setBalance}
@@ -236,7 +237,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="AO00 0000 0000 0000 0000 0000 0"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={iban}
           onChangeText={setIban}
           autoCapitalize="characters"
@@ -247,7 +248,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="0000 0000 0000 0000 0000 0"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={nib}
           onChangeText={setNib}
           keyboardType="numeric"
@@ -258,7 +259,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="Ex: BAIAAOLU"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           value={swift}
           onChangeText={setSwift}
           autoCapitalize="characters"
@@ -271,7 +272,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
             <TextInput
               style={inputStyle}
               placeholder="0"
-              placeholderTextColor="#999"
+              placeholderTextColor={tc.textMuted}
               keyboardType="numeric"
               value={creditLimit}
               onChangeText={setCreditLimit}
@@ -284,7 +285,7 @@ const CreateAccountSheet = forwardRef<BottomSheet, Props>(({ onCreated }, ref) =
         <TextInput
           style={inputStyle}
           placeholder="0 (desactivado)"
-          placeholderTextColor="#999"
+          placeholderTextColor={tc.textMuted}
           keyboardType="numeric"
           value={lowBalanceAlert}
           onChangeText={setLowBalanceAlert}
@@ -309,32 +310,32 @@ CreateAccountSheet.displayName = 'CreateAccountSheet'
 export default CreateAccountSheet
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: '#fff' },
-  sheetDark: { backgroundColor: '#1a1a1a' },
+  sheet: { backgroundColor: colors.light.card },
+  sheetDark: { backgroundColor: colors.dark.card },
   content: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 20, color: '#000' },
-  label: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6, marginTop: 16 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 20, color: colors.light.text },
+  label: { fontSize: 13, fontWeight: '600', color: colors.light.textSecondary, marginBottom: 6, marginTop: 16 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10, paddingHorizontal: 14,
-    paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#f9f9f9',
+    borderWidth: 1, borderColor: colors.light.border, borderRadius: 10, paddingHorizontal: 14,
+    paddingVertical: 12, fontSize: 16, color: colors.light.text, backgroundColor: colors.light.input,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
+  inputDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.input, color: colors.dark.text },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeOption: {
     paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 1, borderColor: '#e5e5e5', flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderWidth: 1, borderColor: colors.light.border, flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  typeOptionDark: { borderColor: '#333' },
-  typeSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
+  typeOptionDark: { borderColor: colors.dark.border },
+  typeSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   typeIcon: { fontSize: 16 },
-  typeLabel: { fontSize: 13, color: '#666' },
-  typeLabelSelected: { color: '#3b82f6', fontWeight: '600' },
+  typeLabel: { fontSize: 13, color: colors.light.textSecondary },
+  typeLabelSelected: { color: colors.primary, fontWeight: '600' },
   submitBtn: {
-    backgroundColor: '#000', borderRadius: 12, paddingVertical: 16,
+    backgroundColor: colors.light.text, borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginTop: 24,
   },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.light.textMuted },
 })

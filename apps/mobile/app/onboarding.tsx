@@ -14,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as SecureStore from 'expo-secure-store'
 
+import { colors, themeColors } from '../lib/tokens'
+
 const { width } = Dimensions.get('window')
 
 interface Step {
@@ -28,25 +30,25 @@ const STEPS: Step[] = [
     icon: 'wallet-outline',
     title: 'Controla as tuas financas',
     description: 'Regista receitas e despesas de forma rapida. Organiza por categorias pensadas para Angola.',
-    color: '#3b82f6',
+    color: colors.primary,
   },
   {
     icon: 'chatbubble-ellipses-outline',
     title: 'Assistente inteligente',
     description: 'Fala com o assistente para registar transaccoes, consultar saldos e receber conselhos financeiros.',
-    color: '#8b5cf6',
+    color: colors.purple,
   },
   {
     icon: 'people-outline',
     title: 'Financas familiares',
     description: 'Gere o orcamento da familia em conjunto. Cada membro controla os seus gastos.',
-    color: '#f59e0b',
+    color: colors.warning,
   },
   {
     icon: 'bar-chart-outline',
     title: 'Relatorios e metas',
     description: 'Acompanha os teus gastos com graficos. Define metas de poupanca e controla dividas.',
-    color: '#22c55e',
+    color: colors.success,
   },
 ]
 
@@ -70,9 +72,10 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  const tc = themeColors(isDark)
   const bg = isDark ? '#000' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
+  const text = tc.text
+  const muted = tc.textSecondary
 
   async function handleFinish() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)

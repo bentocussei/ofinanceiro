@@ -12,6 +12,13 @@ export interface Bill {
   is_active: boolean
   paid_at: string | null
   created_at: string
+  description?: string | null
+  category?: string | null
+  category_id?: string | null
+  payment_account_id?: string | null
+  pay_from_account_id?: string | null
+  auto_pay?: boolean
+  reminder_days?: number | null
 }
 
 interface BillsState {
@@ -31,8 +38,8 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   fetchBills: async () => {
     set({ isLoading: true })
     try {
-      const bills = await apiFetch<Bill[]>('/api/v1/bills/')
-      set({ bills, isLoading: false })
+      const res = await apiFetch<{ items: Bill[] }>('/api/v1/bills/')
+      set({ bills: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }

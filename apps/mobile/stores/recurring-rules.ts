@@ -29,8 +29,8 @@ export const useRecurringRulesStore = create<RecurringRulesState>((set) => ({
   fetchRules: async () => {
     set({ isLoading: true })
     try {
-      const rules = await apiFetch<RecurringRule[]>('/api/v1/recurring-rules/')
-      set({ rules, isLoading: false })
+      const res = await apiFetch<{ items: RecurringRule[] }>('/api/v1/recurring-rules/')
+      set({ rules: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }
@@ -50,8 +50,8 @@ export const useRecurringRulesStore = create<RecurringRulesState>((set) => ({
       method: 'PUT',
       body: JSON.stringify(data),
     })
-    const rules = await apiFetch<RecurringRule[]>('/api/v1/recurring-rules/')
-    set({ rules })
+    const res = await apiFetch<{ items: RecurringRule[] }>('/api/v1/recurring-rules/')
+    set({ rules: res.items })
   },
 
   deleteRule: async (id) => {

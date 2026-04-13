@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface Subscription {
   plan_name: string
@@ -34,11 +35,12 @@ export default function SubscriptionScreen() {
       .finally(() => setLoading(false))
   }, [])
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
 
   const statusLabels: Record<string, string> = {
     active: 'Activo',
@@ -48,9 +50,9 @@ export default function SubscriptionScreen() {
   }
 
   const statusColors: Record<string, string> = {
-    active: '#22c55e',
-    trialing: '#3b82f6',
-    expired: '#ef4444',
+    active: colors.success,
+    trialing: colors.primary,
+    expired: colors.error,
     cancelled: '#888',
   }
 

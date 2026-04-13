@@ -16,6 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { themeColors } from '../lib/tokens'
 import { useAuthStore } from '../stores/auth'
 
 type Tab = 'password' | 'otp'
@@ -99,9 +100,9 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleVerifyOtp() {
-    const code = otp.join('')
+  async function submitOtp(code: string) {
     if (code.length !== 6) return
+    Keyboard.dismiss()
     try {
       await verifyOtp(fullPhone, code)
     } catch (error: any) {
@@ -112,7 +113,17 @@ export default function LoginScreen() {
   }
 
   function handleOtpChange(text: string, index: number) {
-    const digit = text.replace(/\D/g, '').slice(-1)
+    // Handle paste of full code (iOS auto-fill pastes all 6 digits into first field)
+    const digits = text.replace(/\D/g, '')
+    if (digits.length >= 6) {
+      const filled = digits.slice(0, 6).split('')
+      setOtp(filled)
+      otpRefs.current[5]?.focus()
+      submitOtp(filled.join(''))
+      return
+    }
+
+    const digit = digits.slice(-1)
     const newOtp = [...otp]
     newOtp[index] = digit
     setOtp(newOtp)
@@ -120,13 +131,11 @@ export default function LoginScreen() {
     if (digit && index < 5) {
       otpRefs.current[index + 1]?.focus()
     }
+
     // Auto-submit when all 6 digits entered
-    if (digit && index === 5) {
-      const code = newOtp.join('')
-      if (code.length === 6) {
-        Keyboard.dismiss()
-        setTimeout(() => handleVerifyOtp(), 100)
-      }
+    const code = newOtp.join('')
+    if (code.length === 6 && !code.includes('')) {
+      submitOtp(code)
     }
   }
 
@@ -140,12 +149,13 @@ export default function LoginScreen() {
     setCountryIndex((prev) => (prev + 1) % COUNTRY_CODES.length)
   }
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -161,28 +171,12 @@ export default function LoginScreen() {
           <View style={styles.brand}>
             <Text style={[styles.brandTitle, { color: text }]}>O Financeiro</Text>
             <Text style={[styles.brandSubtitle, { color: muted }]}>
-              O teu financeiro pessoal
+              O teu financeiro pessoal e familiar
             </Text>
           </View>
 
           {/* Tab Switcher */}
           <View style={[styles.tabRow, { backgroundColor: card, borderColor: border }]}>
-            <Pressable
-              style={[styles.tab, tab === 'password' && { backgroundColor: accent }]}
-              onPress={() => { setTab('password'); setOtpStep('phone') }}
-            >
-              <Ionicons
-                name="key-outline"
-                size={16}
-                color={tab === 'password' ? (isDark ? '#000' : '#fff') : muted}
-              />
-              <Text style={[
-                styles.tabText,
-                { color: tab === 'password' ? (isDark ? '#000' : '#fff') : muted },
-              ]}>
-                Com senha
-              </Text>
-            </Pressable>
             <Pressable
               style={[styles.tab, tab === 'otp' && { backgroundColor: accent }]}
               onPress={() => { setTab('otp'); setOtpStep('phone') }}
@@ -197,6 +191,22 @@ export default function LoginScreen() {
                 { color: tab === 'otp' ? (isDark ? '#000' : '#fff') : muted },
               ]}>
                 Com codigo SMS
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.tab, tab === 'password' && { backgroundColor: accent }]}
+              onPress={() => { setTab('password'); setOtpStep('phone') }}
+            >
+              <Ionicons
+                name="key-outline"
+                size={16}
+                color={tab === 'password' ? (isDark ? '#000' : '#fff') : muted}
+              />
+              <Text style={[
+                styles.tabText,
+                { color: tab === 'password' ? (isDark ? '#000' : '#fff') : muted },
+              ]}>
+                Com senha
               </Text>
             </Pressable>
           </View>
@@ -299,11 +309,13 @@ export default function LoginScreen() {
                     ref={(ref) => { otpRefs.current[i] = ref }}
                     style={[
                       styles.otpInput,
-                      { backgroundColor: isDark ? '#111' : '#f9f9f9', borderColor: border, color: text },
+                      { backgroundColor: tc.input, borderColor: border, color: text },
                       digit && { borderColor: accent },
                     ]}
                     keyboardType="number-pad"
-                    maxLength={1}
+                    textContentType="oneTimeCode"
+                    autoComplete="sms-otp"
+                    maxLength={i === 0 ? 6 : 1}
                     value={digit}
                     onChangeText={(t) => handleOtpChange(t, i)}
                     onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, i)}

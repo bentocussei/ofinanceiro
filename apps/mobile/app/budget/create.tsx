@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import IconDisplay from '../../components/common/IconDisplay'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { useBudgetsStore } from '../../stores/budgets'
 import { Category, useCategoriesStore } from '../../stores/categories'
 
@@ -29,6 +30,7 @@ const METHODS = [
 
 export default function CreateBudgetScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { createBudget } = useBudgetsStore()
   const { categories, fetchCategories, getParentCategories } = useCategoriesStore()
@@ -96,7 +98,7 @@ export default function CreateBudgetScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Novo orçamento</Text>
         <View style={{ width: 24 }} />
@@ -108,7 +110,7 @@ export default function CreateBudgetScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="Ex: Março 2026"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={name}
           onChangeText={setName}
         />
@@ -137,7 +139,7 @@ export default function CreateBudgetScreen() {
             <TextInput
               style={[styles.input, isDark && styles.inputDark]}
               placeholder="0"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.light.textMuted}
               keyboardType="numeric"
               value={totalLimit}
               onChangeText={setTotalLimit}
@@ -154,15 +156,15 @@ export default function CreateBudgetScreen() {
             {items.map((item) => (
               <View key={item.category_id} style={[styles.itemRow, isDark && styles.itemRowDark]}>
                 <Pressable onPress={() => removeItem(item.category_id)}>
-                  <Ionicons name="close-circle" size={20} color="#ef4444" />
+                  <Ionicons name="close-circle" size={20} color={colors.error} />
                 </Pressable>
                 <Text style={[styles.itemName, isDark && styles.textLight]}>
-                  <IconDisplay name={item.name} size={14} color={isDark ? '#fff' : '#000'} /> {item.name}
+                  <IconDisplay name={item.name} size={14} color={tc.text} /> {item.name}
                 </Text>
                 <TextInput
                   style={[styles.itemInput, isDark && styles.inputDark]}
                   placeholder="Limite"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.light.textMuted}
                   keyboardType="numeric"
                   value={item.limit}
                   onChangeText={(v) => updateItemLimit(item.category_id, v)}
@@ -181,7 +183,7 @@ export default function CreateBudgetScreen() {
                     style={[styles.catChip, isDark && styles.catChipDark]}
                     onPress={() => addCategory(cat)}
                   >
-                    <IconDisplay name={cat.name} size={14} color={isDark ? '#999' : '#666'} />
+                    <IconDisplay name={cat.name} size={14} color={tc.textSecondary} />
                     <Text style={[styles.catLabel, isDark && styles.textMuted]}>{cat.name}</Text>
                   </Pressable>
                 ))}
@@ -194,7 +196,7 @@ export default function CreateBudgetScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="Ex: 80 (alerta ao atingir 80% do limite)"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={alertThreshold}
           onChangeText={setAlertThreshold}
@@ -214,56 +216,56 @@ export default function CreateBudgetScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
   content: { padding: 16, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6, marginTop: 16 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.light.textSecondary, marginBottom: 6, marginTop: 16 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.light.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.light.text, backgroundColor: colors.light.card,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
+  inputDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.input, color: colors.dark.text },
   methodGrid: { gap: 8 },
   methodCard: {
-    padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e5e5e5', backgroundColor: '#fff',
+    padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.light.border, backgroundColor: colors.light.card,
   },
-  methodCardDark: { borderColor: '#333', backgroundColor: '#1a1a1a' },
-  methodSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
-  methodLabel: { fontSize: 14, fontWeight: '600', color: '#666' },
-  methodLabelSelected: { color: '#3b82f6' },
-  methodDesc: { fontSize: 12, color: '#999', marginTop: 2 },
+  methodCardDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.card },
+  methodSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  methodLabel: { fontSize: 14, fontWeight: '600', color: colors.light.textSecondary },
+  methodLabelSelected: { color: colors.primary },
+  methodDesc: { fontSize: 12, color: colors.light.textMuted, marginTop: 2 },
   itemRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 10, backgroundColor: '#fff', borderRadius: 10, marginBottom: 6,
+    padding: 10, backgroundColor: colors.light.card, borderRadius: 10, marginBottom: 6,
   },
-  itemRowDark: { backgroundColor: '#1a1a1a' },
-  itemName: { flex: 1, fontSize: 14, color: '#000' },
+  itemRowDark: { backgroundColor: colors.dark.card },
+  itemName: { flex: 1, fontSize: 14, color: colors.light.text },
   itemInput: {
-    width: 100, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8,
+    width: 100, borderWidth: 1, borderColor: colors.light.border, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6, fontSize: 14, fontFamily: 'monospace',
-    textAlign: 'right', color: '#000',
+    textAlign: 'right', color: colors.light.text,
   },
-  kzSuffix: { fontSize: 12, color: '#999' },
+  kzSuffix: { fontSize: 12, color: colors.light.textMuted },
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   catChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-    borderWidth: 1, borderColor: '#e5e5e5', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.light.border, backgroundColor: colors.light.card,
   },
-  catChipDark: { borderColor: '#333', backgroundColor: '#1a1a1a' },
+  catChipDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.card },
   catIcon: { fontSize: 14 },
-  catLabel: { fontSize: 11, color: '#666' },
+  catLabel: { fontSize: 11, color: colors.light.textSecondary },
   submitBtn: {
-    backgroundColor: '#000', borderRadius: 12, paddingVertical: 16,
+    backgroundColor: colors.light.text, borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginTop: 24,
   },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

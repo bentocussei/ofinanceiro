@@ -13,6 +13,7 @@ import {
 import * as Clipboard from 'expo-clipboard'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface ReferralStats {
   referral_code: string
@@ -27,11 +28,12 @@ export default function ReferralCard() {
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   useEffect(() => {
     apiFetch<ReferralStats>('/api/v1/referrals/stats')
@@ -67,7 +69,7 @@ export default function ReferralCard() {
   return (
     <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
       <View style={styles.headerRow}>
-        <Ionicons name="gift" size={20} color="#f59e0b" />
+        <Ionicons name="gift" size={20} color={colors.warning} />
         <Text style={[styles.title, { color: text }]}>Convidar amigos</Text>
       </View>
 
@@ -88,7 +90,7 @@ export default function ReferralCard() {
             <Ionicons name="copy-outline" size={18} color={muted} />
           </Pressable>
           <Pressable style={[styles.actionBtn, { backgroundColor: accent }]} onPress={handleShare}>
-            <Ionicons name="share-social-outline" size={18} color={isDark ? '#000' : '#fff'} />
+            <Ionicons name="share-social-outline" size={18} color={isDark ? colors.light.text : colors.dark.text} />
           </Pressable>
         </View>
       </View>
@@ -106,8 +108,8 @@ export default function ReferralCard() {
         <Text style={[styles.progressLabel, { color: muted }]}>
           {total} de {max} referencias usadas
         </Text>
-        <View style={[styles.progressBg, { backgroundColor: isDark ? '#333' : '#e5e5e5' }]}>
-          <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: '#22c55e' }]} />
+        <View style={[styles.progressBg, { backgroundColor: tc.border }]}>
+          <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: colors.success }]} />
         </View>
       </View>
     </View>

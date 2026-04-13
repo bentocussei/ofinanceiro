@@ -19,6 +19,7 @@ interface ChatState {
   messages: ChatMessage[]
   sessionId: string | null
   isLoading: boolean
+  progressMessage: string | null
   sendMessage: (text: string) => Promise<void>
   clearChat: () => void
 }
@@ -29,6 +30,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   sessionId: null,
   isLoading: false,
+  progressMessage: null,
 
   sendMessage: async (text: string) => {
     const state = get()
@@ -79,50 +81,50 @@ export const useChatStore = create<ChatState>((set, get) => ({
         throw new Error(err.detail?.message || 'Erro ao processar mensagem')
       }
 
-      const reader = res.body?.getReader()
-      if (!reader) {
-        // Fallback: read entire body as JSON (non-streaming endpoint)
-        const data = await res.json()
-        updateAssistant(assistantId, data.content, data.agent, data.session_id)
-        set({ isLoading: false })
-        return
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
+      // React Native on iOS doesn't support streaming ReadableStream well.
+      // Read full response as text then parse SSE events.
+      const rawText = await res.text()
       let fullContent = ''
       let agent = ''
       let newSessionId = state.sessionId
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+      // Try to parse as SSE lines
+      const lines = rawText.split('\n')
+      let parsedAnyEvent = false
 
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const payload = line.slice(6).trim()
+        if (!payload || payload === '[DONE]' || payload === 'done') continue
+        try {
+          const event = JSON.parse(payload)
+          parsedAnyEvent = true
+          if (event.type === 'progress') {
+            set({ progressMessage: event.content })
+          } else if (event.type === 'result') {
+            fullContent = event.content
+            agent = event.agent
+            newSessionId = event.session_id
+          } else if (event.type === 'error') {
+            fullContent = event.content || 'Erro ao processar'
+          }
+        } catch { /* skip malformed lines */ }
+      }
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          try {
-            const event = JSON.parse(line.slice(6))
-            if (event.type === 'progress') {
-              fullContent = event.content
-              // Update assistant message progressively
-              updateAssistantContent(assistantId, fullContent)
-            } else if (event.type === 'result') {
-              fullContent = event.content
-              agent = event.agent
-              newSessionId = event.session_id
-              updateAssistant(assistantId, fullContent, agent, newSessionId)
-            } else if (event.type === 'error') {
-              updateAssistantContent(assistantId, event.content || 'Erro ao processar')
-            }
-          } catch { /* skip malformed SSE lines */ }
+      // Fallback: if no SSE events parsed, try as plain JSON
+      if (!parsedAnyEvent) {
+        try {
+          const data = JSON.parse(rawText)
+          fullContent = data.content || data.message || rawText
+          agent = data.agent || ''
+          newSessionId = data.session_id || newSessionId
+        } catch {
+          fullContent = rawText || 'Resposta recebida'
         }
       }
 
-      set({ sessionId: newSessionId, isLoading: false })
+      updateAssistant(assistantId, fullContent, agent, newSessionId)
+      set({ sessionId: newSessionId, isLoading: false, progressMessage: null })
     } catch (error: any) {
       // Update the placeholder with error
       const msgs = get().messages.map((m) =>
@@ -130,11 +132,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ? { ...m, content: error.message || 'Desculpe, ocorreu um erro. Tente novamente.', agent: 'system' }
           : m
       )
-      set({ messages: msgs, isLoading: false })
+      set({ messages: msgs, isLoading: false, progressMessage: null })
     }
   },
 
-  clearChat: () => set({ messages: [], sessionId: null }),
+  clearChat: () => set({ messages: [], sessionId: null, progressMessage: null }),
 }))
 
 // Helper to update assistant message content during streaming

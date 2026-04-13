@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface ExpenseSplit {
   id: string
@@ -33,11 +34,12 @@ export default function ExpenseSplitsScreen() {
   const [splits, setSplits] = useState<ExpenseSplit[]>([])
   const [loading, setLoading] = useState(true)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
 
   const fetchSplits = useCallback(async () => {
     try {
@@ -56,7 +58,7 @@ export default function ExpenseSplitsScreen() {
     pending: 'Pendente', settled: 'Liquidado', partial: 'Parcial',
   }
   const statusColors: Record<string, string> = {
-    pending: '#f59e0b', settled: '#22c55e', partial: '#3b82f6',
+    pending: colors.warning, settled: colors.success, partial: colors.primary,
   }
 
   return (
@@ -93,7 +95,7 @@ export default function ExpenseSplitsScreen() {
                   <Ionicons
                     name={p.is_paid ? 'checkmark-circle' : 'ellipse-outline'}
                     size={16}
-                    color={p.is_paid ? '#22c55e' : muted}
+                    color={p.is_paid ? colors.success : muted}
                   />
                   <Text style={[styles.participantName, { color: text }]}>{p.member_name}</Text>
                   <Text style={[styles.participantAmount, { color: muted }]}>{formatKz(p.amount)}</Text>

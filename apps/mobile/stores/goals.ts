@@ -45,8 +45,8 @@ export const useGoalsStore = create<GoalsState>((set) => ({
   fetchGoals: async () => {
     set({ isLoading: true })
     try {
-      const goals = await apiFetch<Goal[]>('/api/v1/goals/')
-      set({ goals, isLoading: false })
+      const res = await apiFetch<{ items: Goal[] }>('/api/v1/goals/')
+      set({ goals: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }
@@ -67,8 +67,8 @@ export const useGoalsStore = create<GoalsState>((set) => ({
       body: JSON.stringify({ amount, note }),
     })
     // Refresh goals to get updated current_amount
-    const goals = await apiFetch<Goal[]>('/api/v1/goals/')
-    set({ goals })
+    const res = await apiFetch<{ items: Goal[] }>('/api/v1/goals/')
+    set({ goals: res.items })
   },
 
   deleteGoal: async (id) => {

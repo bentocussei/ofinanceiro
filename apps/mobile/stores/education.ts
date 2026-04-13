@@ -2,8 +2,25 @@ import { create } from 'zustand'
 import { apiFetch } from '../lib/api'
 
 export interface Tip { id: string; title: string; content: string }
-export interface Challenge { id: string; title: string; description: string; xp: number }
-export interface EduProfile { xp: number; level: number; streak_days: number; badges: string[]; next_level_xp: number }
+export interface Challenge {
+  id: string
+  title: string
+  description: string
+  xp: number
+  xp_reward: number
+  target: number
+  progress: number
+  status: 'active' | 'completed'
+}
+export interface Badge { id: string; name: string }
+export interface EduProfile {
+  xp: number
+  level: number
+  streak_days: number
+  badges: Badge[]
+  next_level_xp: number
+  xp_to_next_level: number
+}
 
 interface EducationState {
   tip: Tip | null; challenges: Challenge[]; profile: EduProfile | null; isLoading: boolean

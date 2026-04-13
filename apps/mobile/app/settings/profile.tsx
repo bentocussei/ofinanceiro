@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import { themeColors } from '../../lib/tokens'
 import { useAuthStore } from '../../stores/auth'
 
 export default function ProfileScreen() {
@@ -49,6 +50,15 @@ export default function ProfileScreen() {
       Alert.alert('Erro', 'O nome nao pode estar vazio')
       return
     }
+    let parsedSalaryDay: number | null = null
+    if (salaryDay.trim()) {
+      const n = parseInt(salaryDay, 10)
+      if (isNaN(n) || n < 1 || n > 31) {
+        Alert.alert('Erro', 'O dia do salario deve estar entre 1 e 31')
+        return
+      }
+      parsedSalaryDay = n
+    }
     Keyboard.dismiss()
     setSaving(true)
     try {
@@ -58,7 +68,7 @@ export default function ProfileScreen() {
           name: name.trim(),
           email: email.trim() || null,
           currency,
-          salary_day: salaryDay ? parseInt(salaryDay) : null,
+          salary_day: parsedSalaryDay,
         }),
       })
       await fetchUser()
@@ -71,12 +81,13 @@ export default function ProfileScreen() {
     }
   }
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -114,6 +125,20 @@ export default function ProfileScreen() {
               autoCapitalize="none"
             />
 
+            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Dia do salário</Text>
+            <TextInput
+              style={[styles.input, { borderColor: border, color: text }]}
+              value={salaryDay}
+              onChangeText={(v) => setSalaryDay(v.replace(/[^0-9]/g, '').slice(0, 2))}
+              placeholder="Ex: 25"
+              placeholderTextColor={muted}
+              keyboardType="numeric"
+              maxLength={2}
+            />
+            <Text style={[styles.helper, { color: muted }]}>
+              Dia do mês em que recebes o salário
+            </Text>
+
             <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Telefone</Text>
             <View style={[styles.readonlyField, { borderColor: border }]}>
               <Text style={[styles.readonlyText, { color: muted }]}>
@@ -140,16 +165,6 @@ export default function ProfileScreen() {
               ))}
             </View>
 
-            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Dia do salario (1-31)</Text>
-            <TextInput
-              style={[styles.input, { borderColor: border, color: text }]}
-              value={salaryDay}
-              onChangeText={setSalaryDay}
-              placeholder="Ex: 25"
-              placeholderTextColor={muted}
-              keyboardType="numeric"
-            />
-
             <Pressable
               style={[styles.saveBtn, { backgroundColor: accent }, saving && { opacity: 0.6 }]}
               onPress={handleSave}
@@ -173,6 +188,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700' },
   card: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, padding: 20 },
   label: { fontSize: 13, fontWeight: '500', marginBottom: 8 },
+  helper: { fontSize: 12, marginTop: 6 },
   input: {
     borderWidth: 1,
     borderRadius: 10,

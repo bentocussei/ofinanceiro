@@ -5,15 +5,18 @@ import { useRouter } from 'expo-router'
 import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { themeColors } from '../../lib/tokens'
+
 export default function AboutScreen() {
   const isDark = useColorScheme() === 'dark'
   const router = useRouter()
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
 
   const version = Constants.expoConfig?.version || '1.0.0'
 
@@ -79,18 +82,16 @@ function AboutRow({
   onPress?: () => void
   isLast?: boolean
 }) {
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#f0f0f0'
+  const tc = themeColors(isDark)
 
   return (
     <Pressable
-      style={[styles.row, !isLast && { borderBottomWidth: 0.5, borderBottomColor: border }]}
+      style={[styles.row, !isLast && { borderBottomWidth: 0.5, borderBottomColor: tc.borderLight }]}
       onPress={onPress}
     >
-      <Ionicons name={icon as any} size={18} color={muted} />
-      <Text style={[styles.rowLabel, { color: muted }]}>{label}</Text>
-      <Text style={[styles.rowValue, { color: text }]}>{value}</Text>
+      <Ionicons name={icon as any} size={18} color={tc.textSecondary} />
+      <Text style={[styles.rowLabel, { color: tc.textSecondary }]}>{label}</Text>
+      <Text style={[styles.rowValue, { color: tc.text }]}>{value}</Text>
     </Pressable>
   )
 }

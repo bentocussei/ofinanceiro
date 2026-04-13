@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { StyleSheet, ViewStyle, useColorScheme } from 'react-native'
+
+import { colors, themeColors } from '../../lib/tokens'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -46,7 +48,7 @@ export default function Skeleton({
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: isDark ? '#333' : '#e5e5e5',
+          backgroundColor: isDark ? colors.dark.border : colors.light.border,
         },
         animatedStyle,
         style,

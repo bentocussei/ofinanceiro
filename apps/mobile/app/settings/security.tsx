@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 import {
   isBiometricAvailable,
   getBiometricType,
@@ -95,12 +96,13 @@ export default function SecurityScreen() {
     }
   }
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -183,7 +185,7 @@ export default function SecurityScreen() {
                 <Switch
                   value={bioEnabled}
                   onValueChange={handleToggleBiometric}
-                  trackColor={{ false: isDark ? '#333' : '#e5e5e5', true: '#22c55e' }}
+                  trackColor={{ false: tc.border, true: colors.success }}
                 />
               </View>
             </View>

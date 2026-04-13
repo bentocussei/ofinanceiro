@@ -16,11 +16,13 @@ import {
 import { apiFetch } from '../../lib/api'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import ContextSwitcher from '../../components/common/ContextSwitcher'
 import IconDisplay from '../../components/common/IconDisplay'
 import CreateAccountSheet from '../../components/accounts/CreateAccountSheet'
 import TransferSheet from '../../components/accounts/TransferSheet'
 import FAB from '../../components/common/FAB'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Account, useAccountsStore } from '../../stores/accounts'
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -37,6 +39,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 export default function AccountsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const tc = themeColors(isDark)
   const createSheetRef = useRef<BottomSheet>(null)
   const transferSheetRef = useRef<BottomSheet>(null)
   const { accounts, summary, fetchSummary, isLoading } = useAccountsStore()
@@ -77,7 +80,7 @@ export default function AccountsScreen() {
       onPress={() => router.push(`/accounts/${item.id}`)}
       onLongPress={() => handleAccountAction(item)}
     >
-      <View style={styles.accountIcon}><IconDisplay name={item.type} size={24} color={isDark ? '#fff' : '#000'} /></View>
+      <View style={styles.accountIcon}><IconDisplay name={item.type} size={24} color={tc.text} /></View>
       <View style={styles.accountInfo}>
         <Text style={[styles.accountName, isDark && styles.textLight]}>{item.name}</Text>
         <Text style={[styles.accountType, isDark && styles.textMuted]}>
@@ -107,13 +110,20 @@ export default function AccountsScreen() {
           <View>
             <View style={styles.header}>
               <Text style={[styles.title, isDark && styles.textLight]}>Contas</Text>
+              <ContextSwitcher onContextChange={onRefresh} />
               {accounts.length >= 2 && (
                 <Pressable
                   style={[styles.transferBtn, isDark && styles.transferBtnDark]}
                   onPress={() => transferSheetRef.current?.expand()}
                 >
-                  <Ionicons name="swap-horizontal" size={16} color="#3b82f6" />
-                  <Text style={styles.transferBtnText}>Transferir</Text>
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={16}
+                    color={isDark ? '#FFFFFF' : colors.primary}
+                  />
+                  <Text style={[styles.transferBtnText, isDark && { color: '#FFFFFF' }]}>
+                    Transferir
+                  </Text>
                 </Pressable>
               )}
             </View>
@@ -137,7 +147,7 @@ export default function AccountsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="wallet-outline" size={48} color={isDark ? '#666' : '#ccc'} />
+            <Ionicons name="wallet-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma conta criada</Text>
           </View>
         }
@@ -151,46 +161,46 @@ export default function AccountsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#000' },
+  title: { fontSize: 24, fontWeight: '700', color: colors.light.text },
   transferBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-    backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+    backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: '#bfdbfe',
   },
-  transferBtnDark: { backgroundColor: '#1e3a5f', borderColor: '#2563eb' },
-  transferBtnText: { fontSize: 13, color: '#3b82f6', fontWeight: '600' },
+  transferBtnDark: { backgroundColor: colors.primary, borderColor: colors.primary },
+  transferBtnText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   summaryCard: {
     marginHorizontal: 16, marginVertical: 12, padding: 16,
-    backgroundColor: '#fff', borderRadius: 12,
+    backgroundColor: colors.light.card, borderRadius: 12,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  cardDark: { backgroundColor: colors.dark.card },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  summaryLabel: { fontSize: 14, color: '#666' },
+  summaryLabel: { fontSize: 14, color: colors.light.textSecondary },
   summaryValue: { fontSize: 14, fontFamily: 'monospace', fontWeight: '500' },
-  summaryTotal: { borderTopWidth: 0.5, borderTopColor: '#e5e5e5', marginTop: 4, paddingTop: 10 },
-  summaryTotalLabel: { fontSize: 15, fontWeight: '600', color: '#000' },
-  summaryTotalValue: { fontSize: 15, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
+  summaryTotal: { borderTopWidth: 0.5, borderTopColor: colors.light.border, marginTop: 4, paddingTop: 10 },
+  summaryTotalLabel: { fontSize: 15, fontWeight: '600', color: colors.light.text },
+  summaryTotalValue: { fontSize: 15, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
   accountRow: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20,
-    paddingVertical: 14, backgroundColor: '#fff',
-    borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0',
+    paddingVertical: 14, backgroundColor: colors.light.card,
+    borderBottomWidth: 0.5, borderBottomColor: colors.light.borderLight,
   },
-  rowDark: { backgroundColor: '#1a1a1a', borderBottomColor: '#333' },
+  rowDark: { backgroundColor: colors.dark.card, borderBottomColor: colors.dark.border },
   accountIcon: { marginRight: 12 },
   accountInfo: { flex: 1 },
-  accountName: { fontSize: 15, fontWeight: '500', color: '#000' },
-  accountType: { fontSize: 12, color: '#999', marginTop: 2 },
+  accountName: { fontSize: 15, fontWeight: '500', color: colors.light.text },
+  accountType: { fontSize: 12, color: colors.light.textMuted, marginTop: 2 },
   accountBalance: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
-  positive: { color: '#22c55e' },
-  negative: { color: '#ef4444' },
+  positive: { color: colors.success },
+  negative: { color: colors.error },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, color: '#999' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 16, color: colors.light.textMuted },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.light.textMuted },
 })

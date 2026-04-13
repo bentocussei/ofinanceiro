@@ -16,10 +16,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Debt, useDebtsStore } from '../../stores/debts'
 
 export default function DebtsScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { debts, isLoading, fetchDebts, registerPayment, deleteDebt } = useDebtsStore()
   const [payDebtId, setPayDebtId] = useState<string | null>(null)
@@ -27,6 +29,28 @@ export default function DebtsScreen() {
 
   useEffect(() => { fetchDebts() }, [])
   const onRefresh = useCallback(() => fetchDebts(), [])
+
+  const MONTHS_PT = [
+    'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ]
+
+  const getNextPaymentLabel = (paymentDay: number): string => {
+    const today = new Date()
+    const currentDay = today.getDate()
+    let month = today.getMonth()
+    if (currentDay >= paymentDay) {
+      month = (month + 1) % 12
+    }
+    return `${paymentDay} de ${MONTHS_PT[month]}`
+  }
+
+  const getDebtStatus = (debt: Debt): 'paid_off' | 'overdue' | 'active' => {
+    if (debt.current_balance === 0 || !debt.is_active) return 'paid_off'
+    return 'active'
+  }
+
+  const hexWithAlpha = (hex: string, alpha: string) => `${hex}${alpha}`
 
   const handleDelete = (debt: Debt) => {
     Alert.alert('Eliminar', `Eliminar dívida "${debt.name}"?`, [
@@ -57,7 +81,16 @@ export default function DebtsScreen() {
     }
   }
 
-  const renderDebt = ({ item }: { item: Debt }) => (
+  const renderDebt = ({ item }: { item: Debt }) => {
+    const status = getDebtStatus(item)
+    const statusConfig =
+      status === 'paid_off'
+        ? { label: 'QUITADA', bg: hexWithAlpha(colors.success, '22'), fg: colors.success }
+        : status === 'overdue'
+          ? { label: 'ATRASADA', bg: hexWithAlpha(colors.error, '22'), fg: colors.error }
+          : { label: 'ACTIVA', bg: hexWithAlpha(colors.primary, '22'), fg: colors.primary }
+
+    return (
     <Pressable
       style={[styles.card, isDark && styles.cardDark]}
       onPress={() => router.push(`/debts/${item.id}`)}
@@ -70,8 +103,15 @@ export default function DebtsScreen() {
             <Text style={[styles.creditor, isDark && styles.textMuted]}>{item.creditor}</Text>
           )}
         </View>
-        <View style={[styles.typeBadge, isDark && { backgroundColor: '#1e3a5f' }]}>
-          <Text style={styles.typeText}>{item.type}</Text>
+        <View style={styles.badgesGroup}>
+          <View style={[styles.typeBadge, isDark && { backgroundColor: colors.brand }]}>
+            <Text style={styles.typeText}>{item.type}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+            <Text style={[styles.statusBadgeText, { color: statusConfig.fg }]}>
+              {statusConfig.label}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -80,18 +120,23 @@ export default function DebtsScreen() {
         <Text style={[styles.balanceValue, isDark && styles.textLight]}>
           {formatKz(item.current_balance)}
         </Text>
+        {item.payment_day != null && status !== 'paid_off' && (
+          <Text style={[styles.nextPayment, isDark && styles.textMuted]}>
+            Proximo pagamento: {getNextPaymentLabel(item.payment_day)}
+          </Text>
+        )}
       </View>
 
       <View style={styles.detailsRow}>
         {item.interest_rate != null && (
           <View style={styles.detailItem}>
-            <Ionicons name="trending-up-outline" size={14} color={isDark ? '#999' : '#666'} />
+            <Ionicons name="trending-up-outline" size={14} color={tc.textSecondary} />
             <Text style={[styles.detailText, isDark && styles.textMuted]}>{item.interest_rate}%</Text>
           </View>
         )}
         {item.monthly_payment != null && (
           <View style={styles.detailItem}>
-            <Ionicons name="calendar-outline" size={14} color={isDark ? '#999' : '#666'} />
+            <Ionicons name="calendar-outline" size={14} color={tc.textSecondary} />
             <Text style={[styles.detailText, isDark && styles.textMuted]}>
               {formatKz(item.monthly_payment)}/mês
             </Text>
@@ -105,7 +150,7 @@ export default function DebtsScreen() {
           <TextInput
             style={[styles.payInput, isDark && styles.inputDark]}
             placeholder="Valor Kz"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.light.textMuted}
             keyboardType="numeric"
             value={payAmount}
             onChangeText={setPayAmount}
@@ -115,7 +160,7 @@ export default function DebtsScreen() {
             <Text style={styles.payBtnText}>Pagar</Text>
           </Pressable>
           <Pressable onPress={() => setPayDebtId(null)}>
-            <Ionicons name="close" size={20} color="#999" />
+            <Ionicons name="close" size={20} color={colors.light.textMuted} />
           </Pressable>
         </View>
       ) : (
@@ -123,18 +168,19 @@ export default function DebtsScreen() {
           style={styles.addPayBtn}
           onPress={() => { setPayDebtId(item.id); setPayAmount('') }}
         >
-          <Ionicons name="cash-outline" size={18} color="#3b82f6" />
+          <Ionicons name="cash-outline" size={18} color={colors.primary} />
           <Text style={styles.addPayText}>Registar pagamento</Text>
         </Pressable>
       )}
     </Pressable>
-  )
+    )
+  }
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Dividas</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -142,13 +188,13 @@ export default function DebtsScreen() {
             style={[styles.addBtn, isDark && styles.addBtnDark]}
             onPress={() => router.push('/debts/simulator')}
           >
-            <Ionicons name="calculator-outline" size={18} color="#f59e0b" />
+            <Ionicons name="calculator-outline" size={18} color={colors.warning} />
           </Pressable>
           <Pressable
             style={[styles.addBtn, isDark && styles.addBtnDark]}
             onPress={() => router.push('/debts/create')}
           >
-            <Ionicons name="add" size={20} color="#3b82f6" />
+            <Ionicons name="add" size={20} color={colors.primary} />
           </Pressable>
         </View>
       </View>
@@ -161,7 +207,7 @@ export default function DebtsScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="card-outline" size={48} color={isDark ? '#666' : '#ccc'} />
+            <Ionicons name="card-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma dívida registada</Text>
             <Text style={[styles.emptySubtext, isDark && styles.textMuted]}>
               Registe as suas dívidas para acompanhar os pagamentos
@@ -174,50 +220,54 @@ export default function DebtsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
   backBtn: { padding: 4 },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
   addBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: '#eff6ff',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  addBtnDark: { backgroundColor: '#1e3a5f' },
+  addBtnDark: { backgroundColor: colors.brand },
   list: { padding: 16, gap: 12 },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
+    backgroundColor: colors.light.card, borderRadius: 16, padding: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  cardDark: { backgroundColor: colors.dark.card },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  cardName: { fontSize: 16, fontWeight: '600', color: '#000' },
-  creditor: { fontSize: 13, color: '#999', marginTop: 2 },
-  typeBadge: { backgroundColor: '#eff6ff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  typeText: { fontSize: 11, color: '#3b82f6', fontWeight: '600' },
+  cardName: { fontSize: 16, fontWeight: '600', color: colors.light.text },
+  creditor: { fontSize: 13, color: colors.light.textMuted, marginTop: 2 },
+  typeBadge: { backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  typeText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
+  badgesGroup: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  nextPayment: { fontSize: 12, color: colors.light.textSecondary, marginTop: 4 },
   amountRow: { marginBottom: 8 },
-  balanceLabel: { fontSize: 12, color: '#666', marginBottom: 2 },
-  balanceValue: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
+  balanceLabel: { fontSize: 12, color: colors.light.textSecondary, marginBottom: 2 },
+  balanceValue: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
   detailsRow: { flexDirection: 'row', gap: 16, marginBottom: 8 },
   detailItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  detailText: { fontSize: 13, color: '#666' },
+  detailText: { fontSize: 13, color: colors.light.textSecondary },
   addPayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
-  addPayText: { fontSize: 13, color: '#3b82f6', fontWeight: '600' },
+  addPayText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   payRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   payInput: {
-    flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6, fontSize: 14, fontFamily: 'monospace', color: '#000',
+    flex: 1, borderWidth: 1, borderColor: colors.light.border, borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 6, fontSize: 14, fontFamily: 'monospace', color: colors.light.text,
   },
-  inputDark: { borderColor: '#333', color: '#fff', backgroundColor: '#111' },
-  payBtn: { backgroundColor: '#3b82f6', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  payBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  inputDark: { borderColor: colors.dark.border, color: colors.dark.text, backgroundColor: colors.dark.input },
+  payBtn: { backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  payBtnText: { color: colors.dark.text, fontSize: 13, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8, paddingHorizontal: 40 },
-  emptyText: { fontSize: 16, color: '#999' },
-  emptySubtext: { fontSize: 13, color: '#ccc', textAlign: 'center' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 16, color: colors.light.textMuted },
+  emptySubtext: { fontSize: 13, color: colors.light.handle, textAlign: 'center' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

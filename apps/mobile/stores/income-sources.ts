@@ -11,6 +11,7 @@ export interface IncomeSource {
   day_of_month: number | null
   is_active: boolean
   created_at: string
+  description?: string | null
 }
 
 interface IncomeSourcesState {
@@ -29,8 +30,8 @@ export const useIncomeSourcesStore = create<IncomeSourcesState>((set) => ({
   fetchSources: async () => {
     set({ isLoading: true })
     try {
-      const sources = await apiFetch<IncomeSource[]>('/api/v1/income-sources/')
-      set({ sources, isLoading: false })
+      const res = await apiFetch<{ items: IncomeSource[] }>('/api/v1/income-sources/')
+      set({ sources: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }
@@ -50,8 +51,8 @@ export const useIncomeSourcesStore = create<IncomeSourcesState>((set) => ({
       method: 'PUT',
       body: JSON.stringify(data),
     })
-    const sources = await apiFetch<IncomeSource[]>('/api/v1/income-sources/')
-    set({ sources })
+    const res = await apiFetch<{ items: IncomeSource[] }>('/api/v1/income-sources/')
+    set({ sources: res.items })
   },
 
   deleteSource: async (id) => {

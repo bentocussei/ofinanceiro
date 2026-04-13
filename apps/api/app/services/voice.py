@@ -1,8 +1,9 @@
-"""Voice service: speech-to-text using OpenAI Whisper API.
+"""Voice service: speech-to-text using OpenAI transcription.
 
 Requires OPENAI_API_KEY. Returns clear error if not configured.
 """
 
+import io
 import logging
 
 from app.config import settings
@@ -10,34 +11,31 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-async def transcribe_audio(audio_base64: str) -> dict:
-    """Transcribe audio to text using Whisper API.
+async def transcribe_audio_bytes(audio_bytes: bytes, filename: str = "audio.m4a") -> dict:
+    """Transcribe raw audio bytes to text using OpenAI transcription.
 
     Returns {"text": "transcription"} or {"error": "message"}.
+    Uses gpt-4o-mini-transcribe with Portuguese language hint.
     """
     if not settings.openai_api_key:
         return {"error": "Servico de transcricao de voz nao esta disponivel de momento."}
 
     try:
-        import base64
-        import io
-
         import openai
 
         client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
 
-        audio_bytes = base64.b64decode(audio_base64)
         audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = "audio.webm"
+        audio_file.name = filename
 
         transcription = await client.audio.transcriptions.create(
-            model="whisper-1",
+            model="gpt-4o-mini-transcribe",
             file=audio_file,
             language="pt",
         )
 
         return {"text": transcription.text}
 
-    except Exception as e:
+    except Exception:
         logger.exception("Voice transcription failed")
         return {"error": "Erro na transcricao de voz. Tente novamente."}

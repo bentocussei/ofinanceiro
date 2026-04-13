@@ -5,6 +5,8 @@
 
 import { Ionicons } from '@expo/vector-icons'
 
+import { colors } from '../../lib/tokens'
+
 const ICON_MAP: Record<string, string> = {
   // Account types
   bank: 'business-outline',
@@ -49,7 +51,7 @@ interface Props {
   color?: string
 }
 
-export default function IconDisplay({ name, size = 20, color = '#666' }: Props) {
+export default function IconDisplay({ name, size = 20, color = colors.light.textSecondary }: Props) {
   const iconName = (name && ICON_MAP[name.toLowerCase()]) || ICON_MAP.default
   return <Ionicons name={iconName as any} size={size} color={color} />
 }

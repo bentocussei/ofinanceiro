@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Debt, useDebtsStore } from '../../stores/debts'
 
 export default function DebtDetailScreen() {
@@ -35,12 +36,13 @@ export default function DebtDetailScreen() {
   const [payAmount, setPayAmount] = useState('')
   const [paying, setPaying] = useState(false)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   useEffect(() => {
     if (id) {
@@ -141,7 +143,7 @@ export default function DebtDetailScreen() {
             <Ionicons name={editing ? 'close' : 'pencil'} size={20} color={text} />
           </Pressable>
           <Pressable onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -169,7 +171,7 @@ export default function DebtDetailScreen() {
                 onPress={handleSave}
                 disabled={saving}
               >
-                <Text style={[styles.saveBtnText, { color: isDark ? '#000' : '#fff' }]}>
+                <Text style={[styles.saveBtnText, { color: isDark ? colors.dark.bg : colors.light.bg }]}>
                   {saving ? 'A guardar...' : 'Guardar'}
                 </Text>
               </Pressable>
@@ -177,7 +179,7 @@ export default function DebtDetailScreen() {
           ) : (
             <>
               <Text style={[styles.debtName, { color: text }]}>{debt.name}</Text>
-              <Text style={[styles.debtBalance, { color: '#ef4444' }]}>
+              <Text style={[styles.debtBalance, { color: colors.error }]}>
                 {formatKz(debt.current_balance)}
               </Text>
               <Text style={[styles.debtOriginal, { color: muted }]}>
@@ -186,7 +188,7 @@ export default function DebtDetailScreen() {
 
               {/* Progress */}
               <View style={styles.progressSection}>
-                <View style={[styles.progressBg, { backgroundColor: isDark ? '#333' : '#e5e5e5' }]}>
+                <View style={[styles.progressBg, { backgroundColor: tc.border }]}>
                   <View style={[styles.progressFill, { width: `${paidPct}%` }]} />
                 </View>
                 <Text style={[styles.progressText, { color: muted }]}>
@@ -231,7 +233,7 @@ export default function DebtDetailScreen() {
                 onPress={handlePayment}
                 disabled={paying || !payAmount.trim()}
               >
-                <Text style={[styles.payBtnText, { color: isDark ? '#000' : '#fff' }]}>
+                <Text style={[styles.payBtnText, { color: isDark ? colors.dark.bg : colors.light.bg }]}>
                   {paying ? '...' : 'Pagar'}
                 </Text>
               </Pressable>
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
   debtOriginal: { fontSize: 13, marginTop: 4 },
   progressSection: { marginTop: 16 },
   progressBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4, backgroundColor: '#22c55e' },
+  progressFill: { height: '100%', borderRadius: 4, backgroundColor: colors.success },
   progressText: { fontSize: 12, marginTop: 6, textAlign: 'right' },
   label: { fontSize: 13, fontWeight: '500', marginBottom: 6 },
   input: { borderWidth: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 12, fontSize: 16 },

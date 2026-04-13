@@ -1,6 +1,8 @@
 import * as Haptics from 'expo-haptics'
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native'
 
+import { colors, themeColors } from '../../lib/tokens'
+
 interface Props {
   value: string
   onChange: (value: string) => void
@@ -111,29 +113,29 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: '700',
     fontFamily: 'monospace',
-    color: '#000',
+    color: colors.light.text,
   },
-  amountDark: { color: '#fff' },
-  currency: { fontSize: 18, color: '#999', fontWeight: '500' },
-  currencyDark: { color: '#666' },
+  amountDark: { color: colors.dark.text },
+  currency: { fontSize: 18, color: colors.light.textMuted, fontWeight: '500' },
+  currencyDark: { color: colors.dark.textMuted },
   keypad: { gap: 8, paddingHorizontal: 16 },
   row: { flexDirection: 'row', gap: 8 },
   key: {
     flex: 1,
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.light.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  keyDark: { backgroundColor: '#222' },
-  keyPressed: { backgroundColor: '#e5e5e5' },
+  keyDark: { backgroundColor: colors.dark.borderLight },
+  keyPressed: { backgroundColor: colors.light.border },
   keyBackspace: { backgroundColor: 'transparent' },
   keyText: {
     fontSize: 22,
     fontWeight: '500',
-    color: '#000',
+    color: colors.light.text,
   },
-  keyTextDark: { color: '#fff' },
+  keyTextDark: { color: colors.dark.text },
   keyTextBackspace: { fontSize: 24 },
 })

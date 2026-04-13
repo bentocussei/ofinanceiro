@@ -1,7 +1,7 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -16,25 +16,50 @@ import {
 import { Swipeable } from 'react-native-gesture-handler'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import ContextSwitcher from '../../components/common/ContextSwitcher'
 import FAB from '../../components/common/FAB'
-import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
+import CreateTransactionSheet, { TransactionPrefill } from '../../components/transactions/CreateTransactionSheet'
 import TransactionFilters, { FilterState } from '../../components/transactions/TransactionFilters'
 import { formatKz, formatRelativeDate } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Transaction, useTransactionsStore } from '../../stores/transactions'
 
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
+  const params = useLocalSearchParams<{
+    prefill_amount?: string
+    prefill_description?: string
+    prefill_merchant?: string
+    prefill_date?: string
+  }>()
   const txnSheetRef = useRef<BottomSheet>(null)
   const { transactions, fetchTransactions, deleteTransaction, isLoading, hasMore } =
     useTransactionsStore()
 
   const [filters, setFilters] = useState<FilterState>({ type: 'all', period: 'month' })
+  const [prefill, setPrefill] = useState<TransactionPrefill | null>(null)
 
   useEffect(() => {
     fetchTransactions(true)
   }, [])
+
+  // Handle prefill from receipt scanner
+  useEffect(() => {
+    if (params.prefill_amount || params.prefill_description) {
+      const data: TransactionPrefill = {
+        type: 'expense',
+      }
+      if (params.prefill_amount) data.amount = parseInt(params.prefill_amount, 10)
+      if (params.prefill_description) data.description = params.prefill_description
+      if (params.prefill_merchant) data.merchant = params.prefill_merchant
+      if (params.prefill_date) data.date = params.prefill_date
+      setPrefill(data)
+      setTimeout(() => txnSheetRef.current?.expand(), 300)
+    }
+  }, [params.prefill_amount, params.prefill_description])
 
   const onRefresh = useCallback(() => fetchTransactions(true), [])
   const onEndReached = useCallback(() => {
@@ -139,6 +164,7 @@ export default function TransactionsScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Text style={[styles.title, isDark && styles.textLight]}>Transacções</Text>
+        <ContextSwitcher onContextChange={onRefresh} />
       </View>
 
       <TransactionFilters filters={filters} onChange={setFilters} />
@@ -152,7 +178,7 @@ export default function TransactionsScreen() {
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="receipt-outline" size={48} color={isDark ? '#666' : '#ccc'} />
+            <Ionicons name="receipt-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>
               {filters.type !== 'all' || filters.period !== 'all'
                 ? 'Nenhuma transacção encontrada com estes filtros'
@@ -163,40 +189,40 @@ export default function TransactionsScreen() {
       />
 
       <FAB onPress={() => txnSheetRef.current?.expand()} />
-      <CreateTransactionSheet ref={txnSheetRef} onCreated={onRefresh} />
+      <CreateTransactionSheet ref={txnSheetRef} onCreated={() => { setPrefill(null); onRefresh() }} prefill={prefill} />
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
-  title: { fontSize: 24, fontWeight: '700', color: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  title: { fontSize: 24, fontWeight: '700', color: colors.light.text },
   dateHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#f0f0f0',
+    paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.light.separator,
   },
-  dateHeaderDark: { backgroundColor: '#111' },
-  dateText: { fontSize: 14, fontWeight: '600', color: '#333' },
+  dateHeaderDark: { backgroundColor: colors.dark.cardAlt },
+  dateText: { fontSize: 14, fontWeight: '600', color: colors.light.textSecondary },
   dateTotal: { fontSize: 13, fontWeight: '500', fontFamily: 'monospace' },
   txnRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff',
-    borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 20, paddingVertical: 14, backgroundColor: colors.light.card,
+    borderBottomWidth: 0.5, borderBottomColor: colors.light.borderLight,
   },
-  txnRowDark: { backgroundColor: '#1a1a1a', borderBottomColor: '#333' },
+  txnRowDark: { backgroundColor: colors.dark.card, borderBottomColor: colors.dark.border },
   txnInfo: { flex: 1 },
-  txnDesc: { fontSize: 15, color: '#000' },
+  txnDesc: { fontSize: 15, color: colors.light.text },
   txnAmount: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
-  income: { color: '#22c55e' },
-  expense: { color: '#ef4444' },
+  income: { color: colors.success },
+  expense: { color: colors.error },
   swipeDelete: {
-    backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: colors.error, justifyContent: 'center', alignItems: 'center',
     width: 80,
   },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 15, color: '#999', textAlign: 'center', paddingHorizontal: 40 },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 15, color: colors.light.textMuted, textAlign: 'center', paddingHorizontal: 40 },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.light.textMuted },
 })

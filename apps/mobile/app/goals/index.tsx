@@ -18,10 +18,12 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { Goal, useGoalsStore } from '../../stores/goals'
 
 export default function GoalsScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { goals, isLoading, fetchGoals, contribute, deleteGoal } = useGoalsStore()
   const [contributeGoalId, setContributeGoalId] = useState<string | null>(null)
@@ -68,12 +70,12 @@ export default function GoalsScreen() {
         onLongPress={() => handleDelete(item)}
       >
         <View style={styles.goalHeader}>
-          <View style={styles.goalIcon}><IconDisplay name={item.type} size={24} color={isDark ? '#fff' : '#000'} /></View>
+          <View style={styles.goalIcon}><IconDisplay name={item.type} size={24} color={tc.text} /></View>
           <View style={styles.goalInfo}>
             <Text style={[styles.goalName, isDark && styles.textLight]}>{item.name}</Text>
             {isComplete && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
+                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
                 <Text style={styles.completeBadge}>Concluída</Text>
               </View>
             )}
@@ -94,7 +96,7 @@ export default function GoalsScreen() {
           <View
             style={[styles.progressFill, {
               width: `${Math.min(pct, 100)}%`,
-              backgroundColor: isComplete ? '#22c55e' : pct >= 75 ? '#f59e0b' : '#3b82f6',
+              backgroundColor: isComplete ? colors.success : pct >= 75 ? colors.warning : colors.primary,
             }]}
           />
         </View>
@@ -107,7 +109,7 @@ export default function GoalsScreen() {
               <TextInput
                 style={[styles.contributeInput, isDark && styles.inputDark]}
                 placeholder="Valor Kz"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.light.textMuted}
                 keyboardType="numeric"
                 value={contributeAmount}
                 onChangeText={setContributeAmount}
@@ -117,7 +119,7 @@ export default function GoalsScreen() {
                 <Text style={styles.contributeBtnText}>Contribuir</Text>
               </Pressable>
               <Pressable onPress={() => setContributeGoalId(null)}>
-                <Ionicons name="close" size={20} color="#999" />
+                <Ionicons name="close" size={20} color={colors.light.textMuted} />
               </Pressable>
             </View>
           ) : (
@@ -125,7 +127,7 @@ export default function GoalsScreen() {
               style={styles.addContributeBtn}
               onPress={() => { setContributeGoalId(item.id); setContributeAmount('') }}
             >
-              <Ionicons name="add-circle-outline" size={18} color="#3b82f6" />
+              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
               <Text style={styles.addContributeText}>Contribuir</Text>
             </Pressable>
           )
@@ -138,14 +140,14 @@ export default function GoalsScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Metas</Text>
         <Pressable
           style={[styles.addBtn, isDark && styles.addBtnDark]}
           onPress={() => router.push('/goals/create')}
         >
-          <Ionicons name="add" size={20} color="#3b82f6" />
+          <Ionicons name="add" size={20} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -157,7 +159,7 @@ export default function GoalsScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <IconDisplay name="custom" size={48} color={isDark ? '#666' : '#ccc'} />
+            <IconDisplay name="custom" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma meta criada</Text>
             <Text style={[styles.emptySubtext, isDark && styles.textMuted]}>
               Defina metas para poupar e alcançar os seus objectivos
@@ -170,43 +172,43 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
-  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' },
-  addBtnDark: { backgroundColor: '#1e3a5f' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
+  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  addBtnDark: { backgroundColor: colors.brand },
   list: { padding: 16, gap: 12 },
-  goalCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16 },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  goalCard: { backgroundColor: colors.light.card, borderRadius: 16, padding: 16 },
+  cardDark: { backgroundColor: colors.dark.card },
   goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   goalIcon: { width: 24, height: 24 },
   goalInfo: { flex: 1 },
-  goalName: { fontSize: 16, fontWeight: '600', color: '#000' },
-  completeBadge: { fontSize: 12, color: '#22c55e', marginTop: 2 },
+  goalName: { fontSize: 16, fontWeight: '600', color: colors.light.text },
+  completeBadge: { fontSize: 12, color: colors.success, marginTop: 2 },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 6 },
-  currentAmount: { fontSize: 18, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
-  targetAmount: { fontSize: 13, fontFamily: 'monospace', color: '#999', marginLeft: 4 },
-  progressBg: { height: 8, backgroundColor: '#f0f0f0', borderRadius: 4, marginBottom: 4 },
+  currentAmount: { fontSize: 18, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
+  targetAmount: { fontSize: 13, fontFamily: 'monospace', color: colors.light.textMuted, marginLeft: 4 },
+  progressBg: { height: 8, backgroundColor: colors.light.separator, borderRadius: 4, marginBottom: 4 },
   progressFill: { height: 8, borderRadius: 4 },
-  pctText: { fontSize: 12, color: '#999', marginBottom: 8 },
+  pctText: { fontSize: 12, color: colors.light.textMuted, marginBottom: 8 },
   addContributeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
-  addContributeText: { fontSize: 13, color: '#3b82f6', fontWeight: '600' },
+  addContributeText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   contributeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   contributeInput: {
-    flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6, fontSize: 14, fontFamily: 'monospace', color: '#000',
+    flex: 1, borderWidth: 1, borderColor: colors.light.border, borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 6, fontSize: 14, fontFamily: 'monospace', color: colors.light.text,
   },
-  inputDark: { borderColor: '#333', color: '#fff', backgroundColor: '#111' },
-  contributeBtn: { backgroundColor: '#3b82f6', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  contributeBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  inputDark: { borderColor: colors.dark.border, color: colors.dark.text, backgroundColor: colors.dark.input },
+  contributeBtn: { backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  contributeBtnText: { color: colors.dark.text, fontSize: 13, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8, paddingHorizontal: 40 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 16, color: '#999' },
-  emptySubtext: { fontSize: 13, color: '#ccc', textAlign: 'center' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 16, color: colors.light.textMuted },
+  emptySubtext: { fontSize: 13, color: colors.light.handle, textAlign: 'center' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

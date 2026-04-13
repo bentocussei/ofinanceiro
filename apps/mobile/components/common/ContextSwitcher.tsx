@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Text, View, useColorScheme, Modal, FlatList } from 'react-native'
+import { Pressable, StyleSheet, Text, View, useColorScheme, Modal } from 'react-native'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 import {
   AppContext,
-  getContext,
   isFamilyContext,
   loadContext,
   setContext,
@@ -28,10 +28,7 @@ export default function ContextSwitcher({ onContextChange }: Props) {
   const [showPicker, setShowPicker] = useState(false)
 
   useEffect(() => {
-    loadContext().then((ctx) => {
-      setCurrent(ctx)
-    })
-    // Fetch family info
+    loadContext().then((ctx) => setCurrent(ctx))
     apiFetch<Family>('/api/v1/families/me')
       .then(setFamily)
       .catch(() => setFamily(null))
@@ -45,14 +42,11 @@ export default function ContextSwitcher({ onContextChange }: Props) {
     onContextChange?.()
   }
 
-  const isFamily = isFamilyContext()
+  const isFamily = current.startsWith('family:')
   const label = isFamily && family ? family.name : 'Pessoal'
   const icon = isFamily ? 'people' : 'person'
 
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const border = isDark ? '#333' : '#e5e5e5'
+  const tc = themeColors(isDark)
 
   // If no family, don't show switcher
   if (!family) return null
@@ -64,32 +58,40 @@ export default function ContextSwitcher({ onContextChange }: Props) {
 
   return (
     <>
-      <Pressable style={styles.trigger} onPress={() => setShowPicker(true)}>
-        <Ionicons name={icon as any} size={18} color={text} />
-        <Text style={[styles.triggerText, { color: text }]}>{label}</Text>
-        <Ionicons name="chevron-down" size={14} color={muted} />
+      <Pressable
+        style={[styles.trigger, { backgroundColor: isFamily ? colors.primaryLight : tc.cardAlt }]}
+        onPress={() => setShowPicker(true)}
+      >
+        <Ionicons name={icon as any} size={14} color={isFamily ? colors.primary : tc.textSecondary} />
+        <Text
+          style={[styles.triggerText, { color: isFamily ? colors.primary : tc.textSecondary }]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+        <Ionicons name="chevron-down" size={12} color={isFamily ? colors.primary : tc.textMuted} />
       </Pressable>
 
       <Modal visible={showPicker} transparent animationType="fade">
         <Pressable style={styles.backdrop} onPress={() => setShowPicker(false)}>
-          <View style={[styles.picker, { backgroundColor: card, borderColor: border }]}>
-            <Text style={[styles.pickerTitle, { color: text }]}>Escolher contexto</Text>
-            {options.map((opt) => (
-              <Pressable
-                key={opt.ctx}
-                style={[
-                  styles.option,
-                  current === opt.ctx && { backgroundColor: isDark ? '#333' : '#f0f0f0' },
-                ]}
-                onPress={() => switchTo(opt.ctx)}
-              >
-                <Ionicons name={opt.icon as any} size={20} color={text} />
-                <Text style={[styles.optionLabel, { color: text }]}>{opt.label}</Text>
-                {current === opt.ctx && (
-                  <Ionicons name="checkmark" size={20} color="#22c55e" />
-                )}
-              </Pressable>
-            ))}
+          <View style={[styles.picker, { backgroundColor: tc.card, borderColor: tc.border }]}>
+            <Text style={[styles.pickerTitle, { color: tc.text }]}>Escolher contexto</Text>
+            {options.map((opt) => {
+              const isActive = current === opt.ctx
+              return (
+                <Pressable
+                  key={opt.ctx}
+                  style={[styles.option, isActive && { backgroundColor: colors.primaryLight }]}
+                  onPress={() => switchTo(opt.ctx)}
+                >
+                  <Ionicons name={opt.icon as any} size={20} color={isActive ? colors.primary : tc.icon} />
+                  <Text style={[styles.optionLabel, { color: isActive ? colors.primary : tc.text }]}>
+                    {opt.label}
+                  </Text>
+                  {isActive && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </Pressable>
+              )
+            })}
           </View>
         </Pressable>
       </Modal>
@@ -101,12 +103,12 @@ const styles = StyleSheet.create({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 4,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
   },
-  triggerText: { fontSize: 14, fontWeight: '600' },
+  triggerText: { fontSize: 13, fontWeight: '600', maxWidth: 100 },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

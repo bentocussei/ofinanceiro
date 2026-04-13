@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons'
 import { StyleSheet, Text, View, useColorScheme } from 'react-native'
 
+import { themeColors } from '../../lib/tokens'
+
 interface Props {
   icon: string
   title: string
@@ -9,14 +11,14 @@ interface Props {
 
 export default function EmptyState({ icon, title, description }: Props) {
   const isDark = useColorScheme() === 'dark'
-  const muted = isDark ? '#666' : '#999'
+  const tc = themeColors(isDark)
 
   return (
     <View style={styles.container}>
-      <Ionicons name={icon as any} size={52} color={muted} />
-      <Text style={[styles.title, { color: isDark ? '#aaa' : '#555' }]}>{title}</Text>
+      <Ionicons name={icon as any} size={52} color={tc.textMuted} />
+      <Text style={[styles.title, { color: tc.textSecondary }]}>{title}</Text>
       {description && (
-        <Text style={[styles.desc, { color: muted }]}>{description}</Text>
+        <Text style={[styles.desc, { color: tc.textMuted }]}>{description}</Text>
       )}
     </View>
   )

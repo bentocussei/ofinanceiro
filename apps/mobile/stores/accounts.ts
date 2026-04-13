@@ -40,8 +40,8 @@ export const useAccountsStore = create<AccountsState>((set) => ({
   fetchAccounts: async () => {
     set({ isLoading: true })
     try {
-      const accounts = await apiFetch<Account[]>('/api/v1/accounts/')
-      set({ accounts, isLoading: false })
+      const res = await apiFetch<{ items: Account[] }>('/api/v1/accounts/')
+      set({ accounts: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }

@@ -2,11 +2,14 @@ import { Ionicons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
 import { Platform, useColorScheme } from 'react-native'
 
+import { colors } from '../../lib/tokens'
+
 export default function TabLayout() {
   const colorScheme = useColorScheme()
-  const tint = colorScheme === 'dark' ? '#fff' : '#000'
-  const inactive = colorScheme === 'dark' ? '#555' : '#aaa'
-  const bg = colorScheme === 'dark' ? '#000' : '#fff'
+  const isDark = colorScheme === 'dark'
+  const tint = isDark ? colors.dark.text : colors.light.text
+  const inactive = isDark ? '#555' : '#aaa'
+  const bg = isDark ? colors.dark.bg : colors.light.card
 
   return (
     <Tabs

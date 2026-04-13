@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface BudgetItemStatus {
   category_id: string
@@ -39,16 +40,17 @@ interface BudgetStatus {
 }
 
 function getProgressColor(pct: number): string {
-  if (pct >= 100) return '#ef4444'
-  if (pct >= 90) return '#f97316'
-  if (pct >= 70) return '#f59e0b'
-  return '#22c55e'
+  if (pct >= 100) return colors.error
+  if (pct >= 90) return colors.orange
+  if (pct >= 70) return colors.warning
+  return colors.success
 }
 
 export default function BudgetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
 
   const [status, setStatus] = useState<BudgetStatus | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -129,15 +131,15 @@ export default function BudgetDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.headerTitle, isDark && styles.textLight]}>Orcamento</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={() => setIsEditing(!isEditing)} style={styles.actionBtn}>
-            <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={isDark ? '#fff' : '#000'} />
+            <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={tc.text} />
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.actionBtn}>
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -151,7 +153,7 @@ export default function BudgetDetailScreen() {
               value={editName}
               onChangeText={setEditName}
               placeholder="Nome do orcamento"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.light.textMuted}
             />
           ) : (
             <Text style={[styles.budgetName, isDark && styles.textLight]}>
@@ -239,53 +241,53 @@ export default function BudgetDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { fontSize: 16, color: '#999' },
+  loadingText: { fontSize: 16, color: colors.light.textMuted },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.light.text },
   headerActions: { flexDirection: 'row', gap: 12 },
   actionBtn: { padding: 4 },
   content: { padding: 16, gap: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16 },
-  cardDark: { backgroundColor: '#1a1a1a' },
-  budgetName: { fontSize: 20, fontWeight: '700', textAlign: 'center', color: '#000' },
+  card: { backgroundColor: colors.light.card, borderRadius: 16, padding: 16 },
+  cardDark: { backgroundColor: colors.dark.card },
+  budgetName: { fontSize: 20, fontWeight: '700', textAlign: 'center', color: colors.light.text },
   summaryCard: { alignItems: 'center' },
-  spentLabel: { fontSize: 12, color: '#999', marginBottom: 4 },
-  spentAmount: { fontSize: 32, fontWeight: '700', fontFamily: 'monospace', color: '#000' },
-  limitLabel: { fontSize: 14, color: '#999', marginTop: 4, fontFamily: 'monospace' },
+  spentLabel: { fontSize: 12, color: colors.light.textMuted, marginBottom: 4 },
+  spentAmount: { fontSize: 32, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
+  limitLabel: { fontSize: 14, color: colors.light.textMuted, marginTop: 4, fontFamily: 'monospace' },
   progressBar: {
-    width: '100%', height: 10, backgroundColor: '#f0f0f0', borderRadius: 5,
+    width: '100%', height: 10, backgroundColor: colors.light.separator, borderRadius: 5,
     marginTop: 16, overflow: 'hidden',
   },
   progressFill: { height: 10, borderRadius: 5 },
   row: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8 },
   pctText: { fontSize: 13, fontWeight: '600' },
-  daysText: { fontSize: 13, color: '#999' },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#999', marginBottom: 12 },
+  daysText: { fontSize: 13, color: colors.light.textMuted },
+  sectionTitle: { fontSize: 13, fontWeight: '600', color: colors.light.textMuted, marginBottom: 12 },
   categoryRow: { marginBottom: 12 },
   categoryHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  categoryName: { fontSize: 14, color: '#000' },
-  categoryAmount: { fontSize: 12, fontFamily: 'monospace', color: '#999' },
+  categoryName: { fontSize: 14, color: colors.light.text },
+  categoryAmount: { fontSize: 12, fontFamily: 'monospace', color: colors.light.textMuted },
   categoryProgress: {
-    height: 6, backgroundColor: '#f0f0f0', borderRadius: 3, overflow: 'hidden',
+    height: 6, backgroundColor: colors.light.separator, borderRadius: 3, overflow: 'hidden',
   },
   categoryProgressFill: { height: 6, borderRadius: 3 },
   editInput: {
-    fontSize: 18, fontWeight: '600', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 10, color: '#000', textAlign: 'center',
+    fontSize: 18, fontWeight: '600', borderWidth: 1, borderColor: colors.light.border, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10, color: colors.light.text, textAlign: 'center',
   },
-  editInputDark: { borderColor: '#333', color: '#fff' },
+  editInputDark: { borderColor: colors.dark.border, color: colors.dark.text },
   saveBtn: {
-    backgroundColor: '#3b82f6', borderRadius: 12, paddingVertical: 16, alignItems: 'center',
+    backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16, alignItems: 'center',
   },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  saveBtnText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

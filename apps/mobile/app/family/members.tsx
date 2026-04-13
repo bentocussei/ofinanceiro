@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface Member {
   id: string
@@ -44,8 +45,8 @@ const ROLE_ICONS: Record<string, string> = {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: '#f59e0b',
-  adult: '#3b82f6',
+  admin: colors.warning,
+  adult: colors.primary,
   dependent: '#888',
 }
 
@@ -55,11 +56,12 @@ export default function FamilyMembersScreen() {
   const [family, setFamily] = useState<Family | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
 
   const fetchFamily = useCallback(async () => {
     try {

@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { formatDate, formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { RecurringRule, useRecurringRulesStore } from '../../stores/recurring-rules'
 
 const RULE_TYPES = [
@@ -35,6 +36,7 @@ const FREQUENCIES = [
 
 export default function RecurringRulesScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { rules, isLoading, fetchRules, createRule, updateRule, deleteRule } = useRecurringRulesStore()
   const sheetRef = useRef<BottomSheet>(null)
@@ -132,19 +134,19 @@ export default function RecurringRulesScreen() {
         <View style={styles.detailsRow}>
           <View style={[styles.typeBadge, isIncome ? styles.typeBadgeIncome : styles.typeBadgeExpense,
             isDark && (isIncome ? { backgroundColor: '#002e1a' } : { backgroundColor: '#3d0000' })]}>
-            <Text style={[styles.typeText, isIncome ? { color: '#059669' } : { color: '#dc2626' }]}>
+            <Text style={[styles.typeText, isIncome ? { color: colors.successDark } : { color: colors.errorDark }]}>
               {isIncome ? 'Receita' : 'Despesa'}
             </Text>
           </View>
           <View style={styles.detailItem}>
-            <Ionicons name="repeat-outline" size={14} color={isDark ? '#999' : '#666'} />
+            <Ionicons name="repeat-outline" size={14} color={tc.textSecondary} />
             <Text style={[styles.detailText, isDark && styles.textMuted]}>
               {getFrequencyLabel(item.frequency)}
             </Text>
           </View>
           {item.next_due_date && (
             <View style={styles.detailItem}>
-              <Ionicons name="calendar-outline" size={14} color={isDark ? '#999' : '#666'} />
+              <Ionicons name="calendar-outline" size={14} color={tc.textSecondary} />
               <Text style={[styles.detailText, isDark && styles.textMuted]}>
                 {formatDate(item.next_due_date)}
               </Text>
@@ -159,14 +161,14 @@ export default function RecurringRulesScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Recorrentes</Text>
         <Pressable
           style={[styles.addBtnHeader, isDark && styles.addBtnDark]}
           onPress={openCreate}
         >
-          <Ionicons name="add" size={20} color="#3b82f6" />
+          <Ionicons name="add" size={20} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -178,7 +180,7 @@ export default function RecurringRulesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="repeat-outline" size={48} color={isDark ? '#666' : '#ccc'} />
+            <Ionicons name="repeat-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma regra recorrente</Text>
             <Text style={[styles.emptySubtext, isDark && styles.textMuted]}>
               Crie regras para automatizar transacções repetidas
@@ -193,7 +195,7 @@ export default function RecurringRulesScreen() {
         snapPoints={snapPoints}
         enablePanDownToClose
         backgroundStyle={isDark ? styles.sheetDark : styles.sheet}
-        handleIndicatorStyle={{ backgroundColor: isDark ? '#666' : '#ccc' }}
+        handleIndicatorStyle={{ backgroundColor: tc.handle }}
       >
         <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
           <Text style={[styles.sheetTitle, isDark && styles.textLight]}>Nova regra recorrente</Text>
@@ -202,7 +204,7 @@ export default function RecurringRulesScreen() {
           <TextInput
             style={[styles.input, isDark && styles.inputDark]}
             placeholder="Ex: Renda do apartamento"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.light.textMuted}
             value={description}
             onChangeText={setDescription}
           />
@@ -224,7 +226,7 @@ export default function RecurringRulesScreen() {
           <TextInput
             style={[styles.input, isDark && styles.inputDark]}
             placeholder="0"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.light.textMuted}
             keyboardType="numeric"
             value={amount}
             onChangeText={setAmount}
@@ -247,7 +249,7 @@ export default function RecurringRulesScreen() {
           <TextInput
             style={[styles.input, isDark && styles.inputDark]}
             placeholder="Ex: 2026-04-01"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.light.textMuted}
             value={nextDueDate}
             onChangeText={setNextDueDate}
           />
@@ -266,63 +268,63 @@ export default function RecurringRulesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
   backBtn: { padding: 4 },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
   addBtnHeader: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: '#eff6ff',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  addBtnDark: { backgroundColor: '#1e3a5f' },
+  addBtnDark: { backgroundColor: colors.brand },
   list: { padding: 16, gap: 12 },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
+    backgroundColor: colors.light.card, borderRadius: 16, padding: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
+  cardDark: { backgroundColor: colors.dark.card },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  cardName: { fontSize: 16, fontWeight: '600', color: '#000' },
+  cardName: { fontSize: 16, fontWeight: '600', color: colors.light.text },
   amount: { fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
-  amountIncome: { color: '#059669' },
-  amountExpense: { color: '#dc2626' },
+  amountIncome: { color: colors.successDark },
+  amountExpense: { color: colors.errorDark },
   detailsRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', alignItems: 'center' },
   detailItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  detailText: { fontSize: 13, color: '#666' },
+  detailText: { fontSize: 13, color: colors.light.textSecondary },
   typeBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  typeBadgeIncome: { backgroundColor: '#d1fae5' },
-  typeBadgeExpense: { backgroundColor: '#fee2e2' },
+  typeBadgeIncome: { backgroundColor: colors.successLight },
+  typeBadgeExpense: { backgroundColor: colors.errorLight },
   typeText: { fontSize: 11, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8, paddingHorizontal: 40 },
-  emptyText: { fontSize: 16, color: '#999' },
-  emptySubtext: { fontSize: 13, color: '#ccc', textAlign: 'center' },
-  sheet: { backgroundColor: '#fff' },
-  sheetDark: { backgroundColor: '#1a1a1a' },
+  emptyText: { fontSize: 16, color: colors.light.textMuted },
+  emptySubtext: { fontSize: 13, color: colors.light.handle, textAlign: 'center' },
+  sheet: { backgroundColor: colors.light.card },
+  sheetDark: { backgroundColor: colors.dark.card },
   sheetContent: { padding: 20, paddingBottom: 40 },
-  sheetTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4, color: '#000' },
-  label: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6, marginTop: 16 },
+  sheetTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4, color: colors.light.text },
+  label: { fontSize: 13, fontWeight: '600', color: colors.light.textSecondary, marginBottom: 6, marginTop: 16 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#f9f9f9',
+    borderWidth: 1, borderColor: colors.light.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.light.text, backgroundColor: colors.light.input,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
+  inputDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.input, color: colors.dark.text },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip: {
     alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-    borderWidth: 1, borderColor: '#e5e5e5', minWidth: 80, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.light.border, minWidth: 80, backgroundColor: colors.light.card,
   },
-  typeChipDark: { borderColor: '#333', backgroundColor: '#1a1a1a' },
-  typeSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
-  chipLabel: { fontSize: 11, color: '#666' },
-  chipLabelSelected: { color: '#3b82f6', fontWeight: '600' },
-  submitBtn: { backgroundColor: '#000', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
+  typeChipDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.card },
+  typeSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  chipLabel: { fontSize: 11, color: colors.light.textSecondary },
+  chipLabelSelected: { color: colors.primary, fontWeight: '600' },
+  submitBtn: { backgroundColor: colors.light.text, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useEffect } from 'react'
 import { Pressable, StyleSheet, useColorScheme } from 'react-native'
+
+import { colors, themeColors } from '../../lib/tokens'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -48,7 +50,7 @@ export default function FAB({ onPress }: Props) {
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
-      <Ionicons name="add" size={28} color={isDark ? '#000' : '#fff'} />
+      <Ionicons name="add" size={28} color={isDark ? colors.light.text : colors.dark.text} />
     </AnimatedPressable>
   )
 }
@@ -61,10 +63,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#000',
+    backgroundColor: colors.light.text,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.light.text,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -72,6 +74,6 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   fabDark: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.dark.text,
   },
 })

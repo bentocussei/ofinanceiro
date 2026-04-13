@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz, formatRelativeDate } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { useAccountsStore } from '../../stores/accounts'
 
 interface Account {
@@ -51,26 +52,25 @@ export default function AccountDetailScreen() {
   const [editInstitution, setEditInstitution] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   const fetchData = useCallback(async () => {
     if (!id) return
     try {
       const [acc, txns] = await Promise.all([
         apiFetch<Account>(`/api/v1/accounts/${id}`),
-        apiFetch<Transaction[]>(`/api/v1/transactions/?account_id=${id}&limit=20`).catch(() => []),
+        apiFetch<{ items: Transaction[] }>(`/api/v1/transactions/?account_id=${id}&limit=20`).catch(() => ({ items: [] })),
       ])
       setAccount(acc)
       setEditName(acc.name)
       setEditInstitution(acc.institution || '')
-      // Handle paginated response
-      const items = Array.isArray(txns) ? txns : (txns as any).items || []
-      setTransactions(items)
+      setTransactions(txns.items)
     } catch {
       Alert.alert('Erro', 'Conta nao encontrada')
       router.back()
@@ -151,7 +151,7 @@ export default function AccountDetailScreen() {
             <Ionicons name={editing ? 'close' : 'pencil'} size={20} color={text} />
           </Pressable>
           <Pressable onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -196,7 +196,7 @@ export default function AccountDetailScreen() {
                   {account.institution && (
                     <Text style={[styles.accInst, { color: muted }]}>{account.institution}</Text>
                   )}
-                  <Text style={[styles.accBalance, { color: account.balance >= 0 ? '#22c55e' : '#ef4444' }]}>
+                  <Text style={[styles.accBalance, { color: account.balance >= 0 ? colors.success : colors.error }]}>
                     {formatKz(account.balance)}
                   </Text>
                   <Text style={[styles.accType, { color: muted }]}>
@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
   txnDesc: { fontSize: 15, marginBottom: 2 },
   txnDate: { fontSize: 12 },
   txnAmount: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
-  income: { color: '#22c55e' },
-  expense: { color: '#ef4444' },
+  income: { color: colors.success },
+  expense: { color: colors.error },
   empty: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   emptyText: { fontSize: 14 },
 })

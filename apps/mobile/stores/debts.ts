@@ -20,7 +20,7 @@ export const useDebtsStore = create<DebtsState>((set, get) => ({
   debts: [], isLoading: false,
   fetchDebts: async () => {
     set({ isLoading: true })
-    try { const debts = await apiFetch<Debt[]>('/api/v1/debts/'); set({ debts, isLoading: false }) }
+    try { const res = await apiFetch<{ items: Debt[] }>('/api/v1/debts/'); set({ debts: res.items, isLoading: false }) }
     catch { set({ isLoading: false }) }
   },
   createDebt: async (data) => {

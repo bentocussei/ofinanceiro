@@ -15,7 +15,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   notifications: [], unreadCount: 0, isLoading: false,
   fetchNotifications: async () => {
     set({ isLoading: true })
-    try { const notifications = await apiFetch<Notification[]>('/api/v1/notifications/'); set({ notifications, isLoading: false }) }
+    try { const res = await apiFetch<{ items: Notification[] }>('/api/v1/notifications/'); set({ notifications: res.items, isLoading: false }) }
     catch { set({ isLoading: false }) }
   },
   fetchUnreadCount: async () => {

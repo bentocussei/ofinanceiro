@@ -3,15 +3,17 @@ import { useRouter } from 'expo-router'
 import { ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { themeColors } from '../../lib/tokens'
 import ReferralCard from '../../components/referral/ReferralCard'
 
 export default function ReferralScreen() {
   const isDark = useColorScheme() === 'dark'
   const router = useRouter()
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const text = tc.text
+  const muted = tc.textSecondary
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>

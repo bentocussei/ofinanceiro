@@ -17,6 +17,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { colors, themeColors } from '../lib/tokens'
 import { useAuthStore } from '../stores/auth'
 
 type Step = 'form' | 'otp'
@@ -174,13 +175,14 @@ export default function RegisterScreen() {
     setCountryIndex((prev) => (prev + 1) % COUNTRIES.length)
   }
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text_ = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
-  const primary = '#2563eb'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text_ = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
+  const primary = colors.primaryDark
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -292,7 +294,7 @@ export default function RegisterScreen() {
                     ref={(ref) => { otpRefs.current[i] = ref }}
                     style={[
                       styles.otpInput,
-                      { backgroundColor: isDark ? '#111' : '#f9f9f9', borderColor: border, color: text_ },
+                      { backgroundColor: tc.input, borderColor: border, color: text_ },
                       digit && { borderColor: accent },
                     ]}
                     keyboardType="number-pad"

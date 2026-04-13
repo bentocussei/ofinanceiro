@@ -18,11 +18,15 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Precisamos de acesso a camara para digitalizar recibos e extrair informacoes automaticamente.",
+        "NSMicrophoneUsageDescription": "Precisamos de acesso ao microfone para transcrever as tuas mensagens de voz.",
+        "NSPhotoLibraryUsageDescription": "Precisamos de acesso a galeria para anexar fotos ao assistente.",
         "NSFaceIDUsageDescription": "Usa Face ID para proteger o acesso a app.",
         "CFBundleLocalizations": [
+          "pt",
           "pt"
         ],
-        "CFBundleDevelopmentRegion": "pt"
+        "CFBundleDevelopmentRegion": "pt",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -72,7 +76,8 @@
         {
           "faceIDPermission": "Usa Face ID para proteger o acesso a app."
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

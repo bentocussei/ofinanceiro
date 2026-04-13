@@ -1,4 +1,4 @@
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useRouter } from 'expo-router'
@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import FAB from '../../components/common/FAB'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface Asset {
   id: string
@@ -28,6 +29,10 @@ interface Asset {
   purchase_value?: number
   purchase_date?: string
   notes?: string
+  annual_change_rate?: number
+  insurance_value?: number
+  insurance_expiry?: string
+  details?: Record<string, any>
 }
 
 const ASSET_TYPES = [
@@ -58,19 +63,29 @@ export default function AssetsScreen() {
   const [plate, setPlate] = useState('')
   const [address, setAddress] = useState('')
   const [area, setArea] = useState('')
+  const [kilometers, setKilometers] = useState('')
+  const [rooms, setRooms] = useState('')
+  const [parkingSpots, setParkingSpots] = useState('')
+  // Financial tracking
+  const [annualChangeRate, setAnnualChangeRate] = useState('')
+  // Insurance
+  const [insuranceValue, setInsuranceValue] = useState('')
+  const [insuranceExpiry, setInsuranceExpiry] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#f0f0f0'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.borderLight
+  const accent = tc.text
 
   const fetchAssets = useCallback(async () => {
     try {
-      const data = await apiFetch<Asset[]>('/api/v1/assets/')
-      setAssets(data)
+      const res = await apiFetch<{ items: Asset[] }>('/api/v1/assets/')
+      setAssets(res.items)
     } catch {
       // May not have assets yet
     } finally {
@@ -82,7 +97,62 @@ export default function AssetsScreen() {
     fetchAssets()
   }, [])
 
-  async function handleCreate() {
+  function resetForm() {
+    setName('')
+    setCurrentValue('')
+    setPurchaseValue('')
+    setPurchaseDate('')
+    setDescription('')
+    setType('other')
+    setBrand('')
+    setModel('')
+    setYear('')
+    setPlate('')
+    setAddress('')
+    setArea('')
+    setKilometers('')
+    setRooms('')
+    setParkingSpots('')
+    setAnnualChangeRate('')
+    setInsuranceValue('')
+    setInsuranceExpiry('')
+    setEditingAsset(null)
+  }
+
+  function handleEdit(asset: Asset) {
+    setEditingAsset(asset)
+    setName(asset.name)
+    setType(asset.type)
+    setCurrentValue(asset.current_value.toString())
+    setPurchaseValue(asset.purchase_value ? (asset.purchase_value / 100).toString() : '')
+    setPurchaseDate(asset.purchase_date || '')
+    setDescription(asset.notes || '')
+    setAnnualChangeRate(
+      typeof asset.annual_change_rate === 'number' ? asset.annual_change_rate.toString() : '',
+    )
+    setInsuranceValue(
+      typeof asset.insurance_value === 'number' ? (asset.insurance_value / 100).toString() : '',
+    )
+    setInsuranceExpiry(asset.insurance_expiry || '')
+    const d = asset.details || {}
+    setBrand(d.marca ? String(d.marca) : '')
+    setModel(d.modelo ? String(d.modelo) : '')
+    setYear(d.ano != null ? String(d.ano) : '')
+    setPlate(d.matricula ? String(d.matricula) : '')
+    setKilometers(d.quilometragem != null ? String(d.quilometragem) : '')
+    setAddress(d.morada ? String(d.morada) : '')
+    setArea(d.area_m2 != null ? String(d.area_m2) : '')
+    setRooms(d.quartos != null ? String(d.quartos) : '')
+    setParkingSpots(d.estacionamentos != null ? String(d.estacionamentos) : '')
+    sheetRef.current?.expand()
+  }
+
+  function handleOpenCreate() {
+    resetForm()
+    sheetRef.current?.expand()
+  }
+
+  async function handleSubmit() {
     if (!name.trim()) {
       Alert.alert('Erro', 'Preencha o nome do bem')
       return
@@ -100,31 +170,46 @@ export default function AssetsScreen() {
         if (model.trim()) details.modelo = model.trim()
         if (year.trim()) details.ano = parseInt(year)
         if (plate.trim()) details.matricula = plate.trim()
+        if (kilometers.trim()) details.quilometragem = parseInt(kilometers)
       } else if (type === 'property') {
         if (address.trim()) details.morada = address.trim()
         if (area.trim()) details.area_m2 = parseFloat(area)
+        if (rooms.trim()) details.quartos = parseInt(rooms)
+        if (parkingSpots.trim()) details.estacionamentos = parseInt(parkingSpots)
       }
 
-      await apiFetch('/api/v1/assets/', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          current_value: value,
-          purchase_value: purchaseValue ? Math.round(parseFloat(purchaseValue) * 100) : undefined,
-          purchase_date: purchaseDate.trim() || undefined,
-          description: description.trim() || undefined,
-          details: Object.keys(details).length > 0 ? details : undefined,
-        }),
-      })
+      const payload = {
+        name: name.trim(),
+        type,
+        current_value: value,
+        purchase_value: purchaseValue ? Math.round(parseFloat(purchaseValue) * 100) : undefined,
+        purchase_date: purchaseDate.trim() || undefined,
+        description: description.trim() || undefined,
+        annual_change_rate: annualChangeRate.trim() ? parseFloat(annualChangeRate) : undefined,
+        insurance_value: insuranceValue.trim()
+          ? Math.round(parseFloat(insuranceValue) * 100)
+          : undefined,
+        insurance_expiry: insuranceExpiry.trim() || undefined,
+        details: Object.keys(details).length > 0 ? details : undefined,
+      }
+
+      if (editingAsset) {
+        await apiFetch(`/api/v1/assets/${editingAsset.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch('/api/v1/assets/', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      setName('')
-      setCurrentValue('')
-      setType('other')
+      resetForm()
       sheetRef.current?.close()
       fetchAssets()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao criar bem')
+      Alert.alert('Erro', error.message || (editingAsset ? 'Erro ao actualizar bem' : 'Erro ao criar bem'))
     } finally {
       setCreating(false)
     }
@@ -150,6 +235,12 @@ export default function AssetsScreen() {
   }
 
   const totalValue = assets.reduce((sum, a) => sum + a.current_value, 0)
+  const assetsWithPurchase = assets.filter((a) => typeof a.purchase_value === 'number' && a.purchase_value > 0)
+  const totalPurchase = assetsWithPurchase.reduce((sum, a) => sum + (a.purchase_value || 0), 0)
+  const totalCurrentForPurchase = assetsWithPurchase.reduce((sum, a) => sum + a.current_value, 0)
+  const appreciation = totalCurrentForPurchase - totalPurchase
+  const appreciationPct = totalPurchase > 0 ? (appreciation / totalPurchase) * 100 : 0
+  const hasPurchaseData = assetsWithPurchase.length > 0
 
   const getTypeIcon = (t: string) =>
     ASSET_TYPES.find((at) => at.value === t)?.icon || 'cube-outline'
@@ -163,11 +254,41 @@ export default function AssetsScreen() {
         <Text style={[styles.title, { color: text }]}>Bens</Text>
       </View>
 
-      {/* Total */}
-      <View style={[styles.totalCard, { backgroundColor: card, borderColor: border }]}>
-        <Text style={[styles.totalLabel, { color: muted }]}>Valor total dos bens</Text>
-        <Text style={[styles.totalAmount, { color: text }]}>{formatKz(totalValue)}</Text>
-      </View>
+      {/* Summary cards */}
+      {hasPurchaseData ? (
+        <View style={styles.summaryRow}>
+          <View style={[styles.summaryCard, { backgroundColor: card }]}>
+            <Text style={[styles.summaryLabel, { color: muted }]}>Valor actual</Text>
+            <Text style={[styles.summaryValue, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
+              {formatKz(totalValue)}
+            </Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: card }]}>
+            <Text style={[styles.summaryLabel, { color: muted }]}>Valor investido</Text>
+            <Text style={[styles.summaryValue, { color: text }]} numberOfLines={1} adjustsFontSizeToFit>
+              {formatKz(totalPurchase)}
+            </Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: card }]}>
+            <Text style={[styles.summaryLabel, { color: muted }]}>Valorização</Text>
+            <Text
+              style={[styles.summaryValue, { color: appreciation >= 0 ? colors.success : colors.error }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {appreciation >= 0 ? '+' : ''}{formatKz(appreciation)}
+            </Text>
+            <Text style={[styles.summaryPct, { color: appreciation >= 0 ? colors.success : colors.error }]}>
+              {appreciation >= 0 ? '+' : ''}{appreciationPct.toFixed(1)}%
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={[styles.totalCard, { backgroundColor: card, borderColor: border }]}>
+          <Text style={[styles.totalLabel, { color: muted }]}>Valor total dos bens</Text>
+          <Text style={[styles.totalAmount, { color: text }]}>{formatKz(totalValue)}</Text>
+        </View>
+      )}
 
       <FlatList
         data={assets}
@@ -177,6 +298,7 @@ export default function AssetsScreen() {
         renderItem={({ item }) => (
           <Pressable
             style={[styles.assetRow, { backgroundColor: card, borderColor: border }]}
+            onPress={() => handleEdit(item)}
             onLongPress={() => handleDelete(item)}
           >
             <Ionicons name={getTypeIcon(item.type) as any} size={24} color={muted} />
@@ -199,18 +321,18 @@ export default function AssetsScreen() {
         }
       />
 
-      <FAB onPress={() => sheetRef.current?.expand()} />
+      <FAB onPress={handleOpenCreate} />
 
       <BottomSheet
         ref={sheetRef}
         index={-1}
-        snapPoints={['55%']}
+        snapPoints={['90%']}
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: card }}
         handleIndicatorStyle={{ backgroundColor: muted }}
       >
-        <BottomSheetView style={styles.sheetContent}>
-          <Text style={[styles.sheetTitle, { color: text }]}>Novo bem</Text>
+        <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
+          <Text style={[styles.sheetTitle, { color: text }]}>{editingAsset ? 'Editar bem' : 'Novo bem'}</Text>
 
           <Text style={[styles.label, { color: muted }]}>Nome</Text>
           <TextInput
@@ -235,7 +357,7 @@ export default function AssetsScreen() {
               >
                 <Text style={[
                   styles.typeChipText,
-                  { color: type === t.value ? (isDark ? '#000' : '#fff') : muted },
+                  { color: type === t.value ? (isDark ? colors.dark.bg : colors.light.bg) : muted },
                 ]}>
                   {t.label}
                 </Text>
@@ -273,7 +395,75 @@ export default function AssetsScreen() {
             keyboardType="numbers-and-punctuation"
           />
 
-          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Descricao (opcional)</Text>
+          {/* Type-specific: Vehicle */}
+          {type === 'vehicle' && (
+            <>
+              <Text style={[styles.sectionLabel, { color: muted }]}>VEICULO</Text>
+              <Text style={[styles.label, { color: muted }]}>Marca</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={brand} onChangeText={setBrand} placeholder="Ex: Toyota" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Modelo</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={model} onChangeText={setModel} placeholder="Ex: Hilux" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Ano</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={year} onChangeText={setYear} placeholder="2024" placeholderTextColor={muted} keyboardType="numeric" />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Matricula</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={plate} onChangeText={setPlate} placeholder="LD-XX-XX-XX" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Quilometragem (km)</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={kilometers} onChangeText={setKilometers} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
+            </>
+          )}
+
+          {/* Type-specific: Property */}
+          {type === 'property' && (
+            <>
+              <Text style={[styles.sectionLabel, { color: muted }]}>IMOVEL</Text>
+              <Text style={[styles.label, { color: muted }]}>Morada</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={address} onChangeText={setAddress} placeholder="Endereco" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Area (m2)</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={area} onChangeText={setArea} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Quartos</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={rooms} onChangeText={setRooms} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Estacionamentos</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={parkingSpots} onChangeText={setParkingSpots} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
+            </>
+          )}
+
+          {/* Financial tracking */}
+          <Text style={[styles.sectionLabel, { color: muted }]}>VALORIZACAO</Text>
+          <Text style={[styles.label, { color: muted }]}>Taxa anual de valorizacao (%)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text }]}
+            value={annualChangeRate}
+            onChangeText={setAnnualChangeRate}
+            placeholder="0"
+            placeholderTextColor={muted}
+            keyboardType="numbers-and-punctuation"
+          />
+          <Text style={[styles.helper, { color: muted }]}>Positiva se valoriza, negativa se deprecia</Text>
+
+          {/* Insurance */}
+          <Text style={[styles.sectionLabel, { color: muted }]}>SEGURO</Text>
+          <Text style={[styles.label, { color: muted }]}>Valor do seguro (Kz, opcional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text }]}
+            value={insuranceValue}
+            onChangeText={setInsuranceValue}
+            placeholder="0"
+            placeholderTextColor={muted}
+            keyboardType="number-pad"
+          />
+          <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Validade do seguro (opcional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text }]}
+            value={insuranceExpiry}
+            onChangeText={setInsuranceExpiry}
+            placeholder="AAAA-MM-DD"
+            placeholderTextColor={muted}
+            keyboardType="numbers-and-punctuation"
+          />
+
+          {/* Description */}
+          <Text style={[styles.sectionLabel, { color: muted }]}>NOTAS</Text>
+          <Text style={[styles.label, { color: muted }]}>Descricao (opcional)</Text>
           <TextInput
             style={[styles.input, { borderColor: border, color: text, minHeight: 50, textAlignVertical: 'top' }]}
             value={description}
@@ -283,40 +473,16 @@ export default function AssetsScreen() {
             multiline
           />
 
-          {/* Type-specific: Vehicle */}
-          {type === 'vehicle' && (
-            <>
-              <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Marca</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={brand} onChangeText={setBrand} placeholder="Ex: Toyota" placeholderTextColor={muted} />
-              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Modelo</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={model} onChangeText={setModel} placeholder="Ex: Hilux" placeholderTextColor={muted} />
-              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Ano</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={year} onChangeText={setYear} placeholder="2024" placeholderTextColor={muted} keyboardType="numeric" />
-              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Matricula</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={plate} onChangeText={setPlate} placeholder="LD-XX-XX-XX" placeholderTextColor={muted} />
-            </>
-          )}
-
-          {/* Type-specific: Property */}
-          {type === 'property' && (
-            <>
-              <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Morada</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={address} onChangeText={setAddress} placeholder="Endereco" placeholderTextColor={muted} />
-              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Area (m2)</Text>
-              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={area} onChangeText={setArea} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
-            </>
-          )}
-
           <Pressable
             style={[styles.createBtn, { backgroundColor: accent }, creating && { opacity: 0.6 }]}
-            onPress={handleCreate}
+            onPress={handleSubmit}
             disabled={creating}
           >
-            <Text style={[styles.createBtnText, { color: isDark ? '#000' : '#fff' }]}>
-              {creating ? 'A criar...' : 'Criar bem'}
+            <Text style={[styles.createBtnText, { color: isDark ? colors.dark.bg : colors.light.bg }]}>
+              {creating ? (editingAsset ? 'A actualizar...' : 'A criar...') : (editingAsset ? 'Guardar alteracoes' : 'Criar bem')}
             </Text>
           </Pressable>
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheet>
     </SafeAreaView>
   )
@@ -336,6 +502,34 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 13 },
   totalAmount: { fontSize: 28, fontWeight: '700', fontFamily: 'monospace', marginTop: 4 },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  summaryCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  summaryPct: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+    marginTop: 2,
+  },
   list: { paddingHorizontal: 16, gap: 8, paddingBottom: 80 },
   assetRow: {
     flexDirection: 'row',
@@ -351,9 +545,20 @@ const styles = StyleSheet.create({
   assetValue: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyText: { fontSize: 14 },
-  sheetContent: { padding: 20 },
+  sheetContent: { padding: 20, paddingBottom: 60 },
   sheetTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '500', marginBottom: 6 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  helper: {
+    fontSize: 11,
+    marginTop: 4,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 10,

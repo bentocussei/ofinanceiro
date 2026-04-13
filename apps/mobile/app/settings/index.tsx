@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router'
 import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { colors, themeColors } from '../../lib/tokens'
 import { useAuthStore } from '../../stores/auth'
 
 export default function SettingsScreen() {
@@ -11,11 +12,12 @@ export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#f0f0f0'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.borderLight
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
@@ -37,7 +39,7 @@ export default function SettingsScreen() {
           style={[styles.profileCard, { backgroundColor: card, borderColor: border }]}
           onPress={() => router.push('/settings/profile')}
         >
-          <View style={[styles.avatar, { backgroundColor: isDark ? '#333' : '#e5e5e5' }]}>
+          <View style={[styles.avatar, { backgroundColor: tc.border }]}>
             <Text style={[styles.avatarText, { color: text }]}>{initials}</Text>
           </View>
           <View style={styles.profileInfo}>
@@ -117,7 +119,7 @@ export default function SettingsScreen() {
 
         {/* Logout */}
         <Pressable style={styles.logoutBtn} onPress={logout}>
-          <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          <Ionicons name="log-out-outline" size={20} color={colors.error} />
           <Text style={styles.logoutText}>Terminar sessao</Text>
         </Pressable>
 
@@ -140,21 +142,19 @@ function SettingsRow({
   onPress?: () => void
   isLast?: boolean
 }) {
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#666' : '#ccc'
-  const border = isDark ? '#333' : '#f0f0f0'
+  const tc = themeColors(isDark)
 
   return (
     <Pressable
       style={[
         styles.row,
-        !isLast && { borderBottomWidth: 0.5, borderBottomColor: border },
+        !isLast && { borderBottomWidth: 0.5, borderBottomColor: tc.borderLight },
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icon as any} size={20} color={isDark ? '#aaa' : '#555'} />
-      <Text style={[styles.rowLabel, { color: text }]}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color={muted} />
+      <Ionicons name={icon as any} size={20} color={tc.icon} />
+      <Text style={[styles.rowLabel, { color: tc.text }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={18} color={tc.handle} />
     </Pressable>
   )
 }
@@ -215,5 +215,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 8,
   },
-  logoutText: { fontSize: 15, color: '#ef4444', fontWeight: '500' },
+  logoutText: { fontSize: 15, color: colors.error, fontWeight: '500' },
 })

@@ -10,10 +10,12 @@ import {
   useColorScheme,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg'
 
 import IconDisplay from '../../components/common/IconDisplay'
 import { apiFetch } from '../../lib/api'
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 interface CategorySpending {
   category_name: string
@@ -28,12 +30,161 @@ interface Summary {
   balance: number
 }
 
-const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+const CHART_COLORS = ['#0D9488', '#D97706', '#2563EB', '#7C3AED', '#15803D', '#EA580C', '#DB2777', '#B91C1C']
 
 type Period = 'month' | '3months' | 'year'
 
+// ─── Bar Chart (Income vs Expense) ───────────────────────────────────
+function BarChart({ income, expense, tc }: { income: number; expense: number; tc: ReturnType<typeof themeColors> }) {
+  const maxVal = Math.max(income, expense, 1)
+  const chartH = 120
+  const barW = 60
+  const gap = 40
+  const totalW = barW * 2 + gap
+  const startX = (300 - totalW) / 2
+
+  const incomeH = (income / maxVal) * chartH
+  const expenseH = (expense / maxVal) * chartH
+
+  return (
+    <View style={[styles.chartCard, { backgroundColor: tc.card }]}>
+      <Text style={[styles.chartTitle, { color: tc.text }]}>Receitas vs Despesas</Text>
+      <Svg width="100%" height={180} viewBox="0 0 300 180">
+        {/* Income bar */}
+        <Rect
+          x={startX}
+          y={chartH - incomeH + 10}
+          width={barW}
+          height={incomeH}
+          rx={6}
+          fill={colors.success}
+        />
+        <SvgText
+          x={startX + barW / 2}
+          y={chartH - incomeH + 4}
+          fontSize={10}
+          fontWeight="600"
+          fill={tc.textSecondary}
+          textAnchor="middle"
+        >
+          {formatKz(income)}
+        </SvgText>
+        <SvgText
+          x={startX + barW / 2}
+          y={chartH + 28}
+          fontSize={12}
+          fill={tc.textSecondary}
+          textAnchor="middle"
+        >
+          Receitas
+        </SvgText>
+
+        {/* Expense bar */}
+        <Rect
+          x={startX + barW + gap}
+          y={chartH - expenseH + 10}
+          width={barW}
+          height={expenseH}
+          rx={6}
+          fill={colors.error}
+        />
+        <SvgText
+          x={startX + barW + gap + barW / 2}
+          y={chartH - expenseH + 4}
+          fontSize={10}
+          fontWeight="600"
+          fill={tc.textSecondary}
+          textAnchor="middle"
+        >
+          {formatKz(expense)}
+        </SvgText>
+        <SvgText
+          x={startX + barW + gap + barW / 2}
+          y={chartH + 28}
+          fontSize={12}
+          fill={tc.textSecondary}
+          textAnchor="middle"
+        >
+          Despesas
+        </SvgText>
+      </Svg>
+    </View>
+  )
+}
+
+// ─── Doughnut Chart (Spending by Category) ───────────────────────────
+function DoughnutChart({
+  data,
+  total,
+  tc,
+}: {
+  data: CategorySpending[]
+  total: number
+  tc: ReturnType<typeof themeColors>
+}) {
+  const cx = 90
+  const cy = 90
+  const outerR = 80
+  const innerR = 50
+  const size = 180
+
+  // Build arc segments
+  const segments: { path: string; color: string }[] = []
+  let startAngle = -Math.PI / 2 // start at top
+
+  data.forEach((cat, i) => {
+    const pct = total > 0 ? cat.total / total : 0
+    if (pct <= 0) return
+    const sweep = pct * Math.PI * 2
+    const endAngle = startAngle + sweep
+    const largeArc = sweep > Math.PI ? 1 : 0
+
+    const ox1 = cx + outerR * Math.cos(startAngle)
+    const oy1 = cy + outerR * Math.sin(startAngle)
+    const ox2 = cx + outerR * Math.cos(endAngle)
+    const oy2 = cy + outerR * Math.sin(endAngle)
+    const ix1 = cx + innerR * Math.cos(endAngle)
+    const iy1 = cy + innerR * Math.sin(endAngle)
+    const ix2 = cx + innerR * Math.cos(startAngle)
+    const iy2 = cy + innerR * Math.sin(startAngle)
+
+    const d = [
+      `M ${ox1} ${oy1}`,
+      `A ${outerR} ${outerR} 0 ${largeArc} 1 ${ox2} ${oy2}`,
+      `L ${ix1} ${iy1}`,
+      `A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2}`,
+      'Z',
+    ].join(' ')
+
+    segments.push({ path: d, color: CHART_COLORS[i % CHART_COLORS.length] })
+    startAngle = endAngle
+  })
+
+  // If only one category, draw a full ring
+  if (data.length === 1 && total > 0) {
+    return (
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle cx={cx} cy={cy} r={outerR} fill={CHART_COLORS[0]} />
+        <Circle cx={cx} cy={cy} r={innerR} fill={tc.card} />
+      </Svg>
+    )
+  }
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <G>
+        {segments.map((seg, i) => (
+          <Path key={i} d={seg.path} fill={seg.color} />
+        ))}
+      </G>
+    </Svg>
+  )
+}
+
+// ─── Main Screen ─────────────────────────────────────────────────────
 export default function ReportsScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const [spending, setSpending] = useState<CategorySpending[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
   const [period, setPeriod] = useState<Period>('month')
@@ -69,12 +220,14 @@ export default function ReportsScreen() {
   const totalExpense = spending.reduce((s, c) => s + c.total, 0)
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: tc.bg }}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => fetchData(period)} />}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, isDark && styles.textLight]}>Relatórios</Text>
+          <Text style={[styles.title, { color: tc.text }]}>Relatórios</Text>
         </View>
 
         {/* Period selector */}
@@ -82,147 +235,208 @@ export default function ReportsScreen() {
           {(['month', '3months', 'year'] as Period[]).map((p) => (
             <Pressable
               key={p}
-              style={[styles.periodChip, period === p && styles.periodActive]}
+              style={[
+                styles.periodChip,
+                { borderColor: tc.border, backgroundColor: tc.card },
+                period === p && styles.periodActive,
+              ]}
               onPress={() => setPeriod(p)}
             >
-              <Text style={[styles.periodText, period === p && styles.periodTextActive]}>
+              <Text
+                style={[
+                  styles.periodText,
+                  { color: tc.textSecondary },
+                  period === p && styles.periodTextActive,
+                ]}
+              >
                 {p === 'month' ? 'Este mês' : p === '3months' ? '3 meses' : 'Este ano'}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Summary cards */}
+        {/* 3 Summary cards in a row */}
         {summary && (
           <View style={styles.summaryRow}>
-            <View style={[styles.summaryCard, isDark && styles.cardDark]}>
-              <Text style={[styles.summaryLabel, isDark && styles.textMuted]}>Receitas</Text>
-              <Text style={[styles.summaryValue, styles.income]}>{formatKz(summary.income)}</Text>
-            </View>
-            <View style={[styles.summaryCard, isDark && styles.cardDark]}>
-              <Text style={[styles.summaryLabel, isDark && styles.textMuted]}>Despesas</Text>
-              <Text style={[styles.summaryValue, styles.expense]}>{formatKz(summary.expense)}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Balance */}
-        {summary && (
-          <View style={[styles.balanceCard, isDark && styles.cardDark]}>
-            <Text style={[styles.summaryLabel, isDark && styles.textMuted]}>Balanço</Text>
-            <Text style={[styles.balanceValue, summary.balance >= 0 ? styles.income : styles.expense]}>
-              {formatKz(summary.balance)}
-            </Text>
-          </View>
-        )}
-
-        {/* Savings rate */}
-        {summary && summary.income > 0 && (
-          <View style={[styles.savingsCard, isDark && styles.cardDark]}>
-            <Ionicons name="trending-up-outline" size={20} color={summary.balance >= 0 ? '#22c55e' : '#ef4444'} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.summaryLabel, isDark && styles.textMuted]}>Taxa de poupanca</Text>
-              <Text style={[styles.savingsValue, { color: summary.balance >= 0 ? '#22c55e' : '#ef4444' }]}>
-                {Math.round((summary.balance / summary.income) * 100)}%
+            <View style={[styles.summaryCard, { backgroundColor: tc.card }]}>
+              <Text style={[styles.summaryLabel, { color: tc.textSecondary }]}>Receitas</Text>
+              <Text style={[styles.summaryValue, { color: colors.success }]}>
+                {formatKz(summary.income)}
               </Text>
             </View>
-            <Text style={[styles.savingsHint, isDark && styles.textMuted]}>
+            <View style={[styles.summaryCard, { backgroundColor: tc.card }]}>
+              <Text style={[styles.summaryLabel, { color: tc.textSecondary }]}>Despesas</Text>
+              <Text style={[styles.summaryValue, { color: colors.error }]}>
+                {formatKz(summary.expense)}
+              </Text>
+            </View>
+            <View style={[styles.summaryCard, { backgroundColor: tc.card }]}>
+              <Text style={[styles.summaryLabel, { color: tc.textSecondary }]}>Balanço</Text>
+              <Text
+                style={[
+                  styles.summaryValue,
+                  { color: summary.balance >= 0 ? colors.success : colors.error },
+                ]}
+              >
+                {formatKz(summary.balance)}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Savings rate pill */}
+        {summary && summary.income > 0 && (
+          <View style={[styles.savingsCard, { backgroundColor: tc.card }]}>
+            <Ionicons
+              name="trending-up-outline"
+              size={18}
+              color={summary.balance >= 0 ? colors.success : colors.error}
+            />
+            <Text style={[styles.savingsLabel, { color: tc.textSecondary }]}>Taxa de poupança</Text>
+            <Text
+              style={[
+                styles.savingsValue,
+                { color: summary.balance >= 0 ? colors.success : colors.error },
+              ]}
+            >
+              {Math.round((summary.balance / summary.income) * 100)}%
+            </Text>
+            <Text style={[styles.savingsHint, { color: tc.textMuted }]}>
               {summary.balance >= 0 ? 'Bom trabalho!' : 'Gastas mais do que ganhas'}
             </Text>
           </View>
         )}
 
-        {/* Spending by category */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, isDark && styles.textLight]}>Gastos por categoria</Text>
-        </View>
+        {/* Income vs Expense Bar Chart */}
+        {summary && (summary.income > 0 || summary.expense > 0) && (
+          <BarChart income={summary.income} expense={summary.expense} tc={tc} />
+        )}
 
+        {/* Spending by Category: Doughnut + Legend */}
         {spending.length > 0 ? (
-          <View style={[styles.categoryList, isDark && styles.cardDark]}>
-            {spending.map((cat, i) => {
-              const pct = totalExpense > 0 ? (cat.total / totalExpense) * 100 : 0
-              return (
-                <View key={i} style={styles.categoryRow}>
-                  <View style={styles.categoryInfo}>
-                    <View style={[styles.colorDot, { backgroundColor: COLORS[i % COLORS.length] }]} />
-                    <Text style={[styles.categoryName, isDark && styles.textLight]}>
-                      <IconDisplay name={cat.category_name} size={14} color={isDark ? '#fff' : '#000'} /> {cat.category_name}
-                    </Text>
-                  </View>
-                  <View style={styles.categoryRight}>
-                    <View style={styles.barContainer}>
-                      <View style={[styles.bar, { width: `${Math.max(pct, 2)}%`, backgroundColor: COLORS[i % COLORS.length] }]} />
+          <View style={[styles.chartCard, { backgroundColor: tc.card }]}>
+            <Text style={[styles.chartTitle, { color: tc.text }]}>Gastos por categoria</Text>
+
+            {/* Doughnut */}
+            <View style={styles.doughnutCenter}>
+              <DoughnutChart data={spending} total={totalExpense} tc={tc} />
+            </View>
+
+            {/* Legend / detail list */}
+            <View style={styles.legendList}>
+              {spending.map((cat, i) => {
+                const pct = totalExpense > 0 ? (cat.total / totalExpense) * 100 : 0
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.legendRow,
+                      i < spending.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.borderLight },
+                    ]}
+                  >
+                    <View
+                      style={[styles.legendDot, { backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }]}
+                    />
+                    <View style={styles.legendName}>
+                      <IconDisplay name={cat.category_name} size={14} color={tc.text} />
+                      <Text style={[styles.legendNameText, { color: tc.text }]} numberOfLines={1}>
+                        {cat.category_name}
+                      </Text>
                     </View>
-                    <Text style={[styles.categoryAmount, isDark && styles.textLight]}>
-                      {formatKz(cat.total)}
-                    </Text>
-                    <Text style={[styles.categoryPct, isDark && styles.textMuted]}>
+                    <Text style={[styles.legendPct, { color: tc.textMuted }]}>
                       {Math.round(pct)}%
                     </Text>
+                    <Text style={[styles.legendAmount, { color: tc.text }]}>
+                      {formatKz(cat.total)}
+                    </Text>
                   </View>
-                </View>
-              )
-            })}
+                )
+              })}
+            </View>
           </View>
         ) : (
-          <View style={styles.empty}>
-            <Ionicons name="bar-chart-outline" size={48} color={isDark ? '#444' : '#ddd'} />
-            <Text style={[styles.emptyText, isDark && styles.textMuted]}>
-              Registe transacções para ver os relatórios
-            </Text>
-          </View>
+          !isLoading && (
+            <View style={styles.empty}>
+              <Ionicons name="bar-chart-outline" size={48} color={tc.textMuted} />
+              <Text style={[styles.emptyText, { color: tc.textMuted }]}>
+                Registe transacções para ver os relatórios
+              </Text>
+            </View>
+          )
         )}
       </ScrollView>
     </SafeAreaView>
   )
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 24, fontWeight: '700', color: '#000' },
+  title: { fontSize: 24, fontWeight: '700' },
+
+  // Period selector
   periodRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
   periodChip: {
-    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-    borderWidth: 1, borderColor: '#e5e5e5', backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  periodActive: { backgroundColor: '#000', borderColor: '#000' },
-  periodText: { fontSize: 13, color: '#666' },
+  periodActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  periodText: { fontSize: 13, fontWeight: '500' },
   periodTextActive: { color: '#fff', fontWeight: '600' },
-  summaryRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 12 },
+
+  // Summary cards — 3 in a row
+  summaryRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 12 },
   summaryCard: {
-    flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 16,
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
-  summaryLabel: { fontSize: 12, color: '#666', marginBottom: 4 },
-  summaryValue: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace' },
-  balanceCard: {
-    marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 20,
-  },
-  balanceValue: { fontSize: 24, fontWeight: '700', fontFamily: 'monospace' },
-  income: { color: '#22c55e' },
-  expense: { color: '#ef4444' },
+  summaryLabel: { fontSize: 12, marginBottom: 4 },
+  summaryValue: { fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+
+  // Savings rate
   savingsCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 16,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
   },
-  savingsValue: { fontSize: 20, fontWeight: '700', fontFamily: 'monospace' },
-  savingsHint: { fontSize: 12 },
-  sectionHeader: { paddingHorizontal: 20, marginBottom: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
-  categoryList: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 12 },
-  categoryRow: { paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  categoryInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  colorDot: { width: 10, height: 10, borderRadius: 5 },
-  categoryName: { fontSize: 14, color: '#000' },
-  categoryRight: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 18 },
-  barContainer: { flex: 1, height: 6, backgroundColor: '#f0f0f0', borderRadius: 3 },
-  bar: { height: 6, borderRadius: 3 },
-  categoryAmount: { fontSize: 13, fontFamily: 'monospace', fontWeight: '600', color: '#000', minWidth: 80, textAlign: 'right' },
-  categoryPct: { fontSize: 11, color: '#999', minWidth: 30, textAlign: 'right' },
+  savingsLabel: { fontSize: 12 },
+  savingsValue: { fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+  savingsHint: { fontSize: 11, marginLeft: 'auto' },
+
+  // Chart cards
+  chartCard: {
+    marginHorizontal: 16,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+  chartTitle: { fontSize: 14, fontWeight: '600', marginBottom: 12 },
+
+  // Doughnut
+  doughnutCenter: { alignItems: 'center', marginBottom: 16 },
+
+  // Legend list
+  legendList: { gap: 0 },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
+  },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendName: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendNameText: { fontSize: 13, flexShrink: 1 },
+  legendPct: { fontSize: 11, minWidth: 30, textAlign: 'right' },
+  legendAmount: { fontSize: 13, fontFamily: 'monospace', fontWeight: '600', minWidth: 90, textAlign: 'right' },
+
+  // Empty
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 15, color: '#999', textAlign: 'center' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  emptyText: { fontSize: 15, textAlign: 'center' },
 })

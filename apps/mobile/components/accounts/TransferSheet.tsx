@@ -13,6 +13,7 @@ import {
 
 import IconDisplay from '../common/IconDisplay'
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 import { Account, useAccountsStore } from '../../stores/accounts'
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
 
 const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) => {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const snapPoints = useMemo(() => ['75%'], [])
   const { accounts, fetchSummary } = useAccountsStore()
 
@@ -96,7 +98,7 @@ const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) =>
               ]}
               onPress={() => onSelect(acc.id)}
             >
-              <IconDisplay name={acc.icon || 'default'} size={16} color={selectedId === acc.id ? '#3b82f6' : '#666'} />
+              <IconDisplay name={acc.icon || 'default'} size={16} color={selectedId === acc.id ? colors.primary : tc.textSecondary} />
               <Text
                 style={[
                   styles.accountName,
@@ -119,7 +121,7 @@ const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) =>
       snapPoints={snapPoints}
       enablePanDownToClose
       backgroundStyle={isDark ? styles.sheetDark : styles.sheet}
-      handleIndicatorStyle={{ backgroundColor: isDark ? '#666' : '#ccc' }}
+      handleIndicatorStyle={{ backgroundColor: tc.handle }}
     >
       <BottomSheetScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.title, isDark && styles.textLight]}>Transferência</Text>
@@ -142,7 +144,7 @@ const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) =>
             <TextInput
               style={[styles.input, isDark && styles.inputDark]}
               placeholder="0"
-              placeholderTextColor="#999"
+              placeholderTextColor={tc.textMuted}
               keyboardType="numeric"
               value={amount}
               onChangeText={setAmount}
@@ -152,7 +154,7 @@ const TransferSheet = forwardRef<BottomSheet, Props>(({ onTransferred }, ref) =>
             <TextInput
               style={[styles.input, isDark && styles.inputDark]}
               placeholder="Ex: Poupar para férias"
-              placeholderTextColor="#999"
+              placeholderTextColor={tc.textMuted}
               value={description}
               onChangeText={setDescription}
             />
@@ -177,36 +179,36 @@ TransferSheet.displayName = 'TransferSheet'
 export default TransferSheet
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: '#fff' },
-  sheetDark: { backgroundColor: '#1a1a1a' },
+  sheet: { backgroundColor: colors.light.card },
+  sheetDark: { backgroundColor: colors.dark.card },
   content: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 16, color: '#000' },
-  label: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6, marginTop: 16 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 16, color: colors.light.text },
+  label: { fontSize: 13, fontWeight: '600', color: colors.light.textSecondary, marginBottom: 6, marginTop: 16 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#f9f9f9',
+    borderWidth: 1, borderColor: colors.light.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.light.text, backgroundColor: colors.light.input,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
+  inputDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.input, color: colors.dark.text },
   accountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   accountChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 1, borderColor: '#e5e5e5',
+    borderWidth: 1, borderColor: colors.light.border,
   },
-  accountChipDark: { borderColor: '#333' },
-  accountChipSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
+  accountChipDark: { borderColor: colors.dark.border },
+  accountChipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   accountIcon: { fontSize: 16 },
-  accountName: { fontSize: 13, color: '#666' },
-  accountNameSelected: { color: '#3b82f6', fontWeight: '600' },
+  accountName: { fontSize: 13, color: colors.light.textSecondary },
+  accountNameSelected: { color: colors.primary, fontWeight: '600' },
   arrowContainer: { alignItems: 'center', paddingVertical: 8 },
-  arrow: { fontSize: 24, color: '#999' },
+  arrow: { fontSize: 24, color: colors.light.textMuted },
   submitBtn: {
-    backgroundColor: '#3b82f6', borderRadius: 12, paddingVertical: 16,
+    backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginTop: 24,
   },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  emptyText: { fontSize: 15, color: '#999', textAlign: 'center', paddingVertical: 40 },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  emptyText: { fontSize: 15, color: colors.light.textMuted, textAlign: 'center', paddingVertical: 40 },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.light.textMuted },
 })

@@ -71,8 +71,8 @@ export const useBudgetsStore = create<BudgetsState>((set, get) => ({
   fetchBudgets: async () => {
     set({ isLoading: true })
     try {
-      const budgets = await apiFetch<Budget[]>('/api/v1/budgets/')
-      set({ budgets, isLoading: false })
+      const res = await apiFetch<{ items: Budget[] }>('/api/v1/budgets/')
+      set({ budgets: res.items, isLoading: false })
     } catch {
       set({ isLoading: false })
     }

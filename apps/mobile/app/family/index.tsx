@@ -16,6 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { colors, themeColors } from '../../lib/tokens'
 import { FamilyMember, useFamilyStore } from '../../stores/family'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,6 +27,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function FamilyScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { family, isLoading, fetchFamily, createFamily, joinFamily, removeMember, updateMemberRole } =
     useFamilyStore()
@@ -93,30 +95,30 @@ export default function FamilyScreen() {
   // No family yet — show create/join
   if (!family) {
     return (
-      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+            <Ionicons name="arrow-back" size={24} color={tc.text} />
           </Pressable>
-          <Text style={[styles.title, isDark && styles.textLight]}>Família</Text>
+          <Text style={[styles.title, { color: tc.text }]}>Família</Text>
           <View style={{ width: 24 }} />
         </View>
 
         <View style={styles.noFamily}>
           <Ionicons name="people-outline" size={64} color={isDark ? '#444' : '#ddd'} />
-          <Text style={[styles.noFamilyTitle, isDark && styles.textLight]}>
+          <Text style={[styles.noFamilyTitle, { color: tc.text }]}>
             Sem agregado familiar
           </Text>
-          <Text style={[styles.noFamilyDesc, isDark && styles.textMuted]}>
+          <Text style={[styles.noFamilyDesc, { color: tc.textMuted }]}>
             Crie um agregado ou junte-se a um existente
           </Text>
 
           {showCreate ? (
             <View style={styles.formRow}>
               <TextInput
-                style={[styles.input, isDark && styles.inputDark]}
+                style={[styles.input, { borderColor: tc.border, backgroundColor: tc.card, color: tc.text }]}
                 placeholder="Nome da família"
-                placeholderTextColor="#999"
+                placeholderTextColor={tc.textMuted}
                 value={createName}
                 onChangeText={setCreateName}
                 autoFocus
@@ -135,9 +137,9 @@ export default function FamilyScreen() {
           {showJoin ? (
             <View style={styles.formRow}>
               <TextInput
-                style={[styles.input, isDark && styles.inputDark]}
+                style={[styles.input, { borderColor: tc.border, backgroundColor: tc.card, color: tc.text }]}
                 placeholder="Código de convite"
-                placeholderTextColor="#999"
+                placeholderTextColor={tc.textMuted}
                 value={joinCode}
                 onChangeText={setJoinCode}
                 autoFocus
@@ -147,9 +149,9 @@ export default function FamilyScreen() {
               </Pressable>
             </View>
           ) : (
-            <Pressable style={[styles.secondaryBtn, isDark && styles.secondaryBtnDark]} onPress={() => setShowJoin(true)}>
-              <Ionicons name="enter-outline" size={20} color={isDark ? '#fff' : '#000'} />
-              <Text style={[styles.secondaryBtnText, isDark && styles.textLight]}>Tenho um código</Text>
+            <Pressable style={[styles.secondaryBtn, { borderColor: tc.border }]} onPress={() => setShowJoin(true)}>
+              <Ionicons name="enter-outline" size={20} color={tc.text} />
+              <Text style={[styles.secondaryBtnText, { color: tc.text }]}>Tenho um código</Text>
             </Pressable>
           )}
         </View>
@@ -159,22 +161,22 @@ export default function FamilyScreen() {
 
   // Has family — show members
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.title, isDark && styles.textLight]}>{family.name}</Text>
+        <Text style={[styles.title, { color: tc.text }]}>{family.name}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {/* Invite code */}
-      <Pressable style={[styles.codeCard, isDark && styles.cardDark]} onPress={handleCopyCode}>
+      <Pressable style={[styles.codeCard, { backgroundColor: tc.card }]} onPress={handleCopyCode}>
         <View>
-          <Text style={[styles.codeLabel, isDark && styles.textMuted]}>Código de convite</Text>
-          <Text style={[styles.codeValue, isDark && styles.textLight]}>{family.invite_code}</Text>
+          <Text style={[styles.codeLabel, { color: tc.textMuted }]}>Código de convite</Text>
+          <Text style={[styles.codeValue, { color: tc.text }]}>{family.invite_code}</Text>
         </View>
-        <Ionicons name="copy-outline" size={20} color={isDark ? '#999' : '#666'} />
+        <Ionicons name="copy-outline" size={20} color={tc.textSecondary} />
       </Pressable>
 
       {/* Members */}
@@ -185,7 +187,7 @@ export default function FamilyScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <Pressable
-            style={[styles.memberRow, isDark && styles.memberRowDark]}
+            style={[styles.memberRow, { backgroundColor: tc.card }]}
             onPress={() => handleMemberAction(item)}
           >
             <Ionicons
@@ -194,34 +196,34 @@ export default function FamilyScreen() {
               color={isDark ? '#ccc' : '#333'}
             />
             <View style={styles.memberInfo}>
-              <Text style={[styles.memberName, isDark && styles.textLight]}>
+              <Text style={[styles.memberName, { color: tc.text }]}>
                 {item.display_name || `Membro`}
               </Text>
-              <Text style={[styles.memberRole, isDark && styles.textMuted]}>
+              <Text style={[styles.memberRole, { color: tc.textMuted }]}>
                 {ROLE_LABELS[item.role]}
               </Text>
             </View>
             {item.role !== 'admin' && (
-              <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
+              <Ionicons name="chevron-forward" size={18} color={tc.handle} />
             )}
           </Pressable>
         )}
         ListHeaderComponent={
-          <Text style={[styles.sectionTitle, isDark && styles.textMuted]}>
+          <Text style={[styles.sectionTitle, { color: tc.textMuted }]}>
             {family.members.filter((m) => m.is_active).length} membros
           </Text>
         }
         ListFooterComponent={
           <View style={styles.familyActions}>
-            <Pressable style={[styles.actionRow, isDark && styles.cardDark]} onPress={() => router.push('/family/members')}>
-              <Ionicons name="people-outline" size={20} color={isDark ? '#aaa' : '#555'} />
-              <Text style={[styles.actionLabel, isDark && styles.textLight]}>Gerir membros</Text>
-              <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
+            <Pressable style={[styles.actionRow, { backgroundColor: tc.card }]} onPress={() => router.push('/family/members')}>
+              <Ionicons name="people-outline" size={20} color={tc.icon} />
+              <Text style={[styles.actionLabel, { color: tc.text }]}>Gerir membros</Text>
+              <Ionicons name="chevron-forward" size={18} color={tc.handle} />
             </Pressable>
-            <Pressable style={[styles.actionRow, isDark && styles.cardDark]} onPress={() => router.push('/family/expense-splits')}>
-              <Ionicons name="receipt-outline" size={20} color={isDark ? '#aaa' : '#555'} />
-              <Text style={[styles.actionLabel, isDark && styles.textLight]}>Divisao de despesas</Text>
-              <Ionicons name="chevron-forward" size={18} color={isDark ? '#666' : '#ccc'} />
+            <Pressable style={[styles.actionRow, { backgroundColor: tc.card }]} onPress={() => router.push('/family/expense-splits')}>
+              <Ionicons name="receipt-outline" size={20} color={tc.icon} />
+              <Text style={[styles.actionLabel, { color: tc.text }]}>Divisao de despesas</Text>
+              <Ionicons name="chevron-forward" size={18} color={tc.handle} />
             </Pressable>
           </View>
         }
@@ -231,16 +233,15 @@ export default function FamilyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700' },
   noFamily: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
-  noFamilyTitle: { fontSize: 18, fontWeight: '600', color: '#000', marginTop: 16 },
-  noFamilyDesc: { fontSize: 14, color: '#999', textAlign: 'center', marginBottom: 16 },
+  noFamilyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
+  noFamilyDesc: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
   primaryBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#000', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, width: '100%', justifyContent: 'center',
@@ -248,41 +249,35 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   secondaryBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, width: '100%', justifyContent: 'center',
+    borderWidth: 1, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, width: '100%', justifyContent: 'center',
   },
-  secondaryBtnDark: { borderColor: '#333' },
-  secondaryBtnText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  secondaryBtnText: { fontSize: 16, fontWeight: '600' },
   formRow: { flexDirection: 'row', gap: 8, width: '100%' },
   input: {
-    flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#fff',
+    flex: 1, borderWidth: 1, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
   actionBtn: { backgroundColor: '#000', borderRadius: 10, paddingHorizontal: 20, justifyContent: 'center' },
   actionBtnText: { color: '#fff', fontWeight: '600' },
   codeCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginHorizontal: 16, marginVertical: 8, padding: 16, backgroundColor: '#fff', borderRadius: 12,
+    marginHorizontal: 16, marginVertical: 8, padding: 16, borderRadius: 12,
   },
-  cardDark: { backgroundColor: '#1a1a1a' },
-  codeLabel: { fontSize: 12, color: '#999', marginBottom: 2 },
-  codeValue: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace', color: '#000' },
+  codeLabel: { fontSize: 12, marginBottom: 2 },
+  codeValue: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
   list: { paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#999', marginBottom: 8, marginTop: 8 },
+  sectionTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 8 },
   memberRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 14, backgroundColor: '#fff', borderRadius: 12, marginBottom: 6,
+    padding: 14, borderRadius: 12, marginBottom: 6,
   },
-  memberRowDark: { backgroundColor: '#1a1a1a' },
   memberInfo: { flex: 1 },
-  memberName: { fontSize: 15, fontWeight: '500', color: '#000' },
-  memberRole: { fontSize: 12, color: '#999', marginTop: 1 },
+  memberName: { fontSize: 15, fontWeight: '500' },
+  memberRole: { fontSize: 12, marginTop: 1 },
   familyActions: { paddingTop: 20, gap: 8 },
   actionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 16, backgroundColor: '#fff', borderRadius: 12,
+    padding: 16, borderRadius: 12,
   },
-  actionLabel: { flex: 1, fontSize: 15, color: '#000' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  actionLabel: { flex: 1, fontSize: 15 },
 })

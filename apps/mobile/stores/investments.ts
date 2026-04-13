@@ -18,7 +18,7 @@ export const useInvestmentsStore = create<InvestmentsState>((set) => ({
   investments: [], isLoading: false,
   fetchInvestments: async () => {
     set({ isLoading: true })
-    try { const investments = await apiFetch<Investment[]>('/api/v1/investments/'); set({ investments, isLoading: false }) }
+    try { const res = await apiFetch<{ items: Investment[] }>('/api/v1/investments/'); set({ investments: res.items, isLoading: false }) }
     catch { set({ isLoading: false }) }
   },
   createInvestment: async (data) => {
@@ -27,8 +27,8 @@ export const useInvestmentsStore = create<InvestmentsState>((set) => ({
   },
   updateInvestment: async (id, data) => {
     await apiFetch(`/api/v1/investments/${id}`, { method: 'PUT', body: JSON.stringify(data) })
-    const investments = await apiFetch<Investment[]>('/api/v1/investments/')
-    set({ investments })
+    const res = await apiFetch<{ items: Investment[] }>('/api/v1/investments/')
+    set({ investments: res.items })
   },
 
   deleteInvestment: async (id) => {

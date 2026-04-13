@@ -7,6 +7,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { colors, themeColors } from '../../lib/tokens'
 import { useDebtsStore } from '../../stores/debts'
 
 const DEBT_TYPES = [
@@ -33,6 +34,7 @@ const CREDITOR_TYPES = [
 
 export default function CreateDebtScreen() {
   const isDark = useColorScheme() === 'dark'
+  const tc = themeColors(isDark)
   const router = useRouter()
   const { createDebt } = useDebtsStore()
 
@@ -86,7 +88,7 @@ export default function CreateDebtScreen() {
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+          <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
         <Text style={[styles.title, isDark && styles.textLight]}>Nova divida</Text>
         <View style={{ width: 24 }} />
@@ -97,7 +99,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="Ex: Emprestimo bancario"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={name}
           onChangeText={setName}
           autoFocus
@@ -146,7 +148,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="Ex: Banco BAI"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={creditor}
           onChangeText={setCreditor}
         />
@@ -155,7 +157,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="0"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={originalAmount}
           onChangeText={setOriginalAmount}
@@ -165,7 +167,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="0"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={currentBalance}
           onChangeText={setCurrentBalance}
@@ -175,7 +177,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="0"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={interestRate}
           onChangeText={setInterestRate}
@@ -185,7 +187,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="0"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={monthlyPayment}
           onChangeText={setMonthlyPayment}
@@ -195,7 +197,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="Ex: 15"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           keyboardType="numeric"
           value={paymentDay}
           onChangeText={setPaymentDay}
@@ -205,7 +207,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="AAAA-MM-DD"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={startDate}
           onChangeText={setStartDate}
           keyboardType="numbers-and-punctuation"
@@ -215,7 +217,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="AAAA-MM-DD"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={endDate}
           onChangeText={setEndDate}
           keyboardType="numbers-and-punctuation"
@@ -225,7 +227,7 @@ export default function CreateDebtScreen() {
         <TextInput
           style={[styles.input, isDark && styles.inputDark, { height: 60, textAlignVertical: 'top' }]}
           placeholder="Observacoes sobre a divida"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.light.textMuted}
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -244,32 +246,32 @@ export default function CreateDebtScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: colors.light.bg },
+  containerDark: { backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#000' },
+  title: { fontSize: 20, fontWeight: '700', color: colors.light.text },
   content: { padding: 16, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6, marginTop: 16 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.light.textSecondary, marginBottom: 6, marginTop: 16 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#000', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.light.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.light.text, backgroundColor: colors.light.card,
   },
-  inputDark: { borderColor: '#333', backgroundColor: '#111', color: '#fff' },
+  inputDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.input, color: colors.dark.text },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip: {
     alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-    borderWidth: 1, borderColor: '#e5e5e5', minWidth: 80, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.light.border, minWidth: 80, backgroundColor: colors.light.card,
   },
-  typeChipDark: { borderColor: '#333', backgroundColor: '#1a1a1a' },
-  typeSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
-  typeLabel: { fontSize: 11, color: '#666' },
-  typeLabelSelected: { color: '#3b82f6', fontWeight: '600' },
-  submitBtn: { backgroundColor: '#000', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
+  typeChipDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.card },
+  typeSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  typeLabel: { fontSize: 11, color: colors.light.textSecondary },
+  typeLabelSelected: { color: colors.primary, fontWeight: '600' },
+  submitBtn: { backgroundColor: colors.light.text, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textLight: { color: '#fff' },
-  textMuted: { color: '#999' },
+  submitText: { color: colors.dark.text, fontSize: 16, fontWeight: '600' },
+  textLight: { color: colors.dark.text },
+  textMuted: { color: colors.dark.textMuted },
 })

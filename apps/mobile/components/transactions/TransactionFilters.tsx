@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native'
 
+import { colors, themeColors } from '../../lib/tokens'
+
 export interface FilterState {
   type: 'all' | 'expense' | 'income' | 'transfer'
   period: 'week' | 'month' | '3months' | 'year' | 'all'
@@ -93,13 +95,13 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
-    backgroundColor: '#fff',
+    borderColor: colors.light.border,
+    backgroundColor: colors.light.card,
   },
-  chipDark: { borderColor: '#333', backgroundColor: '#1a1a1a' },
-  chipActive: { backgroundColor: '#000', borderColor: '#000' },
-  chipText: { fontSize: 13, color: '#666' },
-  chipTextDark: { color: '#999' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  separator: { width: 1, height: 20, backgroundColor: '#e5e5e5', marginHorizontal: 4 },
+  chipDark: { borderColor: colors.dark.border, backgroundColor: colors.dark.card },
+  chipActive: { backgroundColor: colors.light.text, borderColor: colors.light.text },
+  chipText: { fontSize: 13, color: colors.light.textSecondary },
+  chipTextDark: { color: colors.dark.textMuted },
+  chipTextActive: { color: colors.dark.text, fontWeight: '600' },
+  separator: { width: 1, height: 20, backgroundColor: colors.light.border, marginHorizontal: 4 },
 })

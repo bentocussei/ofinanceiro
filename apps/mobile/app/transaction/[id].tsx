@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
 import { formatKz, formatDateFull } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 import { useTransactionsStore } from '../../stores/transactions'
 import { useCategoriesStore, Category } from '../../stores/categories'
 
@@ -127,11 +128,19 @@ export default function TransactionDetailScreen() {
     ])
   }
 
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
+
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
         <View style={styles.loading}>
-          <Text style={[styles.loadingText, isDark && styles.textMuted]}>A carregar...</Text>
+          <Text style={[styles.loadingText, { color: tc.textMuted }]}>A carregar...</Text>
         </View>
       </SafeAreaView>
     )
@@ -142,15 +151,8 @@ export default function TransactionDetailScreen() {
   const availableCategories = getParentCategories(txn.type === 'transfer' ? undefined : txn.type)
   const categoryName = categories.find((c) => c.id === txn.category_id)?.name
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
-
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -162,7 +164,7 @@ export default function TransactionDetailScreen() {
             <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={text} />
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.actionBtn}>
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -307,7 +309,7 @@ export default function TransactionDetailScreen() {
                   <Text style={[styles.detailLabel, { color: muted }]}>Tags</Text>
                   <View style={styles.tagsRow}>
                     {txn.tags.map((tag) => (
-                      <View key={tag} style={[styles.tag, { backgroundColor: isDark ? '#333' : '#f0f0f0' }]}>
+                      <View key={tag} style={[styles.tag, { backgroundColor: tc.separator }]}>
                         <Text style={[styles.tagText, { color: muted }]}>{tag}</Text>
                       </View>
                     ))}
@@ -324,31 +326,29 @@ export default function TransactionDetailScreen() {
 }
 
 function EditField({ label, isDark, children }: { label: string; isDark: boolean; children: React.ReactNode }) {
-  const muted = isDark ? '#888' : '#666'
+  const tc = themeColors(isDark)
   return (
     <View style={styles.editFieldBlock}>
-      <Text style={[styles.editFieldLabel, { color: muted }]}>{label}</Text>
+      <Text style={[styles.editFieldLabel, { color: tc.textSecondary }]}>{label}</Text>
       {children}
     </View>
   )
 }
 
 function DetailRow({ label, value, isDark }: { label: string; value: string; isDark: boolean }) {
-  const muted = isDark ? '#888' : '#666'
-  const text = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
   return (
-    <View style={styles.detailRow}>
-      <Text style={[styles.detailLabel, { color: muted }]}>{label}</Text>
-      <Text style={[styles.detailValue, { color: text }]}>{value}</Text>
+    <View style={[styles.detailRow, { borderBottomColor: tc.separator }]}>
+      <Text style={[styles.detailLabel, { color: tc.textSecondary }]}>{label}</Text>
+      <Text style={[styles.detailValue, { color: tc.text }]}>{value}</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  containerDark: { backgroundColor: '#000' },
+  container: { flex: 1 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { fontSize: 16, color: '#999' },
+  loadingText: { fontSize: 16 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
@@ -363,11 +363,11 @@ const styles = StyleSheet.create({
   amount: { fontSize: 36, fontWeight: '700', fontFamily: 'monospace' },
   amountEdit: {
     fontSize: 36, fontWeight: '700', fontFamily: 'monospace', textAlign: 'center',
-    borderBottomWidth: 2, borderBottomColor: '#3b82f6', paddingVertical: 4,
+    borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: 4,
   },
   date: { fontSize: 14, marginTop: 8 },
   detailCard: { borderRadius: 16, padding: 16 },
-  detailRow: { paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
+  detailRow: { paddingVertical: 12, borderBottomWidth: 0.5 },
   detailLabel: { fontSize: 12, marginBottom: 4 },
   detailValue: { fontSize: 15 },
   editFieldBlock: { marginBottom: 16 },
@@ -386,10 +386,9 @@ const styles = StyleSheet.create({
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tagText: { fontSize: 12 },
-  income: { color: '#22c55e' },
-  expense: { color: '#ef4444' },
+  income: { color: colors.success },
+  expense: { color: colors.error },
   saveBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 16, fontWeight: '600' },
-  textMuted: { color: '#999' },
 })

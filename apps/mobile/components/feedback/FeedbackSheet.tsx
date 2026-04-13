@@ -1,4 +1,4 @@
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { forwardRef, useState } from 'react'
@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 
 import { apiFetch } from '../../lib/api'
+import { colors, themeColors } from '../../lib/tokens'
 
 type Tab = 'rating' | 'suggestion' | 'complaint'
 
@@ -29,11 +30,12 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   function reset() {
     setTab('rating')
@@ -81,12 +83,15 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
     <BottomSheet
       ref={ref}
       index={-1}
-      snapPoints={['50%']}
+      snapPoints={['60%']}
       enablePanDownToClose
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backgroundStyle={{ backgroundColor: card }}
       handleIndicatorStyle={{ backgroundColor: muted }}
     >
-      <BottomSheetView style={styles.content}>
+      <BottomSheetScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.title, { color: text }]}>Feedback</Text>
 
         {/* Tabs */}
@@ -117,7 +122,7 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
                   <Ionicons
                     name={n <= rating ? 'star' : 'star-outline'}
                     size={32}
-                    color={n <= rating ? '#f59e0b' : (isDark ? '#555' : '#ccc')}
+                    color={n <= rating ? colors.warning : tc.handle}
                   />
                 </Pressable>
               ))}
@@ -161,11 +166,11 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
           onPress={handleSubmit}
           disabled={submitting}
         >
-          <Text style={[styles.submitText, { color: isDark ? '#000' : '#fff' }]}>
+          <Text style={[styles.submitText, { color: isDark ? colors.light.text : colors.dark.text }]}>
             {submitting ? 'A enviar...' : 'Enviar'}
           </Text>
         </Pressable>
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheet>
   )
 })

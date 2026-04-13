@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiFetch } from '../../lib/api'
+import { themeColors } from '../../lib/tokens'
 
 export default function ScanReceiptScreen() {
   const isDark = useColorScheme() === 'dark'
@@ -23,9 +24,10 @@ export default function ScanReceiptScreen() {
   const [permission, requestPermission] = useCameraPermissions()
   const [processing, setProcessing] = useState(false)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const text = tc.text
+  const muted = tc.textSecondary
 
   async function handleCapture() {
     if (!cameraRef.current || processing) return
@@ -61,7 +63,7 @@ export default function ScanReceiptScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
-      // Navigate back with extracted data
+      // Navigate to transactions with OCR data to pre-fill the create form
       Alert.alert(
         'Recibo detectado',
         `${result.description || 'Compra'}\n${result.amount ? (result.amount / 100).toLocaleString('pt-AO') + ' Kz' : ''}\n${result.merchant || ''}`.trim(),
@@ -70,8 +72,15 @@ export default function ScanReceiptScreen() {
           {
             text: 'Criar transaccao',
             onPress: () => {
-              // TODO: Navigate to create transaction with pre-filled data
-              router.back()
+              router.replace({
+                pathname: '/(tabs)/transactions',
+                params: {
+                  prefill_amount: result.amount?.toString() || '',
+                  prefill_description: result.description || '',
+                  prefill_merchant: result.merchant || '',
+                  prefill_date: result.date || new Date().toISOString().slice(0, 10),
+                },
+              })
             },
           },
         ]

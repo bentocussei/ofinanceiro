@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { formatKz } from '../../lib/format'
+import { colors, themeColors } from '../../lib/tokens'
 
 export default function InvestmentSimulatorScreen() {
   const isDark = useColorScheme() === 'dark'
@@ -28,12 +29,13 @@ export default function InvestmentSimulatorScreen() {
     totalInterest: number
   } | null>(null)
 
-  const bg = isDark ? '#000' : '#f5f5f5'
-  const card = isDark ? '#1a1a1a' : '#fff'
-  const text = isDark ? '#fff' : '#000'
-  const muted = isDark ? '#888' : '#666'
-  const border = isDark ? '#333' : '#e5e5e5'
-  const accent = isDark ? '#fff' : '#000'
+  const tc = themeColors(isDark)
+  const bg = tc.bg
+  const card = tc.card
+  const text = tc.text
+  const muted = tc.textSecondary
+  const border = tc.border
+  const accent = tc.text
 
   function simulate() {
     const p = (parseFloat(principal) || 0) * 100
@@ -115,7 +117,7 @@ export default function InvestmentSimulatorScreen() {
             style={[styles.simBtn, { backgroundColor: accent }]}
             onPress={simulate}
           >
-            <Text style={[styles.simBtnText, { color: isDark ? '#000' : '#fff' }]}>
+            <Text style={[styles.simBtnText, { color: isDark ? colors.dark.bg : colors.light.bg }]}>
               Simular
             </Text>
           </Pressable>
@@ -127,7 +129,7 @@ export default function InvestmentSimulatorScreen() {
 
             <View style={styles.resultRow}>
               <Text style={[styles.resultLabel, { color: muted }]}>Valor final</Text>
-              <Text style={[styles.resultValue, { color: '#22c55e' }]}>
+              <Text style={[styles.resultValue, { color: colors.success }]}>
                 {formatKz(result.finalValue)}
               </Text>
             </View>
@@ -141,7 +143,7 @@ export default function InvestmentSimulatorScreen() {
 
             <View style={[styles.resultRow, { borderTopColor: border }]}>
               <Text style={[styles.resultLabel, { color: muted }]}>Juros ganhos</Text>
-              <Text style={[styles.resultValue, { color: '#22c55e' }]}>
+              <Text style={[styles.resultValue, { color: colors.success }]}>
                 {formatKz(result.totalInterest)}
               </Text>
             </View>
