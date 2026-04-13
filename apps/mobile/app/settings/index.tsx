@@ -72,6 +72,12 @@ export default function SettingsScreen() {
               label="Subscricao"
               isDark={isDark}
               onPress={() => router.push('/settings/subscription')}
+            />
+            <SettingsRow
+              icon="gift-outline"
+              label="Convidar amigos"
+              isDark={isDark}
+              onPress={() => router.push('/settings/referral')}
               isLast
             />
           </View>

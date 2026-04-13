@@ -48,6 +48,16 @@ export default function AssetsScreen() {
   const [name, setName] = useState('')
   const [type, setType] = useState('other')
   const [currentValue, setCurrentValue] = useState('')
+  const [purchaseValue, setPurchaseValue] = useState('')
+  const [purchaseDate, setPurchaseDate] = useState('')
+  const [description, setDescription] = useState('')
+  // Type-specific fields
+  const [brand, setBrand] = useState('')
+  const [model, setModel] = useState('')
+  const [year, setYear] = useState('')
+  const [plate, setPlate] = useState('')
+  const [address, setAddress] = useState('')
+  const [area, setArea] = useState('')
   const [creating, setCreating] = useState(false)
 
   const bg = isDark ? '#000' : '#f5f5f5'
@@ -84,12 +94,27 @@ export default function AssetsScreen() {
     }
     setCreating(true)
     try {
+      const details: Record<string, unknown> = {}
+      if (type === 'vehicle') {
+        if (brand.trim()) details.marca = brand.trim()
+        if (model.trim()) details.modelo = model.trim()
+        if (year.trim()) details.ano = parseInt(year)
+        if (plate.trim()) details.matricula = plate.trim()
+      } else if (type === 'property') {
+        if (address.trim()) details.morada = address.trim()
+        if (area.trim()) details.area_m2 = parseFloat(area)
+      }
+
       await apiFetch('/api/v1/assets/', {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
           type,
           current_value: value,
+          purchase_value: purchaseValue ? Math.round(parseFloat(purchaseValue) * 100) : undefined,
+          purchase_date: purchaseDate.trim() || undefined,
+          description: description.trim() || undefined,
+          details: Object.keys(details).length > 0 ? details : undefined,
         }),
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -227,6 +252,60 @@ export default function AssetsScreen() {
             placeholderTextColor={muted}
             keyboardType="number-pad"
           />
+
+          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Valor de compra (Kz, opcional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text }]}
+            value={purchaseValue}
+            onChangeText={setPurchaseValue}
+            placeholder="0"
+            placeholderTextColor={muted}
+            keyboardType="number-pad"
+          />
+
+          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Data de compra (opcional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text }]}
+            value={purchaseDate}
+            onChangeText={setPurchaseDate}
+            placeholder="AAAA-MM-DD"
+            placeholderTextColor={muted}
+            keyboardType="numbers-and-punctuation"
+          />
+
+          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Descricao (opcional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: border, color: text, minHeight: 50, textAlignVertical: 'top' }]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Detalhes sobre o bem"
+            placeholderTextColor={muted}
+            multiline
+          />
+
+          {/* Type-specific: Vehicle */}
+          {type === 'vehicle' && (
+            <>
+              <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Marca</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={brand} onChangeText={setBrand} placeholder="Ex: Toyota" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Modelo</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={model} onChangeText={setModel} placeholder="Ex: Hilux" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Ano</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={year} onChangeText={setYear} placeholder="2024" placeholderTextColor={muted} keyboardType="numeric" />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Matricula</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={plate} onChangeText={setPlate} placeholder="LD-XX-XX-XX" placeholderTextColor={muted} />
+            </>
+          )}
+
+          {/* Type-specific: Property */}
+          {type === 'property' && (
+            <>
+              <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Morada</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={address} onChangeText={setAddress} placeholder="Endereco" placeholderTextColor={muted} />
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Area (m2)</Text>
+              <TextInput style={[styles.input, { borderColor: border, color: text }]} value={area} onChangeText={setArea} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
+            </>
+          )}
 
           <Pressable
             style={[styles.createBtn, { backgroundColor: accent }, creating && { opacity: 0.6 }]}

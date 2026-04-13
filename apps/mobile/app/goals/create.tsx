@@ -30,6 +30,7 @@ export default function CreateGoalScreen() {
   const [targetAmount, setTargetAmount] = useState('')
   const [monthlyContribution, setMonthlyContribution] = useState('')
   const [contributionFrequency, setContributionFrequency] = useState('monthly')
+  const [targetDate, setTargetDate] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -51,6 +52,7 @@ export default function CreateGoalScreen() {
         name: name.trim(),
         type,
         target_amount: Math.round(parseFloat(targetAmount) * 100),
+        target_date: targetDate.trim() || undefined,
         monthly_contribution: monthlyContribution ? Math.round(parseFloat(monthlyContribution) * 100) : undefined,
         contribution_frequency: contributionFrequency,
         description: description.trim() || undefined,
@@ -107,6 +109,16 @@ export default function CreateGoalScreen() {
           keyboardType="numeric"
           value={targetAmount}
           onChangeText={setTargetAmount}
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data alvo (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor="#999"
+          value={targetDate}
+          onChangeText={setTargetDate}
+          keyboardType="numbers-and-punctuation"
         />
 
         <Text style={[styles.label, isDark && styles.textMuted]}>Descrição (opcional)</Text>

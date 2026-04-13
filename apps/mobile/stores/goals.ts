@@ -32,13 +32,7 @@ interface GoalsState {
   goals: Goal[]
   isLoading: boolean
   fetchGoals: () => Promise<void>
-  createGoal: (data: {
-    name: string
-    type?: string
-    target_amount: number
-    target_date?: string
-    monthly_contribution?: number
-  }) => Promise<Goal>
+  createGoal: (data: Record<string, unknown>) => Promise<Goal>
   contribute: (goalId: string, amount: number, note?: string) => Promise<void>
   deleteGoal: (id: string) => Promise<void>
   getProgress: (id: string) => Promise<GoalProgress>

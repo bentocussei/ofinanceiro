@@ -26,6 +26,8 @@ export default function ProfileScreen() {
 
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
+  const [currency, setCurrency] = useState('AOA')
+  const [salaryDay, setSalaryDay] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -33,6 +35,13 @@ export default function ProfileScreen() {
       setName(user.name)
       setEmail(user.email || '')
     }
+    // Fetch user preferences
+    apiFetch<{ currency?: string; salary_day?: number }>('/api/v1/users/me')
+      .then((data: any) => {
+        if (data.currency) setCurrency(data.currency)
+        if (data.salary_day) setSalaryDay(String(data.salary_day))
+      })
+      .catch(() => {})
   }, [user])
 
   async function handleSave() {
@@ -48,6 +57,8 @@ export default function ProfileScreen() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim() || null,
+          currency,
+          salary_day: salaryDay ? parseInt(salaryDay) : null,
         }),
       })
       await fetchUser()
@@ -110,6 +121,34 @@ export default function ProfileScreen() {
               </Text>
               <Ionicons name="lock-closed-outline" size={16} color={muted} />
             </View>
+
+            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Moeda preferida</Text>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              {['AOA', 'USD', 'EUR', 'MZN', 'CVE'].map((c) => (
+                <Pressable
+                  key={c}
+                  style={[
+                    { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: border },
+                    currency === c && { backgroundColor: accent, borderColor: accent },
+                  ]}
+                  onPress={() => setCurrency(c)}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: currency === c ? (isDark ? '#000' : '#fff') : muted }}>
+                    {c}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Dia do salario (1-31)</Text>
+            <TextInput
+              style={[styles.input, { borderColor: border, color: text }]}
+              value={salaryDay}
+              onChangeText={setSalaryDay}
+              placeholder="Ex: 25"
+              placeholderTextColor={muted}
+              keyboardType="numeric"
+            />
 
             <Pressable
               style={[styles.saveBtn, { backgroundColor: accent }, saving && { opacity: 0.6 }]}

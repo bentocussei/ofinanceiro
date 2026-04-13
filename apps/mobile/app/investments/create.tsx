@@ -30,6 +30,9 @@ export default function CreateInvestmentScreen() {
   const [investedAmount, setInvestedAmount] = useState('')
   const [currentValue, setCurrentValue] = useState('')
   const [interestRate, setInterestRate] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [maturityDate, setMaturityDate] = useState('')
+  const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -46,6 +49,9 @@ export default function CreateInvestmentScreen() {
         invested_amount: Math.round(parseFloat(investedAmount) * 100),
         current_value: Math.round(parseFloat(currentValue) * 100),
         interest_rate: interestRate ? parseFloat(interestRate) : undefined,
+        start_date: startDate.trim() || undefined,
+        maturity_date: maturityDate.trim() || undefined,
+        notes: notes.trim() || undefined,
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       router.back()
@@ -127,6 +133,36 @@ export default function CreateInvestmentScreen() {
           keyboardType="numeric"
           value={interestRate}
           onChangeText={setInterestRate}
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data de inicio (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor="#999"
+          value={startDate}
+          onChangeText={setStartDate}
+          keyboardType="numbers-and-punctuation"
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data de maturidade (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor="#999"
+          value={maturityDate}
+          onChangeText={setMaturityDate}
+          keyboardType="numbers-and-punctuation"
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Notas (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark, { height: 60, textAlignVertical: 'top' }]}
+          placeholder="Observacoes"
+          placeholderTextColor="#999"
+          value={notes}
+          onChangeText={setNotes}
+          multiline
         />
 
         <Pressable

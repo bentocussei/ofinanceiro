@@ -43,6 +43,10 @@ export default function CreateDebtScreen() {
   const [currentBalance, setCurrentBalance] = useState('')
   const [interestRate, setInterestRate] = useState('')
   const [monthlyPayment, setMonthlyPayment] = useState('')
+  const [paymentDay, setPaymentDay] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [notes, setNotes] = useState('')
   const [nature, setNature] = useState('formal')
   const [creditorType, setCreditorType] = useState('bank')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -62,6 +66,10 @@ export default function CreateDebtScreen() {
         current_balance: Math.round(parseFloat(currentBalance) * 100),
         interest_rate: interestRate ? parseFloat(interestRate) : undefined,
         monthly_payment: monthlyPayment ? Math.round(parseFloat(monthlyPayment) * 100) : undefined,
+        payment_day: paymentDay ? parseInt(paymentDay) : undefined,
+        start_date: startDate.trim() || undefined,
+        expected_end_date: endDate.trim() || undefined,
+        notes: notes.trim() || undefined,
         nature,
         creditor_type: creditorType,
       })
@@ -181,6 +189,46 @@ export default function CreateDebtScreen() {
           keyboardType="numeric"
           value={monthlyPayment}
           onChangeText={setMonthlyPayment}
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Dia de pagamento (1-31, opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="Ex: 15"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          value={paymentDay}
+          onChangeText={setPaymentDay}
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data inicio (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor="#999"
+          value={startDate}
+          onChangeText={setStartDate}
+          keyboardType="numbers-and-punctuation"
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data prevista de fim (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark]}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor="#999"
+          value={endDate}
+          onChangeText={setEndDate}
+          keyboardType="numbers-and-punctuation"
+        />
+
+        <Text style={[styles.label, isDark && styles.textMuted]}>Notas (opcional)</Text>
+        <TextInput
+          style={[styles.input, isDark && styles.inputDark, { height: 60, textAlignVertical: 'top' }]}
+          placeholder="Observacoes sobre a divida"
+          placeholderTextColor="#999"
+          value={notes}
+          onChangeText={setNotes}
+          multiline
         />
 
         <Pressable
