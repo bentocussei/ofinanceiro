@@ -19,7 +19,9 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Precisamos de acesso a camara para digitalizar recibos e extrair informacoes automaticamente.",
         "NSFaceIDUsageDescription": "Usa Face ID para proteger o acesso a app.",
-        "CFBundleLocalizations": ["pt"],
+        "CFBundleLocalizations": [
+          "pt"
+        ],
         "CFBundleDevelopmentRegion": "pt"
       }
     },
@@ -37,7 +39,11 @@
         "NOTIFICATIONS",
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -71,17 +77,15 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "ofinanceiro"
-      }
-    },
-    "owner": "bentocussei",
-    "updates": {
-      "url": "https://u.expo.dev/ofinanceiro"
-    },
+    "owner": "benack",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c87ef87b-ada3-4c25-a01a-4ec8014ab923"
+      }
     }
   }
 }
