@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
-import { apiFetch, clearTokens, getTokens, setTokens } from '../lib/api'
+import { apiFetch, getTokens, setTokens } from '../lib/api'
+import { resetSession } from '../lib/session-reset'
 
 interface User {
   id: string
@@ -62,6 +63,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         '/api/v1/auth/login',
         { method: 'POST', body: JSON.stringify({ phone, password }) }
       )
+      // Defensive reset — wipe any stale state from a previous session
+      // in case the last logout didn't fully clean up.
+      await resetSession()
       await setTokens(data.access_token, data.refresh_token)
       set({ isAuthenticated: true, isLoading: false })
       get().fetchUser().catch(() => {})
@@ -110,6 +114,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         '/api/v1/auth/otp/verify',
         { method: 'POST', body: JSON.stringify({ phone, otp }) }
       )
+      // Defensive reset — wipe any stale state from a previous session.
+      await resetSession()
       await setTokens(data.access_token, data.refresh_token)
       set({ isAuthenticated: true, isLoading: false })
       get().fetchUser().catch(() => {})
@@ -120,7 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await clearTokens()
+    await resetSession()
     set({ isAuthenticated: false, user: null })
   },
 

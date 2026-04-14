@@ -7,8 +7,9 @@ import { useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 
+import { apiFetch } from '../lib/api'
 import { isBiometricEnabled, authenticate } from '../lib/biometrics'
-import { loadContext } from '../lib/context'
+import { clearContext, getContext, loadContext } from '../lib/context'
 import { registerForPushNotifications } from '../lib/pushNotifications'
 import { useAuthStore } from '../stores/auth'
 import { hasCompletedOnboarding } from './onboarding'
@@ -64,6 +65,25 @@ export default function RootLayout() {
             useAuthStore.getState().logout()
           }
         }
+
+        // Validate stored context against current user. If the saved context
+        // points to a family the current user doesn't belong to (e.g. previous
+        // account left a stale value), reset to personal to avoid all queries
+        // returning empty data.
+        const ctx = getContext()
+        if (ctx.startsWith('family:')) {
+          const familyId = ctx.slice(7)
+          try {
+            const family = await apiFetch<{ id: string }>('/api/v1/families/me')
+            if (!family || family.id !== familyId) {
+              await clearContext()
+            }
+          } catch {
+            // No family for this user — reset to personal
+            await clearContext()
+          }
+        }
+
         // Register push notifications in background
         registerForPushNotifications().catch(() => {})
       }

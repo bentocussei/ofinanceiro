@@ -73,6 +73,31 @@ async function registerTokenWithBackend(token: string): Promise<void> {
   }
 }
 
+/**
+ * Unregister this device's push token from the backend.
+ * Call on logout to prevent the previous user from receiving notifications
+ * after someone else logs in on the same device.
+ * Best-effort: failures are swallowed so logout never blocks.
+ */
+export async function unregisterPushToken(): Promise<void> {
+  if (!Device.isDevice) return
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+    })
+    const token = tokenData.data
+    if (!token) return
+    await apiFetch('/api/v1/notifications/push-token', {
+      method: 'DELETE',
+      body: JSON.stringify({ token }),
+    }).catch(() => {
+      // Endpoint may not exist yet — ignore
+    })
+  } catch {
+    // Permissions denied, device unreachable, etc. — ignore
+  }
+}
+
 export function addNotificationReceivedListener(
   callback: (notification: Notifications.Notification) => void
 ) {

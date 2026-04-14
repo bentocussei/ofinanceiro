@@ -33,6 +33,16 @@ export async function setContext(ctx: AppContext): Promise<void> {
   }
 }
 
+/** Reset context to "personal" — called on logout so next user starts clean. */
+export async function clearContext(): Promise<void> {
+  cachedContext = 'personal'
+  try {
+    await SecureStore.deleteItemAsync(CONTEXT_KEY)
+  } catch {
+    // Best effort
+  }
+}
+
 export function getContext(): AppContext {
   return cachedContext
 }
