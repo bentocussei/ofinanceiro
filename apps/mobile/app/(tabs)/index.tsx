@@ -1,13 +1,12 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -15,9 +14,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import TransferSheet from '../../components/accounts/TransferSheet'
 import ContextSwitcher from '../../components/common/ContextSwitcher'
-import FAB from '../../components/common/FAB'
 import FadeInView from '../../components/common/FadeInView'
+import SpeedDial from '../../components/common/SpeedDial'
 import FeedbackSheet from '../../components/feedback/FeedbackSheet'
 import CreateTransactionSheet from '../../components/transactions/CreateTransactionSheet'
 import { apiFetch } from '../../lib/api'
@@ -28,12 +28,6 @@ import { useAccountsStore } from '../../stores/accounts'
 import { BudgetStatus, useBudgetsStore } from '../../stores/budgets'
 import { useGoalsStore } from '../../stores/goals'
 import { Transaction, useTransactionsStore } from '../../stores/transactions'
-
-const QUICK_ACTIONS = [
-  { key: 'add', label: 'Registar', icon: 'add-circle-outline' as const },
-  { key: 'transfer', label: 'Transferir', icon: 'swap-horizontal-outline' as const },
-  { key: 'scan', label: 'Digitalizar', icon: 'camera-outline' as const },
-]
 
 const CHART_PALETTE = [
   '#0D9488',
@@ -59,6 +53,7 @@ export default function HomeScreen() {
   const tc = themeColors(isDark)
   const router = useRouter()
   const txnSheetRef = useRef<BottomSheet>(null)
+  const transferSheetRef = useRef<BottomSheet>(null)
   const feedbackRef = useRef<BottomSheet>(null)
 
   const { summary, fetchSummary } = useAccountsStore()
@@ -69,6 +64,7 @@ export default function HomeScreen() {
   const [patrimony, setPatrimony] = useState<any>(null)
   const [referralDismissed, setReferralDismissed] = useState<boolean | null>(null)
   const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([])
+  const [hasFetched, setHasFetched] = useState(false)
 
   const fetchCategorySpending = useCallback(() => {
     const now = new Date()
@@ -89,16 +85,30 @@ export default function HomeScreen() {
   }, [])
 
   useEffect(() => {
-    fetchSummary()
-    fetchTransactions(true)
-    fetchBudgets()
-    fetchGoals()
-    fetchCategorySpending()
-    fetchPatrimony()
+    Promise.all([
+      fetchSummary(),
+      fetchTransactions(true),
+      fetchBudgets(),
+      fetchGoals(),
+      Promise.resolve(fetchCategorySpending()),
+      Promise.resolve(fetchPatrimony()),
+    ]).finally(() => setHasFetched(true))
     SecureStore.getItemAsync('referral_banner_dismissed')
       .then((val) => setReferralDismissed(val === 'true'))
       .catch(() => setReferralDismissed(false))
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSummary(true)
+      fetchTransactions(true, true)
+      fetchBudgets(true)
+      fetchGoals(true)
+      fetchCategorySpending()
+      fetchPatrimony()
+    }, [fetchCategorySpending, fetchPatrimony])
+  )
+
 
   const handleDismissReferral = useCallback(async () => {
     setReferralDismissed(true)
@@ -148,8 +158,10 @@ export default function HomeScreen() {
     .reduce((sum, t) => sum + t.amount, 0)
 
   const handleQuickAction = (key: string) => {
-    if (key === 'add' || key === 'transfer') {
+    if (key === 'add') {
       txnSheetRef.current?.expand()
+    } else if (key === 'transfer') {
+      transferSheetRef.current?.expand()
     } else if (key === 'scan') {
       router.push('/scan')
     }
@@ -315,26 +327,6 @@ export default function HomeScreen() {
               </View>
             </FadeInView>
 
-            {/* Quick Actions */}
-            <FadeInView delay={175}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickActionsRow}
-              >
-                {QUICK_ACTIONS.map((action) => (
-                  <Pressable
-                    key={action.key}
-                    style={[styles.quickChip, { borderColor: tc.border }]}
-                    onPress={() => handleQuickAction(action.key)}
-                  >
-                    <Ionicons name={action.icon} size={18} color={colors.primary} />
-                    <Text style={[styles.quickChipLabel, { color: tc.text }]}>{action.label}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </FadeInView>
-
             {/* Referral Banner */}
             {referralDismissed === false && (
               <FadeInView delay={150}>
@@ -468,18 +460,35 @@ export default function HomeScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="receipt-outline" size={48} color={tc.handle} />
-            <Text style={[styles.emptyText, { color: tc.textMuted }]}>
-              Nenhuma transaccao registada
-            </Text>
-            <Pressable
-              style={styles.emptyBtn}
-              onPress={() => txnSheetRef.current?.expand()}
-            >
-              <Text style={styles.emptyBtnText}>Registar primeira transaccao</Text>
-            </Pressable>
-          </View>
+          !hasFetched ? (
+            <View>
+              {[1, 2, 3, 4].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    height: 60,
+                    backgroundColor: tc.cardAlt,
+                    borderRadius: 12,
+                    marginHorizontal: 16,
+                    marginVertical: 4,
+                  }}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Ionicons name="receipt-outline" size={48} color={tc.handle} />
+              <Text style={[styles.emptyText, { color: tc.textMuted }]}>
+                Nenhuma transaccao registada
+              </Text>
+              <Pressable
+                style={styles.emptyBtn}
+                onPress={() => txnSheetRef.current?.expand()}
+              >
+                <Text style={styles.emptyBtnText}>Registar primeira transaccao</Text>
+              </Pressable>
+            </View>
+          )
         }
         ListFooterComponent={
           <>
@@ -570,8 +579,31 @@ export default function HomeScreen() {
         }
       />
 
-      <FAB onPress={() => txnSheetRef.current?.expand()} />
+      <SpeedDial
+        actions={[
+          {
+            key: 'add',
+            label: 'Registar transaccao',
+            icon: 'add-circle-outline',
+            onPress: () => handleQuickAction('add'),
+            color: colors.primary,
+          },
+          {
+            key: 'transfer',
+            label: 'Transferir entre contas',
+            icon: 'swap-horizontal-outline',
+            onPress: () => handleQuickAction('transfer'),
+          },
+          {
+            key: 'scan',
+            label: 'Digitalizar recibo',
+            icon: 'camera-outline',
+            onPress: () => handleQuickAction('scan'),
+          },
+        ]}
+      />
       <CreateTransactionSheet ref={txnSheetRef} onCreated={onRefresh} />
+      <TransferSheet ref={transferSheetRef} onTransferred={onRefresh} />
       <FeedbackSheet ref={feedbackRef} />
     </SafeAreaView>
   )
@@ -696,27 +728,6 @@ const styles = StyleSheet.create({
   },
   income: { color: colors.success },
   expense: { color: colors.error },
-
-  // Quick Actions
-  quickActionsRow: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 4,
-    gap: 10,
-  },
-  quickChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 9999,
-    borderWidth: 1,
-  },
-  quickChipLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
 
   // Referral Banner
   referralBanner: {

@@ -1,7 +1,7 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -41,10 +41,18 @@ export default function TransactionsScreen() {
 
   const [filters, setFilters] = useState<FilterState>({ type: 'all', period: 'month' })
   const [prefill, setPrefill] = useState<TransactionPrefill | null>(null)
+  const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
-    fetchTransactions(true)
+    Promise.resolve(fetchTransactions(true)).finally(() => setHasFetched(true))
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions(true, true)
+    }, [])
+  )
+
 
   // Handle prefill from receipt scanner
   useEffect(() => {
@@ -177,14 +185,31 @@ export default function TransactionsScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="receipt-outline" size={48} color={tc.handle} />
-            <Text style={[styles.emptyText, isDark && styles.textMuted]}>
-              {filters.type !== 'all' || filters.period !== 'all'
-                ? 'Nenhuma transacção encontrada com estes filtros'
-                : 'Nenhuma transacção registada'}
-            </Text>
-          </View>
+          !hasFetched ? (
+            <View>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    height: 56,
+                    backgroundColor: tc.cardAlt,
+                    borderRadius: 12,
+                    marginHorizontal: 16,
+                    marginVertical: 4,
+                  }}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Ionicons name="receipt-outline" size={48} color={tc.handle} />
+              <Text style={[styles.emptyText, isDark && styles.textMuted]}>
+                {filters.type !== 'all' || filters.period !== 'all'
+                  ? 'Nenhuma transacção encontrada com estes filtros'
+                  : 'Nenhuma transacção registada'}
+              </Text>
+            </View>
+          )
         }
       />
 
@@ -208,10 +233,11 @@ const styles = StyleSheet.create({
   dateTotal: { fontSize: 13, fontWeight: '500', fontFamily: 'monospace' },
   txnRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14, backgroundColor: colors.light.card,
-    borderBottomWidth: 0.5, borderBottomColor: colors.light.borderLight,
+    marginHorizontal: 16, marginVertical: 4,
+    paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: colors.light.card, borderRadius: 12,
   },
-  txnRowDark: { backgroundColor: colors.dark.card, borderBottomColor: colors.dark.border },
+  txnRowDark: { backgroundColor: colors.dark.card },
   txnInfo: { flex: 1 },
   txnDesc: { fontSize: 15, color: colors.light.text },
   txnAmount: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },

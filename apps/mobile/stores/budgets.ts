@@ -51,7 +51,7 @@ export interface BudgetStatus {
 interface BudgetsState {
   budgets: Budget[]
   isLoading: boolean
-  fetchBudgets: () => Promise<void>
+  fetchBudgets: (silent?: boolean) => Promise<void>
   getBudgetStatus: (id: string) => Promise<BudgetStatus>
   createBudget: (data: {
     name?: string
@@ -68,13 +68,13 @@ export const useBudgetsStore = create<BudgetsState>((set, get) => ({
   budgets: [],
   isLoading: false,
 
-  fetchBudgets: async () => {
-    set({ isLoading: true })
+  fetchBudgets: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: Budget[] }>('/api/v1/budgets/')
-      set({ budgets: res.items, isLoading: false })
+      set({ budgets: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

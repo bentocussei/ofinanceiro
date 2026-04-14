@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Alert,
@@ -59,11 +59,23 @@ export default function MoreScreen() {
   const [familyAction, setFamilyAction] = useState<FamilyAction>('none')
   const [familyInput, setFamilyInput] = useState('')
   const [familyLoading, setFamilyLoading] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
-    loadContext().then(setCurrentCtx)
-    fetchFamily()
+    Promise.all([
+      loadContext().then(setCurrentCtx),
+      apiFetch<Family>('/api/v1/families/me')
+        .then(setFamily)
+        .catch(() => setFamily(null)),
+    ]).finally(() => setHasFetched(true))
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchFamily()
+    }, [])
+  )
+
 
   function fetchFamily() {
     apiFetch<Family>('/api/v1/families/me')
@@ -138,26 +150,60 @@ export default function MoreScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
 
         {/* Profile Card */}
-        <Pressable
-          style={[styles.profileCard, { backgroundColor: tc.card }]}
-          onPress={() => router.push('/settings')}
-        >
-          <View style={[styles.avatar, { backgroundColor: tc.border }]}>
-            <Text style={[styles.avatarText, { color: tc.text }]}>{initials}</Text>
+        {!user ? (
+          <View style={[styles.profileCard, { backgroundColor: tc.card }]}>
+            <View style={[styles.avatar, { backgroundColor: tc.cardAlt }]} />
+            <View style={styles.profileInfo}>
+              <View
+                style={{
+                  height: 14,
+                  width: '55%',
+                  backgroundColor: tc.cardAlt,
+                  borderRadius: 6,
+                }}
+              />
+              <View
+                style={{
+                  height: 11,
+                  width: '35%',
+                  backgroundColor: tc.cardAlt,
+                  borderRadius: 6,
+                  marginTop: 6,
+                }}
+              />
+            </View>
           </View>
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: tc.text }]} numberOfLines={1}>
-              {user?.name || 'Utilizador'}
-            </Text>
-            <Text style={[styles.profilePhone, { color: tc.textSecondary }]} numberOfLines={1}>
-              {user?.phone || ''}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={tc.handle} />
-        </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.profileCard, { backgroundColor: tc.card }]}
+            onPress={() => router.push('/settings')}
+          >
+            <View style={[styles.avatar, { backgroundColor: tc.border }]}>
+              <Text style={[styles.avatarText, { color: tc.text }]}>{initials}</Text>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileName, { color: tc.text }]} numberOfLines={1}>
+                {user?.name || 'Utilizador'}
+              </Text>
+              <Text style={[styles.profilePhone, { color: tc.textSecondary }]} numberOfLines={1}>
+                {user?.phone || ''}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={tc.handle} />
+          </Pressable>
+        )}
 
         {/* Context Switcher — always visible */}
-        {family ? (
+        {!hasFetched ? (
+          <View
+            style={{
+              height: 48,
+              backgroundColor: tc.cardAlt,
+              borderRadius: 12,
+              marginBottom: 20,
+            }}
+          />
+        ) : family ? (
           /* Horizontal toggle when family exists */
           <View style={[styles.contextToggle, { backgroundColor: tc.cardAlt }]}>
             <Pressable

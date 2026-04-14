@@ -17,7 +17,7 @@ export interface IncomeSource {
 interface IncomeSourcesState {
   sources: IncomeSource[]
   isLoading: boolean
-  fetchSources: () => Promise<void>
+  fetchSources: (silent?: boolean) => Promise<void>
   createSource: (data: Record<string, unknown>) => Promise<IncomeSource>
   updateSource: (id: string, data: Record<string, unknown>) => Promise<void>
   deleteSource: (id: string) => Promise<void>
@@ -27,13 +27,13 @@ export const useIncomeSourcesStore = create<IncomeSourcesState>((set) => ({
   sources: [],
   isLoading: false,
 
-  fetchSources: async () => {
-    set({ isLoading: true })
+  fetchSources: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: IncomeSource[] }>('/api/v1/income-sources/')
-      set({ sources: res.items, isLoading: false })
+      set({ sources: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

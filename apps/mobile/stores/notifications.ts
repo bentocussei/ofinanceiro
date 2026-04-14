@@ -5,7 +5,7 @@ export interface Notification { id: string; type: string; title: string; body: s
 
 interface NotificationsState {
   notifications: Notification[]; unreadCount: number; isLoading: boolean
-  fetchNotifications: () => Promise<void>
+  fetchNotifications: (silent?: boolean) => Promise<void>
   fetchUnreadCount: () => Promise<void>
   markRead: (id: string) => Promise<void>
   markAllRead: () => Promise<void>
@@ -13,10 +13,10 @@ interface NotificationsState {
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   notifications: [], unreadCount: 0, isLoading: false,
-  fetchNotifications: async () => {
-    set({ isLoading: true })
-    try { const res = await apiFetch<{ items: Notification[] }>('/api/v1/notifications/'); set({ notifications: res.items, isLoading: false }) }
-    catch { set({ isLoading: false }) }
+  fetchNotifications: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
+    try { const res = await apiFetch<{ items: Notification[] }>('/api/v1/notifications/'); set({ notifications: res.items, ...(!silent && { isLoading: false }) }) }
+    catch { if (!silent) set({ isLoading: false }) }
   },
   fetchUnreadCount: async () => {
     try { const data = await apiFetch<{ count: number }>('/api/v1/notifications/unread-count'); set({ unreadCount: data.count }) }

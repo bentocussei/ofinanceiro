@@ -16,7 +16,7 @@ export interface RecurringRule {
 interface RecurringRulesState {
   rules: RecurringRule[]
   isLoading: boolean
-  fetchRules: () => Promise<void>
+  fetchRules: (silent?: boolean) => Promise<void>
   createRule: (data: Record<string, unknown>) => Promise<RecurringRule>
   updateRule: (id: string, data: Record<string, unknown>) => Promise<void>
   deleteRule: (id: string) => Promise<void>
@@ -26,13 +26,13 @@ export const useRecurringRulesStore = create<RecurringRulesState>((set) => ({
   rules: [],
   isLoading: false,
 
-  fetchRules: async () => {
-    set({ isLoading: true })
+  fetchRules: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: RecurringRule[] }>('/api/v1/recurring-rules/')
-      set({ rules: res.items, isLoading: false })
+      set({ rules: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

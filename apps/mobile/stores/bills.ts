@@ -24,7 +24,7 @@ export interface Bill {
 interface BillsState {
   bills: Bill[]
   isLoading: boolean
-  fetchBills: () => Promise<void>
+  fetchBills: (silent?: boolean) => Promise<void>
   createBill: (data: Record<string, unknown>) => Promise<Bill>
   updateBill: (id: string, data: Record<string, unknown>) => Promise<void>
   payBill: (id: string) => Promise<void>
@@ -35,13 +35,13 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   bills: [],
   isLoading: false,
 
-  fetchBills: async () => {
-    set({ isLoading: true })
+  fetchBills: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: Bill[] }>('/api/v1/bills/')
-      set({ bills: res.items, isLoading: false })
+      set({ bills: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

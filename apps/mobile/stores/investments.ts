@@ -8,7 +8,7 @@ export interface Investment {
 
 interface InvestmentsState {
   investments: Investment[]; isLoading: boolean
-  fetchInvestments: () => Promise<void>
+  fetchInvestments: (silent?: boolean) => Promise<void>
   createInvestment: (data: Record<string, unknown>) => Promise<Investment>
   updateInvestment: (id: string, data: Record<string, unknown>) => Promise<void>
   deleteInvestment: (id: string) => Promise<void>
@@ -16,10 +16,10 @@ interface InvestmentsState {
 
 export const useInvestmentsStore = create<InvestmentsState>((set) => ({
   investments: [], isLoading: false,
-  fetchInvestments: async () => {
-    set({ isLoading: true })
-    try { const res = await apiFetch<{ items: Investment[] }>('/api/v1/investments/'); set({ investments: res.items, isLoading: false }) }
-    catch { set({ isLoading: false }) }
+  fetchInvestments: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
+    try { const res = await apiFetch<{ items: Investment[] }>('/api/v1/investments/'); set({ investments: res.items, ...(!silent && { isLoading: false }) }) }
+    catch { if (!silent) set({ isLoading: false }) }
   },
   createInvestment: async (data) => {
     const inv = await apiFetch<Investment>('/api/v1/investments/', { method: 'POST', body: JSON.stringify(data) })

@@ -31,7 +31,7 @@ export interface GoalProgress {
 interface GoalsState {
   goals: Goal[]
   isLoading: boolean
-  fetchGoals: () => Promise<void>
+  fetchGoals: (silent?: boolean) => Promise<void>
   createGoal: (data: Record<string, unknown>) => Promise<Goal>
   contribute: (goalId: string, amount: number, note?: string) => Promise<void>
   deleteGoal: (id: string) => Promise<void>
@@ -42,13 +42,13 @@ export const useGoalsStore = create<GoalsState>((set) => ({
   goals: [],
   isLoading: false,
 
-  fetchGoals: async () => {
-    set({ isLoading: true })
+  fetchGoals: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: Goal[] }>('/api/v1/goals/')
-      set({ goals: res.items, isLoading: false })
+      set({ goals: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

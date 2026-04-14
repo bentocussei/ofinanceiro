@@ -1,7 +1,8 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { useCallback, useEffect, useRef } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
   FlatList,
@@ -40,13 +41,22 @@ export default function AccountsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const tc = themeColors(isDark)
+  const router = useRouter()
   const createSheetRef = useRef<BottomSheet>(null)
   const transferSheetRef = useRef<BottomSheet>(null)
   const { accounts, summary, fetchSummary, isLoading } = useAccountsStore()
+  const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
-    fetchSummary()
+    Promise.resolve(fetchSummary()).finally(() => setHasFetched(true))
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSummary(true)
+    }, [])
+  )
+
 
   const onRefresh = useCallback(() => fetchSummary(), [])
 
@@ -146,10 +156,27 @@ export default function AccountsScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="wallet-outline" size={48} color={tc.handle} />
-            <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma conta criada</Text>
-          </View>
+          !hasFetched ? (
+            <View>
+              {[1, 2, 3, 4].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    height: 60,
+                    backgroundColor: tc.cardAlt,
+                    borderRadius: 12,
+                    marginHorizontal: 16,
+                    marginVertical: 4,
+                  }}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Ionicons name="wallet-outline" size={48} color={tc.handle} />
+              <Text style={[styles.emptyText, isDark && styles.textMuted]}>Nenhuma conta criada</Text>
+            </View>
+          )
         }
       />
 
@@ -187,11 +214,12 @@ const styles = StyleSheet.create({
   summaryTotalLabel: { fontSize: 15, fontWeight: '600', color: colors.light.text },
   summaryTotalValue: { fontSize: 15, fontWeight: '700', fontFamily: 'monospace', color: colors.light.text },
   accountRow: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20,
-    paddingVertical: 14, backgroundColor: colors.light.card,
-    borderBottomWidth: 0.5, borderBottomColor: colors.light.borderLight,
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginVertical: 4,
+    paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: colors.light.card, borderRadius: 12,
   },
-  rowDark: { backgroundColor: colors.dark.card, borderBottomColor: colors.dark.border },
+  rowDark: { backgroundColor: colors.dark.card },
   accountIcon: { marginRight: 12 },
   accountInfo: { flex: 1 },
   accountName: { fontSize: 15, fontWeight: '500', color: colors.light.text },

@@ -23,7 +23,7 @@ interface TransactionsState {
   cursor: string | null
   hasMore: boolean
   isLoading: boolean
-  fetchTransactions: (reset?: boolean) => Promise<void>
+  fetchTransactions: (reset?: boolean, silent?: boolean) => Promise<void>
   createTransaction: (data: Record<string, unknown>) => Promise<Transaction>
   deleteTransaction: (id: string) => Promise<void>
 }
@@ -34,12 +34,12 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
   hasMore: true,
   isLoading: false,
 
-  fetchTransactions: async (reset = false) => {
+  fetchTransactions: async (reset = false, silent = false) => {
     const state = get()
     if (state.isLoading) return
     if (!reset && !state.hasMore) return
 
-    set({ isLoading: true })
+    if (!silent) set({ isLoading: true })
     const cursor = reset ? '' : state.cursor ? `&cursor=${state.cursor}` : ''
     try {
       const data = await apiFetch<{
@@ -52,10 +52,10 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
         transactions: reset ? data.items : [...state.transactions, ...data.items],
         cursor: data.cursor,
         hasMore: data.has_more,
-        isLoading: false,
+        ...(!silent && { isLoading: false }),
       })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 

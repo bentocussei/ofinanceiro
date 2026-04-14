@@ -27,8 +27,8 @@ interface AccountsState {
   accounts: Account[]
   summary: AccountSummary | null
   isLoading: boolean
-  fetchAccounts: () => Promise<void>
-  fetchSummary: () => Promise<void>
+  fetchAccounts: (silent?: boolean) => Promise<void>
+  fetchSummary: (silent?: boolean) => Promise<void>
   createAccount: (data: Record<string, unknown>) => Promise<Account>
 }
 
@@ -37,17 +37,17 @@ export const useAccountsStore = create<AccountsState>((set) => ({
   summary: null,
   isLoading: false,
 
-  fetchAccounts: async () => {
-    set({ isLoading: true })
+  fetchAccounts: async (silent = false) => {
+    if (!silent) set({ isLoading: true })
     try {
       const res = await apiFetch<{ items: Account[] }>('/api/v1/accounts/')
-      set({ accounts: res.items, isLoading: false })
+      set({ accounts: res.items, ...(!silent && { isLoading: false }) })
     } catch {
-      set({ isLoading: false })
+      if (!silent) set({ isLoading: false })
     }
   },
 
-  fetchSummary: async () => {
+  fetchSummary: async (_silent: boolean = false) => {
     try {
       const summary = await apiFetch<AccountSummary>('/api/v1/accounts/summary')
       set({ summary, accounts: summary.accounts })
