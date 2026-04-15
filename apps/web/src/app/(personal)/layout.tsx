@@ -2,7 +2,6 @@
 
 import { Sidebar } from "@/components/layout/sidebar"
 import { MobileNav } from "@/components/layout/MobileNav"
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget"
 import { PermissionProvider } from "@/providers/PermissionProvider"
 import { usePathname } from "next/navigation"
 
@@ -18,7 +17,7 @@ export default function DashboardLayout({
     <PermissionProvider>
       <div className="flex h-screen">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto pb-14 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
           <MobileNav context="personal" />
           {isAssistant ? (
             children
@@ -29,7 +28,6 @@ export default function DashboardLayout({
           )}
         </main>
       </div>
-      <FeedbackWidget />
     </PermissionProvider>
   )
 }

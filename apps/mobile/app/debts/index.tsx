@@ -122,7 +122,7 @@ export default function DebtsScreen() {
         </Text>
         {item.payment_day != null && status !== 'paid_off' && (
           <Text style={[styles.nextPayment, isDark && styles.textMuted]}>
-            Proximo pagamento: {getNextPaymentLabel(item.payment_day)}
+            Próximo pagamento: {getNextPaymentLabel(item.payment_day)}
           </Text>
         )}
       </View>
@@ -182,7 +182,7 @@ export default function DebtsScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.title, isDark && styles.textLight]}>Dividas</Text>
+        <Text style={[styles.title, isDark && styles.textLight]}>Dívidas</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
             style={[styles.addBtn, isDark && styles.addBtnDark]}

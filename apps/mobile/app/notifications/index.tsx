@@ -103,7 +103,7 @@ export default function NotificationsScreen() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.title, { color: tc.text }]}>Notificacoes</Text>
+        <Text style={[styles.title, { color: tc.text }]}>Notificações</Text>
         {unreadCount > 0 ? (
           <Pressable onPress={markAllRead}>
             <Text style={styles.markAllText}>Marcar tudo</Text>
@@ -123,7 +123,7 @@ export default function NotificationsScreen() {
           <View style={styles.empty}>
             <Ionicons name="notifications-off-outline" size={48} color={tc.handle} />
             <Text style={[styles.emptyText, { color: tc.textMuted }]}>
-              Nenhuma notificacao
+              Nenhuma notificação
             </Text>
           </View>
         }

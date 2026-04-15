@@ -47,14 +47,14 @@ export default function ProfileScreen() {
 
   async function handleSave() {
     if (!name.trim()) {
-      Alert.alert('Erro', 'O nome nao pode estar vazio')
+      Alert.alert('Erro', 'O nome não pode estar vazio')
       return
     }
     let parsedSalaryDay: number | null = null
     if (salaryDay.trim()) {
       const n = parseInt(salaryDay, 10)
       if (isNaN(n) || n < 1 || n > 31) {
-        Alert.alert('Erro', 'O dia do salario deve estar entre 1 e 31')
+        Alert.alert('Erro', 'O dia do salário deve estar entre 1 e 31')
         return
       }
       parsedSalaryDay = n

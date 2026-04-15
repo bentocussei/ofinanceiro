@@ -445,7 +445,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-4">
         <div className="mx-auto flex flex-col items-center justify-between gap-3 px-4 md:px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
           <LogoFull className="h-12" />
-          <p>Gestao financeira pessoal e familiar para Angola</p>
+          <p>Gestão financeira pessoal e familiar para Angola</p>
           <p className="text-xs text-muted-foreground/60">Powered by Magiflex</p>
         </div>
       </footer>

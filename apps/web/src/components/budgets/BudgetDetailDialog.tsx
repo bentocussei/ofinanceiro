@@ -162,7 +162,7 @@ export function BudgetDetailDialog({
       setIsEditing(false)
       fetchStatus()
       onUpdated?.()
-      toast.success("Orcamento actualizado")
+      toast.success("Orçamento actualizado")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao guardar"
       setError(msg)
@@ -173,8 +173,8 @@ export function BudgetDetailDialog({
 
   const handleDelete = () => {
     if (!item) return
-    toast("Eliminar este orcamento?", {
-      description: "Esta accao nao pode ser revertida.",
+    toast("Eliminar este orçamento?", {
+      description: "Esta acção não pode ser revertida.",
       action: {
         label: "Eliminar",
         onClick: async () => {
@@ -183,7 +183,7 @@ export function BudgetDetailDialog({
             await budgetsApi.remove(item.id, opts)
             onOpenChange(false)
             onDeleted?.()
-            toast.success("Orcamento eliminado com sucesso")
+            toast.success("Orçamento eliminado com sucesso")
           } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Erro ao eliminar"
             setError(msg)
@@ -277,7 +277,7 @@ export function BudgetDetailDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Editar orcamento" : "Detalhe do orcamento"}
+            {isEditing ? "Editar orçamento" : "Detalhe do orçamento"}
           </DialogTitle>
         </DialogHeader>
 
@@ -290,12 +290,12 @@ export function BudgetDetailDialog({
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nome do orcamento"
+                  placeholder="Nome do orçamento"
                 />
               </div>
 
               <div>
-                <Label>Metodo</Label>
+                <Label>Método</Label>
                 <Select value={editMethod} onValueChange={(v) => { if (v) setEditMethod(v) }}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -309,7 +309,7 @@ export function BudgetDetailDialog({
               </div>
 
               <div>
-                <Label>Periodo</Label>
+                <Label>Período</Label>
                 <Select value={editPeriodType} onValueChange={(v) => { if (v) setEditPeriodType(v) }}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -324,7 +324,7 @@ export function BudgetDetailDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Inicio</Label>
+                  <Label>Início</Label>
                   <Input
                     type="date"
                     value={editPeriodStart}
@@ -395,7 +395,7 @@ export function BudgetDetailDialog({
             <>
               {/* Header info */}
               <div className="text-center py-2">
-                <h3 className="text-lg font-semibold">{item.name || "Orcamento"}</h3>
+                <h3 className="text-lg font-semibold">{item.name || "Orçamento"}</h3>
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <span className="text-xs rounded-full bg-muted px-2 py-0.5">
                     {methodLabel(item.method)}
@@ -457,7 +457,7 @@ export function BudgetDetailDialog({
 
                   {status.items.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4 border-t">
-                      Sem categorias definidas. Edite o orcamento para adicionar.
+                      Sem categorias definidas. Edite o orçamento para adicionar.
                     </p>
                   )}
                 </>

@@ -121,7 +121,7 @@ export default function NewsScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="newspaper-outline" size={48} color={tc.handle} />
-            <Text style={[styles.emptyText, { color: tc.textMuted }]}>Nenhuma noticia disponivel</Text>
+            <Text style={[styles.emptyText, { color: tc.textMuted }]}>Nenhuma noticia disponível</Text>
           </View>
         }
       />

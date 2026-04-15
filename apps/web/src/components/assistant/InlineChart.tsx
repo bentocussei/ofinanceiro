@@ -253,7 +253,7 @@ export function InlineChart({ config, onSendPrompt }: InlineChartProps) {
   }
 
   // ---------------------------------------------------------------------------
-  // Line / Area
+  // Line / Área
   // ---------------------------------------------------------------------------
   if (config.type === "line" || config.type === "area") {
     const isArea = config.type === "area"

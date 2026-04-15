@@ -14,7 +14,7 @@ export default function AuthLayout({
         className="absolute top-4 left-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <Home className="h-4 w-4" />
-        Inicio
+        Início
       </Link>
       <div className="mb-8 flex items-center justify-center w-full">
         <LogoFull className="h-16" />

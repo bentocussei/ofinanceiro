@@ -65,11 +65,11 @@ export default function FamilyNotificationsPage() {
           <p className="text-sm text-muted-foreground">Sem notificações familiares</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-accent/50 active:bg-accent/50 ${!n.is_read ? "bg-blue-50/50 dark:bg-blue-950/10" : ""}`}
+              className={`px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-accent/50 active:bg-accent/50 mx-4 my-1 rounded-xl shadow-sm md:mx-0 md:my-0 md:rounded-none md:shadow-none ${!n.is_read ? "bg-blue-50/50 dark:bg-blue-950/10" : "bg-card md:bg-transparent"}`}
               onClick={() => { if (!n.is_read) markRead(n.id) }}
             >
               <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${!n.is_read ? "bg-blue-500" : "bg-transparent"}`} />

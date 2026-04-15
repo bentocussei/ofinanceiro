@@ -198,7 +198,7 @@ function DoughnutChart({
   )
 }
 
-// --- Line / Area Chart ---
+// --- Line / Área Chart ---
 function LineChart({
   labels,
   values,

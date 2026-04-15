@@ -1,6 +1,6 @@
 /**
  * Tracks which tours a user has already seen.
- * Uses localStorage keyed by tour name so tours don't repeat.
+ * Uses localStorage keyed by tour name só tours don't repeat.
  */
 
 const PREFIX = "tour_seen:"

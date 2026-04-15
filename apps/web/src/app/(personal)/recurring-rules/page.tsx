@@ -273,14 +273,14 @@ export default function RecurringRulesPage() {
           <p className="text-sm text-muted-foreground mt-1">Crie regras para automatizar transacções repetitivas</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <Repeat className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{item.description}</p>
-                  <p className="text-xs text-muted-foreground">
+            <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <Repeat className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate">{item.description}</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mr-2 ${item.type === "income" ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"}`}>
                       {item.type === "income" ? "Receita" : "Despesa"}
                     </span>
@@ -289,8 +289,8 @@ export default function RecurringRulesPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <p className={`font-mono font-semibold ${item.type === "income" ? "text-green-500" : "text-red-500"}`}>
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                <p className={`font-mono font-semibold whitespace-nowrap ${item.type === "income" ? "text-green-500" : "text-red-500"}`}>
                   {formatKz(item.amount)}
                 </p>
                 <Button variant="ghost" size="sm" onClick={() => startEdit(item)}>

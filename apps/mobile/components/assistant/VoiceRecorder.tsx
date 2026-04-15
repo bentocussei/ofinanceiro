@@ -96,7 +96,7 @@ export default function VoiceRecorder({ onTranscription, disabled }: VoiceRecord
       const perm = await AudioModule.requestRecordingPermissionsAsync()
       if (!perm.granted) {
         Alert.alert(
-          'Permissao necessaria',
+          'Permissao necessária',
           'Precisamos de acesso ao microfone para gravar audio.'
         )
         return
@@ -111,7 +111,7 @@ export default function VoiceRecorder({ onTranscription, disabled }: VoiceRecord
       recorder.record()
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     } catch (error) {
-      Alert.alert('Erro', 'Nao foi possivel iniciar a gravacao.')
+      Alert.alert('Erro', 'Não foi possível iniciar a gravacao.')
     }
   }, [recorder])
 
@@ -123,7 +123,7 @@ export default function VoiceRecorder({ onTranscription, disabled }: VoiceRecord
       const uri = recorder.uri
 
       if (!uri) {
-        Alert.alert('Erro', 'Nao foi possivel obter o ficheiro de audio.')
+        Alert.alert('Erro', 'Não foi possível obter o ficheiro de audio.')
         return
       }
 

@@ -42,7 +42,7 @@ export default function ScanReceiptScreen() {
       })
 
       if (!photo?.base64) {
-        Alert.alert('Erro', 'Nao foi possivel capturar a foto')
+        Alert.alert('Erro', 'Não foi possível capturar a foto')
         setProcessing(false)
         return
       }
@@ -70,7 +70,7 @@ export default function ScanReceiptScreen() {
         [
           { text: 'Cancelar', style: 'cancel' },
           {
-            text: 'Criar transaccao',
+            text: 'Criar transacção',
             onPress: () => {
               router.replace({
                 pathname: '/(tabs)/transactions',
@@ -108,10 +108,10 @@ export default function ScanReceiptScreen() {
         <View style={styles.permissionView}>
           <Ionicons name="camera-outline" size={64} color={muted} />
           <Text style={[styles.permissionTitle, { color: text }]}>
-            Acesso a camara necessario
+            Acesso a camara necessário
           </Text>
           <Text style={[styles.permissionDesc, { color: muted }]}>
-            Precisamos de acesso a camara para digitalizar recibos e extrair informacoes automaticamente.
+            Precisamos de acesso a camara para digitalizar recibos e extrair informações automaticamente.
           </Text>
           <Pressable
             style={[styles.permissionBtn, { backgroundColor: text }]}

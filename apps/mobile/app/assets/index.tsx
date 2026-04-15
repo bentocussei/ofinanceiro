@@ -37,7 +37,7 @@ interface Asset {
 
 const ASSET_TYPES = [
   { value: 'vehicle', label: 'Veiculo', icon: 'car-outline' },
-  { value: 'property', label: 'Imovel', icon: 'home-outline' },
+  { value: 'property', label: 'Imóvel', icon: 'home-outline' },
   { value: 'electronics', label: 'Electronico', icon: 'laptop-outline' },
   { value: 'furniture', label: 'Mobilia', icon: 'bed-outline' },
   { value: 'other', label: 'Outro', icon: 'cube-outline' },
@@ -415,10 +415,10 @@ export default function AssetsScreen() {
           {/* Type-specific: Property */}
           {type === 'property' && (
             <>
-              <Text style={[styles.sectionLabel, { color: muted }]}>IMOVEL</Text>
+              <Text style={[styles.sectionLabel, { color: muted }]}>IMÓVEL</Text>
               <Text style={[styles.label, { color: muted }]}>Morada</Text>
               <TextInput style={[styles.input, { borderColor: border, color: text }]} value={address} onChangeText={setAddress} placeholder="Endereco" placeholderTextColor={muted} />
-              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Area (m2)</Text>
+              <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Área (m2)</Text>
               <TextInput style={[styles.input, { borderColor: border, color: text }]} value={area} onChangeText={setArea} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
               <Text style={[styles.label, { color: muted, marginTop: 8 }]}>Quartos</Text>
               <TextInput style={[styles.input, { borderColor: border, color: text }]} value={rooms} onChangeText={setRooms} placeholder="0" placeholderTextColor={muted} keyboardType="numeric" />
@@ -463,7 +463,7 @@ export default function AssetsScreen() {
 
           {/* Description */}
           <Text style={[styles.sectionLabel, { color: muted }]}>NOTAS</Text>
-          <Text style={[styles.label, { color: muted }]}>Descricao (opcional)</Text>
+          <Text style={[styles.label, { color: muted }]}>Descrição (opcional)</Text>
           <TextInput
             style={[styles.input, { borderColor: border, color: text, minHeight: 50, textAlignVertical: 'top' }]}
             value={description}

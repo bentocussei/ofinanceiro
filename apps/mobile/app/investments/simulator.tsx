@@ -93,7 +93,7 @@ export default function InvestmentSimulatorScreen() {
             placeholderTextColor={muted}
           />
 
-          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Periodo (anos)</Text>
+          <Text style={[styles.label, { color: muted, marginTop: 12 }]}>Período (anos)</Text>
           <TextInput
             style={[styles.input, { borderColor: border, color: text }]}
             value={years}

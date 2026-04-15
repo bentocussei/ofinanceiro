@@ -103,7 +103,7 @@ export default function GoalDetailScreen() {
       setIsLoading(false)
     } catch {
       setIsLoading(false)
-      Alert.alert('Erro', 'Meta nao encontrada')
+      Alert.alert('Erro', 'Meta não encontrada')
       router.back()
     }
   }
@@ -150,7 +150,7 @@ export default function GoalDetailScreen() {
       await fetchData()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel actualizar')
+      Alert.alert('Erro', error.message || 'Não foi possível actualizar')
     } finally {
       setIsSaving(false)
     }
@@ -168,7 +168,7 @@ export default function GoalDetailScreen() {
       await fetchData()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel contribuir')
+      Alert.alert('Erro', error.message || 'Não foi possível contribuir')
     } finally {
       setIsContributing(false)
     }
@@ -187,7 +187,7 @@ export default function GoalDetailScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             router.back()
           } catch (error: any) {
-            Alert.alert('Erro', error.message || 'Nao foi possivel eliminar')
+            Alert.alert('Erro', error.message || 'Não foi possível eliminar')
           }
         },
       },
@@ -263,7 +263,7 @@ export default function GoalDetailScreen() {
           <View style={[styles.card, isDark && styles.cardDark]}>
             <View style={styles.autoToggleRow}>
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={[styles.autoTitle, { color: tc.text }]}>Contribuicao automatica</Text>
+                <Text style={[styles.autoTitle, { color: tc.text }]}>Contribuicao automática</Text>
                 <Text style={[styles.autoDescription, { color: tc.textMuted }]}>
                   Configure pagamentos automaticos regulares para esta meta
                 </Text>
@@ -278,7 +278,7 @@ export default function GoalDetailScreen() {
 
             {autoContribute && (
               <View style={styles.autoFields}>
-                <Text style={[styles.fieldLabel, { color: tc.textMuted }]}>Frequencia</Text>
+                <Text style={[styles.fieldLabel, { color: tc.textMuted }]}>Frequência</Text>
                 <View style={styles.chipRow}>
                   {AUTO_FREQUENCIES.map((f) => (
                     <Pressable
@@ -307,7 +307,7 @@ export default function GoalDetailScreen() {
                   onChangeText={setAutoDay}
                 />
                 <Text style={[styles.helper, { color: tc.textMuted }]}>
-                  Dia do mes (ex: 15) ou dia da semana (1-7)
+                  Dia do mês (ex: 15) ou dia da semana (1-7)
                 </Text>
 
                 <Text style={[styles.fieldLabel, { color: tc.textMuted }]}>Valor da contribuicao (Kz)</Text>
@@ -320,12 +320,12 @@ export default function GoalDetailScreen() {
                   onChangeText={setAutoAmount}
                 />
                 <Text style={[styles.helper, { color: tc.textMuted }]}>
-                  Quanto sera poupado em cada contribuicao
+                  Quanto será poupado em cada contribuicao
                 </Text>
 
                 <Text style={[styles.fieldLabel, { color: tc.textMuted }]}>Conta de origem</Text>
                 {accounts.length === 0 ? (
-                  <Text style={[styles.helper, { color: tc.textMuted }]}>Sem contas disponiveis</Text>
+                  <Text style={[styles.helper, { color: tc.textMuted }]}>Sem contas disponíveis</Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                     {accounts.filter((a) => !a.is_archived).map((acc) => (
@@ -359,9 +359,9 @@ export default function GoalDetailScreen() {
         {/* Auto-contribution summary (read-only) */}
         {!isEditing && goal.auto_contribute && (
           <View style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.sectionTitle, isDark && styles.textMuted]}>Contribuicao automatica</Text>
+            <Text style={[styles.sectionTitle, isDark && styles.textMuted]}>Contribuicao automática</Text>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: tc.textMuted }]}>Frequencia</Text>
+              <Text style={[styles.summaryLabel, { color: tc.textMuted }]}>Frequência</Text>
               <Text style={[styles.summaryValue, isDark && styles.textLight]}>
                 {goal.contribution_frequency === 'weekly'
                   ? 'Semanal'
@@ -456,7 +456,7 @@ export default function GoalDetailScreen() {
         {!isEditing && progress && progress.contributions.length > 0 && (
           <View style={[styles.card, isDark && styles.cardDark]}>
             <Text style={[styles.sectionTitle, isDark && styles.textMuted]}>
-              Historico de contribuicoes
+              Histórico de contribuicoes
             </Text>
             {progress.contributions.slice(0, 10).map((c, i) => (
               <View key={i} style={styles.historyRow}>

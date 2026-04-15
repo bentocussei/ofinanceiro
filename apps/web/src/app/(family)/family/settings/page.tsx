@@ -24,10 +24,10 @@ import { getContextHeader, setContext } from "@/lib/context"
 type TabId = "family" | "subscription" | "tags" | "security"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "family", label: "Familia", icon: Users },
-  { id: "subscription", label: "Subscricao", icon: CreditCard },
+  { id: "family", label: "Família", icon: Users },
+  { id: "subscription", label: "Subscrição", icon: CreditCard },
   { id: "tags", label: "Etiquetas", icon: TagIcon },
-  { id: "security", label: "Seguranca", icon: ShieldCheck },
+  { id: "security", label: "Segurança", icon: ShieldCheck },
 ]
 
 export default function FamilySettingsPage() {
@@ -85,17 +85,17 @@ export default function FamilySettingsPage() {
         month_start_day: parseInt(monthStartDay) || 1,
         contribution_model: contributionModel,
       }, ctx)
-      toast.success("Configuracoes guardadas")
+      toast.success("Configurações guardadas")
       fetchFamily()
     } catch {
-      toast.error("Erro ao guardar configuracoes")
+      toast.error("Erro ao guardar configurações")
     }
     setIsSaving(false)
   }
 
   const handleLeaveFamily = () => {
-    toast("Tem a certeza que deseja sair da familia?", {
-      description: "Perdera o acesso a todas as financas partilhadas.",
+    toast("Tem a certeza que deseja sair da família?", {
+      description: "Perdera o acesso a todas as finanças partilhadas.",
       action: {
         label: "Sair",
         onClick: async () => {
@@ -103,10 +103,10 @@ export default function FamilySettingsPage() {
             const ctx = { headers: getContextHeader() }
             await familiesApi.leave(ctx)
             setContext("personal")
-            toast.success("Saiu da familia")
+            toast.success("Saiu da família")
             router.push("/dashboard")
           } catch {
-            toast.error("Erro ao sair da familia")
+            toast.error("Erro ao sair da família")
           }
         },
       },
@@ -119,8 +119,8 @@ export default function FamilySettingsPage() {
 
   const handleDeleteFamily = () => {
     if (!family) return
-    toast("Eliminar a familia permanentemente?", {
-      description: "Todos os dados partilhados serao eliminados. Esta accao e irreversivel.",
+    toast("Eliminar a família permanentemente?", {
+      description: "Todos os dados partilhados serão eliminados. Esta acção e irreversível.",
       action: {
         label: "Eliminar",
         onClick: async () => {
@@ -128,10 +128,10 @@ export default function FamilySettingsPage() {
             const ctx = { headers: getContextHeader() }
             await familiesApi.remove(family.id, ctx)
             setContext("personal")
-            toast.success("Familia eliminada")
+            toast.success("Família eliminada")
             router.push("/dashboard")
           } catch {
-            toast.error("Erro ao eliminar familia")
+            toast.error("Erro ao eliminar família")
           }
         },
       },
@@ -154,7 +154,7 @@ export default function FamilySettingsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold tracking-tight mb-6">Configuracoes da Familia</h1>
+      <h1 className="text-xl font-bold tracking-tight mb-6">Configurações da Família</h1>
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto">
@@ -239,7 +239,7 @@ function FamilyTab({
       <section className="rounded-xl bg-card p-5 shadow-sm space-y-4">
         <h3 className="font-semibold">Geral</h3>
         <div>
-          <Label>Nome da familia</Label>
+          <Label>Nome da família</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
@@ -255,7 +255,7 @@ function FamilyTab({
           </select>
         </div>
         <div>
-          <Label>Dia de inicio do mes</Label>
+          <Label>Dia de início do mês</Label>
           <Input
             type="number"
             min="1"
@@ -289,14 +289,14 @@ function FamilyTab({
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={onLeave}>
-            Sair da familia
+            Sair da família
           </Button>
           <Button
             variant="outline"
             className="border-destructive/50 text-destructive hover:bg-destructive/10"
             onClick={onDelete}
           >
-            Eliminar familia
+            Eliminar família
           </Button>
         </div>
       </section>

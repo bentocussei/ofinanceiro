@@ -36,6 +36,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
+      mobileOffset={{
+        // Keep toasts above the mobile bottom tab bar (56px) and notch/home
+        // indicator (env(safe-area-inset-bottom)). Desktop uses the default.
+        bottom: "calc(3.5rem + env(safe-area-inset-bottom) + 1rem)",
+        top: "calc(env(safe-area-inset-top) + 1rem)",
+      }}
       toastOptions={{
         classNames: {
           toast: "cn-toast",

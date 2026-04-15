@@ -62,7 +62,7 @@ export default function DebtSimulatorScreen() {
       return
     }
     if (!Number.isFinite(annualRate) || annualRate < 0) {
-      setError('Taxa de juro invalida.')
+      setError('Taxa de juro inválida.')
       return
     }
     if (!Number.isFinite(p) || p <= 0) {
@@ -196,7 +196,7 @@ export default function DebtSimulatorScreen() {
             <View style={styles.summaryRow}>
               <View style={[styles.summaryCard, { backgroundColor: tc.card }]}>
                 <Text style={[styles.summaryLabel, { color: tc.textSecondary }]}>
-                  Meses ate pagar
+                  Meses até pagar
                 </Text>
                 <Text style={[styles.summaryValue, { color: tc.text }]}>
                   {result.reachedMaxMonths ? '> 600' : result.months}
@@ -252,7 +252,7 @@ export default function DebtSimulatorScreen() {
                         { color: tc.textSecondary },
                       ]}
                     >
-                      Mes
+                      Mês
                     </Text>
                     <Text
                       style={[

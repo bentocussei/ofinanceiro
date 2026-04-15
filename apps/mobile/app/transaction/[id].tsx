@@ -69,7 +69,7 @@ export default function TransactionDetailScreen() {
         })
         .catch(() => {
           setIsLoading(false)
-          Alert.alert('Erro', 'Transaccao nao encontrada')
+          Alert.alert('Erro', 'Transacção não encontrada')
           router.back()
         })
     }
@@ -106,7 +106,7 @@ export default function TransactionDetailScreen() {
       setIsEditing(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel actualizar')
+      Alert.alert('Erro', error.message || 'Não foi possível actualizar')
     } finally {
       setIsSaving(false)
     }
@@ -114,7 +114,7 @@ export default function TransactionDetailScreen() {
 
   const handleDelete = () => {
     if (!txn) return
-    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar esta transaccao?', [
+    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar esta transacção?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -173,7 +173,7 @@ export default function TransactionDetailScreen() {
         {/* Amount */}
         <View style={[styles.amountCard, { backgroundColor: card }]}>
           <Text style={[styles.typeLabel, txn.type === 'income' ? styles.income : styles.expense]}>
-            {txn.type === 'income' ? 'Receita' : txn.type === 'expense' ? 'Despesa' : 'Transferencia'}
+            {txn.type === 'income' ? 'Receita' : txn.type === 'expense' ? 'Despesa' : 'Transferência'}
           </Text>
           {isEditing ? (
             <TextInput
@@ -201,12 +201,12 @@ export default function TransactionDetailScreen() {
           {isEditing ? (
             <>
               {/* Description */}
-              <EditField label="Descricao" isDark={isDark}>
+              <EditField label="Descrição" isDark={isDark}>
                 <TextInput
                   style={[styles.editInput, { borderColor: border, color: text }]}
                   value={editDescription}
                   onChangeText={setEditDescription}
-                  placeholder="Descricao"
+                  placeholder="Descrição"
                   placeholderTextColor={muted}
                 />
               </EditField>
@@ -299,7 +299,7 @@ export default function TransactionDetailScreen() {
             </>
           ) : (
             <>
-              <DetailRow label="Descricao" value={txn.description || '—'} isDark={isDark} />
+              <DetailRow label="Descrição" value={txn.description || '—'} isDark={isDark} />
               <DetailRow label="Data" value={formatDateFull(txn.transaction_date)} isDark={isDark} />
               {categoryName && <DetailRow label="Categoria" value={categoryName} isDark={isDark} />}
               {txn.merchant && <DetailRow label="Comerciante" value={txn.merchant} isDark={isDark} />}
@@ -316,7 +316,7 @@ export default function TransactionDetailScreen() {
                   </View>
                 </View>
               )}
-              <DetailRow label="Recorrente" value={txn.is_recurring ? 'Sim' : 'Nao'} isDark={isDark} />
+              <DetailRow label="Recorrente" value={txn.is_recurring ? 'Sim' : 'Não'} isDark={isDark} />
             </>
           )}
         </View>

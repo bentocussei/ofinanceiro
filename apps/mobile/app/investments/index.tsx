@@ -33,12 +33,12 @@ const CHART_PALETTE = [
 ]
 
 const TYPE_LABELS: Record<string, string> = {
-  stocks: 'Acoes',
+  stocks: 'Ações',
   bonds: 'Obrigacoes',
   real_estate: 'Imobiliario',
   mutual_fund: 'Fundos',
   crypto: 'Cripto',
-  fixed_deposit: 'Deposito a Prazo',
+  fixed_deposit: 'Depósito a Prazo',
   other: 'Outro',
 }
 
@@ -295,7 +295,7 @@ export default function InvestmentsScreen() {
     const barWidth = Math.max(1, screenWidth - listPadding * 2 - cardInnerPadding * 2)
     const barHeight = 14
 
-    // Precompute cumulative segment positions so rounding doesn't leave gaps
+    // Precompute cumulative segment positions só rounding doesn't leave gaps
     let cursor = 0
     const segments = portfolio.slices.map((slice) => {
       const w = slice.share * barWidth
@@ -403,7 +403,7 @@ export default function InvestmentsScreen() {
     return (
       <View style={styles.insightsSection}>
         <Text style={[styles.sectionTitle, isDark && styles.textLight]}>
-          INSIGHTS E RECOMENDACOES
+          INSIGHTS E RECOMENDAÇÕES
         </Text>
 
         {/* Risk profile card */}

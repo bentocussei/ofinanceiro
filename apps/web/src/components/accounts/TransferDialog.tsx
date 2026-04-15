@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -85,15 +79,14 @@ export function TransferDialog({ onTransferred }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
-      <DialogTrigger render={<Button variant="outline" />}>
-        ↔ Transferir
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Transferência entre contas</DialogTitle>
-        </DialogHeader>
-
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>↔ Transferir</Button>
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={(v) => { setOpen(v); if (!v) reset() }}
+        title="Transferência entre contas"
+        desktopClassName="sm:max-w-md"
+      >
         {accounts.length < 2 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
             Precisa de pelo menos 2 contas para fazer transferências.
@@ -165,7 +158,7 @@ export function TransferDialog({ onTransferred }: Props) {
             </Button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
+    </>
   )
 }

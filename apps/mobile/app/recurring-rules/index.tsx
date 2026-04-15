@@ -70,7 +70,7 @@ export default function RecurringRulesScreen() {
   const openCreate = () => { resetForm(); sheetRef.current?.expand() }
 
   const handleSubmit = async () => {
-    if (!description.trim()) { Alert.alert('Erro', 'A descricao e obrigatoria'); return }
+    if (!description.trim()) { Alert.alert('Erro', 'A descrição e obrigatória'); return }
     if (!amount || parseFloat(amount) <= 0) { Alert.alert('Erro', 'Defina o valor'); return }
 
     setIsSubmitting(true)

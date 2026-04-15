@@ -105,7 +105,7 @@ export default function MoreScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       switchContext(`family:${newFamily.id}`)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel criar a familia')
+      Alert.alert('Erro', error.message || 'Não foi possível criar a família')
     } finally {
       setFamilyLoading(false)
     }
@@ -120,12 +120,12 @@ export default function MoreScreen() {
         body: JSON.stringify({ invite_code: familyInput.trim() }),
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      Alert.alert('Sucesso', 'Pedido de integracao enviado. Aguarde aprovacao.')
+      Alert.alert('Sucesso', 'Pedido de integração enviado. Aguarde aprovacao.')
       setFamilyInput('')
       setFamilyAction('none')
       fetchFamily()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Codigo de convite invalido')
+      Alert.alert('Erro', error.message || 'Código de convite inválido')
     } finally {
       setFamilyLoading(false)
     }
@@ -245,7 +245,7 @@ export default function MoreScreen() {
                 >
                   <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
                   <Text style={[styles.contextActionLabel, { color: colors.primary }]}>
-                    Criar familia
+                    Criar família
                   </Text>
                 </Pressable>
                 <Pressable
@@ -254,7 +254,7 @@ export default function MoreScreen() {
                 >
                   <Ionicons name="people-outline" size={18} color={tc.textSecondary} />
                   <Text style={[styles.contextActionLabel, { color: tc.textSecondary }]}>
-                    Tenho um codigo
+                    Tenho um código
                   </Text>
                 </Pressable>
               </View>
@@ -264,7 +264,7 @@ export default function MoreScreen() {
               <View style={[styles.contextForm, { borderTopColor: tc.borderLight }]}>
                 <TextInput
                   style={[styles.contextInput, { borderColor: tc.border, color: tc.text, backgroundColor: tc.input }]}
-                  placeholder="Nome da familia"
+                  placeholder="Nome da família"
                   placeholderTextColor={tc.textMuted}
                   value={familyInput}
                   onChangeText={setFamilyInput}
@@ -292,7 +292,7 @@ export default function MoreScreen() {
               <View style={[styles.contextForm, { borderTopColor: tc.borderLight }]}>
                 <TextInput
                   style={[styles.contextInput, { borderColor: tc.border, color: tc.text, backgroundColor: tc.input, fontFamily: 'monospace' }]}
-                  placeholder="Codigo de convite"
+                  placeholder="Código de convite"
                   placeholderTextColor={tc.textMuted}
                   value={familyInput}
                   onChangeText={setFamilyInput}
@@ -323,20 +323,20 @@ export default function MoreScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>PRINCIPAL</Text>
           <View style={[styles.sectionCard, { backgroundColor: tc.card }]}>
-            <MenuItem icon="bar-chart-outline" label="Relatorios" tc={tc} onPress={() => router.push('/(tabs)/reports')} />
+            <MenuItem icon="bar-chart-outline" label="Relatórios" tc={tc} onPress={() => router.push('/(tabs)/reports')} />
             <MenuItem icon="camera-outline" label="Digitalizar recibo" tc={tc} onPress={() => router.push('/scan')} isLast />
           </View>
         </View>
 
         {/* Section: Gestão */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>GESTAO</Text>
+          <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>GESTÃO</Text>
           <View style={[styles.sectionCard, { backgroundColor: tc.card }]}>
-            <MenuItem icon="pie-chart-outline" label={isFamily ? 'Orcamento domestico' : 'Orcamentos'} tc={tc} onPress={() => router.push('/budget')} />
+            <MenuItem icon="pie-chart-outline" label={isFamily ? 'Orçamento doméstico' : 'Orçamentos'} tc={tc} onPress={() => router.push('/budget')} />
             <MenuItem icon="flag-outline" label={isFamily ? 'Metas familiar' : 'Metas'} tc={tc} onPress={() => router.push('/goals')} />
-            <MenuItem icon="card-outline" label="Dividas" tc={tc} onPress={() => router.push('/debts')} />
+            <MenuItem icon="card-outline" label="Dívidas" tc={tc} onPress={() => router.push('/debts')} />
             <MenuItem icon="trending-up-outline" label="Investimentos" tc={tc} onPress={() => router.push('/investments')} />
-            <MenuItem icon="cube-outline" label="Patrimonio" tc={tc} onPress={() => router.push('/assets')} />
+            <MenuItem icon="cube-outline" label="Património" tc={tc} onPress={() => router.push('/assets')} />
             <MenuItem icon="wallet-outline" label="Rendimentos" tc={tc} onPress={() => router.push('/income-sources')} />
             <MenuItem icon="receipt-outline" label="Contas a Pagar" tc={tc} onPress={() => router.push('/bills')} />
             <MenuItem icon="repeat-outline" label="Recorrentes" tc={tc} onPress={() => router.push('/recurring-rules')} isLast />
@@ -345,20 +345,20 @@ export default function MoreScreen() {
 
         {/* Section: Mais — different items for personal vs family */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>{isFamily ? 'FAMILIA' : 'MAIS'}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>{isFamily ? 'FAMÍLIA' : 'MAIS'}</Text>
           <View style={[styles.sectionCard, { backgroundColor: tc.card }]}>
             {isFamily ? (
               <>
                 <MenuItem icon="people-outline" label="Membros" tc={tc} onPress={() => router.push('/family/members')} />
-                <MenuItem icon="git-compare-outline" label="Divisao de despesas" tc={tc} onPress={() => router.push('/family/expense-splits')} />
-                <MenuItem icon="bar-chart-outline" label="Relatorios" tc={tc} onPress={() => router.push('/(tabs)/reports')} />
-                <MenuItem icon="notifications-outline" label="Notificacoes" tc={tc} onPress={() => router.push('/notifications')} isLast />
+                <MenuItem icon="git-compare-outline" label="Divisão de despesas" tc={tc} onPress={() => router.push('/family/expense-splits')} />
+                <MenuItem icon="bar-chart-outline" label="Relatórios" tc={tc} onPress={() => router.push('/(tabs)/reports')} />
+                <MenuItem icon="notifications-outline" label="Notificações" tc={tc} onPress={() => router.push('/notifications')} isLast />
               </>
             ) : (
               <>
                 <MenuItem icon="newspaper-outline" label="Noticias" tc={tc} onPress={() => router.push('/news')} />
-                <MenuItem icon="school-outline" label="Educacao" tc={tc} onPress={() => router.push('/education')} />
-                <MenuItem icon="notifications-outline" label="Notificacoes" tc={tc} onPress={() => router.push('/notifications')} isLast />
+                <MenuItem icon="school-outline" label="Educação" tc={tc} onPress={() => router.push('/education')} />
+                <MenuItem icon="notifications-outline" label="Notificações" tc={tc} onPress={() => router.push('/notifications')} isLast />
               </>
             )}
           </View>

@@ -49,7 +49,7 @@ export default function InvestmentDetailScreen() {
           setEditCurrentValue(String(data.current_value / 100))
         })
         .catch(() => {
-          Alert.alert('Erro', 'Investimento nao encontrado')
+          Alert.alert('Erro', 'Investimento não encontrado')
           router.back()
         })
         .finally(() => setLoading(false))

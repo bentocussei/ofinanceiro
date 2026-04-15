@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
+import { FadeIn } from "@/components/common/FadeIn"
 import { useTour } from "@/lib/tours"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
 import { budgetsApi } from "@/lib/api/budgets"
@@ -90,6 +91,7 @@ export default function FamilyDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Património Familiar */}
+      <FadeIn delay={0}>
       <div data-tour="family-net-worth" className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
           Património Familiar Líquido
@@ -130,7 +132,7 @@ export default function FamilyDashboardPage() {
           <div className="rounded-lg bg-muted/50 p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <CreditCard className="h-3.5 w-3.5 text-expense" />
-              <span className="text-xs text-muted-foreground">Dividas</span>
+              <span className="text-xs text-muted-foreground">Dívidas</span>
             </div>
             <p className="text-sm font-bold font-mono text-expense">
               -{formatKz(patrimony?.liabilities.total ?? 0)}
@@ -158,11 +160,13 @@ export default function FamilyDashboardPage() {
           </div>
         )}
       </div>
+      </FadeIn>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left Column */}
         <div className="space-y-6">
           {/* Cash Flow */}
+          <FadeIn delay={100}>
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Fluxo de Caixa Familiar
@@ -190,8 +194,10 @@ export default function FamilyDashboardPage() {
               </div>
             </div>
           </section>
+          </FadeIn>
 
           {/* Recent Transactions */}
+          <FadeIn delay={300}>
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -250,6 +256,7 @@ export default function FamilyDashboardPage() {
               </div>
             )}
           </section>
+          </FadeIn>
         </div>
 
         {/* Right Column */}
@@ -299,6 +306,7 @@ export default function FamilyDashboardPage() {
           </section>
 
           {/* Budget Progress */}
+          <FadeIn delay={150}>
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -337,8 +345,10 @@ export default function FamilyDashboardPage() {
               </div>
             )}
           </section>
+          </FadeIn>
 
           {/* Spending by Member */}
+          <FadeIn delay={250}>
           <section data-tour="family-members-spending">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Gastos por Membro
@@ -364,8 +374,10 @@ export default function FamilyDashboardPage() {
               </div>
             )}
           </section>
+          </FadeIn>
 
           {/* Family Goals */}
+          <FadeIn delay={200}>
           <section data-tour="family-goals">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -417,6 +429,7 @@ export default function FamilyDashboardPage() {
               </div>
             )}
           </section>
+          </FadeIn>
         </div>
       </div>
     </div>

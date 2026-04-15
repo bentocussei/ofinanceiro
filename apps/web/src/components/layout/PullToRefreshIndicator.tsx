@@ -25,7 +25,9 @@ export function PullToRefreshIndicator({
     <div
       className="md:hidden fixed left-0 right-0 z-30 flex items-center justify-center pointer-events-none"
       style={{
-        top: 56, // below the 14*4 = 56 top bar
+        // Sit just below the mobile top bar, which is 56px tall plus the
+        // iOS notch / Dynamic Island safe-area inset.
+        top: "calc(3.5rem + env(safe-area-inset-top))",
         transform: `translateY(${Math.max(0, pullDistance - 20)}px)`,
         opacity: progress,
       }}

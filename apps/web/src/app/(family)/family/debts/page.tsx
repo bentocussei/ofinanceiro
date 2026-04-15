@@ -335,7 +335,7 @@ export default function FamilyDebtsPage() {
           <p className="text-sm text-muted-foreground">Nenhuma dívida familiar registada</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {debts.map((debt) => {
             const rawPct = debt.original_amount > 0
               ? Math.round((1 - debt.remaining_balance / debt.original_amount) * 100)
@@ -343,7 +343,7 @@ export default function FamilyDebtsPage() {
             const pct = Math.max(0, Math.min(100, rawPct))
 
             return (
-              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailDebtId(debt.id); setDetailOpen(true) }}>
+              <div key={debt.id} className="px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none" onClick={() => { setDetailDebtId(debt.id); setDetailOpen(true) }}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3 min-w-0">
                     <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />

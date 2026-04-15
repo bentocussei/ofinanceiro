@@ -62,7 +62,7 @@ function resetAllStores(): void {
   useRecurringRulesStore.setState({ rules: [], isLoading: false })
   useNotificationsStore.setState({ notifications: [], unreadCount: 0, isLoading: false })
   useCategoriesStore.setState({ categories: [], isLoading: false })
-  useFamilyStore.setState({ family: null, members: [], isLoading: false })
+  useFamilyStore.setState({ family: null, isLoading: false })
   useChatStore.setState({ messages: [], sessionId: null, isLoading: false, progressMessage: null })
   useNewsStore.setState({ news: [], rates: null, isLoading: false })
   useEducationStore.setState({ tip: null, challenges: [], profile: null, isLoading: false })

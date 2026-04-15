@@ -32,7 +32,7 @@ const CURRENCIES = [
 const ACCOUNT_TYPES = [
   { value: "bank", label: "Banco" },
   { value: "cash", label: "Carteira" },
-  { value: "savings", label: "Poupanca" },
+  { value: "savings", label: "Poupança" },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -225,8 +225,8 @@ function StepWelcome() {
       </div>
       <h1 className="text-2xl font-bold mb-2">Bem-vindo ao O Financeiro!</h1>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        Vamos configurar a sua conta em poucos passos para que possa comecar
-        a controlar as suas financas de forma inteligente.
+        Vamos configurar a sua conta em poucos passos para que possa começar
+        a controlar as suas finanças de forma inteligente.
       </p>
     </div>
   )
@@ -288,9 +288,9 @@ function StepSalaryDay({
           <CalendarDays className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-bold">Dia do salario</h2>
+          <h2 className="text-lg font-bold">Dia do salário</h2>
           <p className="text-xs text-muted-foreground">
-            Ajuda a organizar os periodos de orcamento
+            Ajuda a organizar os períodos de orçamento
           </p>
         </div>
       </div>
@@ -351,7 +351,7 @@ function StepFirstAccount({
         <div>
           <h2 className="text-lg font-bold">Primeira conta</h2>
           <p className="text-xs text-muted-foreground">
-            Crie a sua primeira conta para comecar a registar transaccoes
+            Crie a sua primeira conta para começar a registar transacções
           </p>
         </div>
       </div>
@@ -419,8 +419,8 @@ function StepComplete() {
       </div>
       <h2 className="text-2xl font-bold mb-2">Tudo pronto!</h2>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        A sua conta esta configurada. Agora pode comecar a registar as suas
-        transaccoes, criar orcamentos e acompanhar as suas financas.
+        A sua conta esta configurada. Agora pode começar a registar as suas
+        transacções, criar orçamentos e acompanhar as suas finanças.
       </p>
     </div>
   )

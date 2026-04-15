@@ -266,9 +266,9 @@ export default function IncomeSourcesPage() {
           <p className="text-sm text-muted-foreground mt-1">Adicione as suas fontes de rendimento para melhor planeamento</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {items.map((item) => (
-            <div key={item.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors">
+            <div key={item.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none">
               <div className="flex items-start gap-3 min-w-0">
                 <Banknote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="min-w-0">

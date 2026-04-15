@@ -251,7 +251,7 @@ export default function BillsScreen() {
             <View style={styles.detailItem}>
               <Ionicons name="calendar-outline" size={14} color={tc.textSecondary} />
               <Text style={[styles.detailText, isDark && styles.textMuted]}>
-                Proximo vencimento: {getNextDueLabel(item.due_day)}
+                Próximo vencimento: {getNextDueLabel(item.due_day)}
               </Text>
             </View>
           )}
@@ -412,7 +412,7 @@ export default function BillsScreen() {
 
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.switchLabel, isDark && styles.textLight]}>Pagamento automatico</Text>
+              <Text style={[styles.switchLabel, isDark && styles.textLight]}>Pagamento automático</Text>
               <Text style={[styles.switchHint, isDark && styles.textMuted]}>
                 Debitar o valor automaticamente no vencimento
               </Text>

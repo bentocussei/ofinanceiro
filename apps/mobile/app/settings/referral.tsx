@@ -29,15 +29,15 @@ export default function ReferralScreen() {
           <Text style={[styles.infoTitle, { color: text }]}>Como funciona</Text>
           <View style={styles.step}>
             <Text style={[styles.stepNumber, { color: muted }]}>1</Text>
-            <Text style={[styles.stepText, { color: muted }]}>Partilha o teu codigo com amigos</Text>
+            <Text style={[styles.stepText, { color: muted }]}>Partilha o teu código com amigos</Text>
           </View>
           <View style={styles.step}>
             <Text style={[styles.stepNumber, { color: muted }]}>2</Text>
-            <Text style={[styles.stepText, { color: muted }]}>O amigo regista-se com o teu codigo</Text>
+            <Text style={[styles.stepText, { color: muted }]}>O amigo regista-se com o teu código</Text>
           </View>
           <View style={styles.step}>
             <Text style={[styles.stepNumber, { color: muted }]}>3</Text>
-            <Text style={[styles.stepText, { color: muted }]}>Ambos ganham 30 dias gratis</Text>
+            <Text style={[styles.stepText, { color: muted }]}>Ambos ganham 30 dias grátis</Text>
           </View>
         </View>
       </ScrollView>

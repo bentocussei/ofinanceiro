@@ -68,7 +68,7 @@ export function TagsTab() {
           </div>
           <div>
             <h2 className="text-[15px] font-semibold">Etiquetas</h2>
-            <p className="text-xs text-muted-foreground">Organize transaccoes com etiquetas personalizadas</p>
+            <p className="text-xs text-muted-foreground">Organize transacções com etiquetas personalizadas</p>
           </div>
         </div>
 

@@ -68,7 +68,7 @@ export default function FamilyMembersScreen() {
       const data = await apiFetch<Family>('/api/v1/families/me')
       setFamily(data)
     } catch {
-      Alert.alert('Erro', 'Nao foi possivel carregar a familia')
+      Alert.alert('Erro', 'Não foi possível carregar a família')
       router.back()
     } finally {
       setLoading(false)
@@ -104,7 +104,7 @@ export default function FamilyMembersScreen() {
   }
 
   async function handleRemove(member: Member) {
-    Alert.alert('Remover membro', `Remover ${member.display_name} da familia?`, [
+    Alert.alert('Remover membro', `Remover ${member.display_name} da família?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Remover',
@@ -138,7 +138,7 @@ export default function FamilyMembersScreen() {
         <View style={[styles.inviteCard, { backgroundColor: card, borderColor: border }]}>
           <Ionicons name="link-outline" size={18} color={muted} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.inviteLabel, { color: muted }]}>Codigo de convite</Text>
+            <Text style={[styles.inviteLabel, { color: muted }]}>Código de convite</Text>
             <Text style={[styles.inviteCode, { color: text }]}>{family.invite_code}</Text>
           </View>
         </View>

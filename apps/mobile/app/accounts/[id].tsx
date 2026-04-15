@@ -72,7 +72,7 @@ export default function AccountDetailScreen() {
       setEditInstitution(acc.institution || '')
       setTransactions(txns.items)
     } catch {
-      Alert.alert('Erro', 'Conta nao encontrada')
+      Alert.alert('Erro', 'Conta não encontrada')
       router.back()
     } finally {
       setLoading(false)
@@ -107,7 +107,7 @@ export default function AccountDetailScreen() {
 
   function handleDelete() {
     if (!account) return
-    Alert.alert('Eliminar conta', `Eliminar "${account.name}"? Todas as transaccoes associadas serao mantidas.`, [
+    Alert.alert('Eliminar conta', `Eliminar "${account.name}"? Todas as transacções associadas serão mantidas.`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -136,7 +136,7 @@ export default function AccountDetailScreen() {
 
   const typeLabels: Record<string, string> = {
     bank: 'Banco', wallet: 'Carteira', cash: 'Dinheiro',
-    savings: 'Poupanca', credit: 'Credito', investment: 'Investimento',
+    savings: 'Poupança', credit: 'Crédito', investment: 'Investimento',
   }
 
   return (
@@ -208,7 +208,7 @@ export default function AccountDetailScreen() {
 
             {/* Section header */}
             {!editing && transactions.length > 0 && (
-              <Text style={[styles.sectionTitle, { color: text }]}>Transaccoes recentes</Text>
+              <Text style={[styles.sectionTitle, { color: text }]}>Transacções recentes</Text>
             )}
           </View>
         }
@@ -219,7 +219,7 @@ export default function AccountDetailScreen() {
           >
             <View style={{ flex: 1 }}>
               <Text style={[styles.txnDesc, { color: text }]}>
-                {item.description || 'Sem descricao'}
+                {item.description || 'Sem descrição'}
               </Text>
               <Text style={[styles.txnDate, { color: muted }]}>
                 {formatRelativeDate(item.transaction_date)}
@@ -234,7 +234,7 @@ export default function AccountDetailScreen() {
           !editing ? (
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={40} color={muted} />
-              <Text style={[styles.emptyText, { color: muted }]}>Sem transaccoes nesta conta</Text>
+              <Text style={[styles.emptyText, { color: muted }]}>Sem transacções nesta conta</Text>
             </View>
           ) : null
         }

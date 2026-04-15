@@ -5,12 +5,7 @@ import { toast } from "sonner"
 import { Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -155,7 +150,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
   const handleAddItem = () => {
     if (!addCategoryId || !addCategoryLimit) return
     if (items.some((i) => i.category_id === addCategoryId)) {
-      toast.error("Esta categoria ja foi adicionada")
+      toast.error("Esta categoria já foi adicionada")
       return
     }
     const cat = categories.find((c) => c.id === addCategoryId)
@@ -195,11 +190,11 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
         items: budgetItems.length > 0 ? budgetItems : undefined,
       }, opts)
 
-      toast.success("Orcamento criado com sucesso")
+      toast.success("Orçamento criado com sucesso")
       onOpenChange(false)
       onSaved?.()
     } catch {
-      toast.error("Erro ao criar orcamento")
+      toast.error("Erro ao criar orçamento")
     } finally {
       setIsSubmitting(false)
     }
@@ -212,12 +207,12 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
   const itemsTotal = items.reduce((sum, i) => sum + i.limit_amount, 0)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Novo orcamento</DialogTitle>
-        </DialogHeader>
-
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Novo orçamento"
+      desktopClassName="sm:max-w-lg"
+    >
         <div className="space-y-5 py-2">
           {/* Name */}
           <div>
@@ -228,13 +223,13 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
               onChange={(e) => setName(e.target.value)}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Se deixar vazio, sera preenchido automaticamente
+              Se deixar vazio, será preenchido automaticamente
             </p>
           </div>
 
           {/* Method */}
           <div>
-            <Label>Metodo</Label>
+            <Label>Método</Label>
             <Select value={method} onValueChange={(v) => { if (v) setMethod(v) }}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -249,7 +244,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
 
           {/* Period */}
           <div>
-            <Label>Periodo</Label>
+            <Label>Período</Label>
             <Select value={periodType} onValueChange={(v) => { if (v) setPeriodType(v) }}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -265,7 +260,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Inicio</Label>
+              <Label>Início</Label>
               <Input
                 type="date"
                 value={periodStart}
@@ -340,7 +335,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
           {/* Budget Items */}
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm font-semibold">Categorias do orcamento</Label>
+              <Label className="text-sm font-semibold">Categorias do orçamento</Label>
               {items.length > 0 && (
                 <span className="text-xs text-muted-foreground font-mono">
                   Total: {(itemsTotal / 100).toLocaleString("pt-AO")} Kz
@@ -418,10 +413,9 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, contextHeaders }
 
           {/* Submit */}
           <Button className="w-full" onClick={handleCreate} disabled={isSubmitting}>
-            {isSubmitting ? "A criar..." : "Criar orcamento"}
+            {isSubmitting ? "A criar..." : "Criar orçamento"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   )
 }

@@ -53,7 +53,7 @@ export default function DebtDetailScreen() {
           setEditBalance(String(d.current_balance / 100))
         })
         .catch(() => {
-          Alert.alert('Erro', 'Divida nao encontrada')
+          Alert.alert('Erro', 'Dívida não encontrada')
           router.back()
         })
         .finally(() => setLoading(false))
@@ -84,7 +84,7 @@ export default function DebtDetailScreen() {
     if (!debt || !payAmount.trim()) return
     const amountCentavos = Math.round(parseFloat(payAmount) * 100)
     if (amountCentavos <= 0) {
-      Alert.alert('Erro', 'Valor invalido')
+      Alert.alert('Erro', 'Valor inválido')
       return
     }
     setPaying(true)
@@ -137,7 +137,7 @@ export default function DebtDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={text} />
         </Pressable>
-        <Text style={[styles.title, { color: text }]}>Divida</Text>
+        <Text style={[styles.title, { color: text }]}>Dívida</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={() => setEditing(!editing)}>
             <Ionicons name={editing ? 'close' : 'pencil'} size={20} color={text} />

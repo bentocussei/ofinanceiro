@@ -26,7 +26,7 @@ function FamilyLayoutInner({
   //
   // The previous gate also required hasModuleAccess("family") on top, but
   // family:* permission codes are NOT auto-granted on family join (only
-  // explicit user_permissions or PlanPermission grants populate them), so
+  // explicit user_permissions or PlanPermission grants populate them), só
   // ordinary ADULT members had zero family:* permissions and the gate
   // always denied. The gate then ran router.replace() during render,
   // bouncing every /family/* visit straight back to /dashboard and
@@ -42,7 +42,7 @@ function FamilyLayoutInner({
   return (
     <div className="flex h-screen">
       <FamilySidebar familyName={family.name} />
-      <main className="flex-1 overflow-y-auto pb-14 md:pb-0">
+      <main className="flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <MobileNav context="family" />
         {isAssistant ? (
           children

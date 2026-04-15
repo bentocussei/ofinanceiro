@@ -102,7 +102,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, pref
 
   const handleSubmit = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Erro', 'Introduza um valor valido')
+      Alert.alert('Erro', 'Introduza um valor válido')
       return
     }
     if (!activeAccount) {
@@ -137,7 +137,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, pref
       ;(ref as any)?.current?.close()
       onCreated?.()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel registar a transaccao')
+      Alert.alert('Erro', error.message || 'Não foi possível registar a transacção')
     } finally {
       setIsSubmitting(false)
     }
@@ -166,7 +166,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, pref
       handleIndicatorStyle={{ backgroundColor: tc.handle }}
     >
       <BottomSheetScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.title, { color: text }]}>Nova transaccao</Text>
+        <Text style={[styles.title, { color: text }]}>Nova transacção</Text>
 
         {/* Type Toggle */}
         <View style={styles.typeToggle}>
@@ -192,7 +192,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, pref
         <AmountInput value={amount} onChange={setAmount} />
 
         {/* Description */}
-        <Text style={[styles.label, { color: muted }]}>Descricao</Text>
+        <Text style={[styles.label, { color: muted }]}>Descrição</Text>
         <TextInput
           style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
           placeholder="Ex: Almoco no restaurante"
@@ -283,7 +283,7 @@ const CreateTransactionSheet = forwardRef<BottomSheet, Props>(({ onCreated, pref
           onPress={() => setShowAdvanced(!showAdvanced)}
         >
           <Text style={[styles.advancedText, { color: muted }]}>
-            {showAdvanced ? 'Menos opcoes' : 'Mais opcoes'}
+            {showAdvanced ? 'Menos opções' : 'Mais opções'}
           </Text>
         </Pressable>
 

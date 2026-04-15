@@ -44,7 +44,7 @@ export default function SubscriptionScreen() {
 
   const statusLabels: Record<string, string> = {
     active: 'Activo',
-    trialing: 'Periodo de teste',
+    trialing: 'Período de teste',
     expired: 'Expirado',
     cancelled: 'Cancelado',
   }
@@ -63,7 +63,7 @@ export default function SubscriptionScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={text} />
           </Pressable>
-          <Text style={[styles.title, { color: text }]}>Subscricao</Text>
+          <Text style={[styles.title, { color: text }]}>Subscrição</Text>
         </View>
 
         {loading ? (
@@ -93,7 +93,7 @@ export default function SubscriptionScreen() {
 
             {sub.end_date && (
               <View style={[styles.infoRow, { borderTopColor: border }]}>
-                <Text style={[styles.infoLabel, { color: muted }]}>Valido ate</Text>
+                <Text style={[styles.infoLabel, { color: muted }]}>Válido até</Text>
                 <Text style={[styles.infoValue, { color: text }]}>
                   {new Date(sub.end_date).toLocaleDateString('pt-AO')}
                 </Text>
@@ -104,7 +104,7 @@ export default function SubscriptionScreen() {
           <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <Ionicons name="diamond-outline" size={40} color={muted} style={styles.emptyIcon} />
             <Text style={[styles.emptyText, { color: muted }]}>
-              Nenhuma subscricao activa
+              Nenhuma subscrição activa
             </Text>
           </View>
         )}

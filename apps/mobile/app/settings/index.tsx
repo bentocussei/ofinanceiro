@@ -65,13 +65,13 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="shield-checkmark-outline"
-              label="Seguranca"
+              label="Segurança"
               isDark={isDark}
               onPress={() => router.push('/settings/security')}
             />
             <SettingsRow
               icon="diamond-outline"
-              label="Subscricao"
+              label="Subscrição"
               isDark={isDark}
               onPress={() => router.push('/settings/subscription')}
             />
@@ -86,7 +86,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: muted }]}>Preferencias</Text>
+          <Text style={[styles.sectionTitle, { color: muted }]}>Preferências</Text>
           <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
             <SettingsRow
               icon="pricetags-outline"
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="notifications-outline"
-              label="Notificacoes"
+              label="Notificações"
               isDark={isDark}
               onPress={() => router.push('/notifications')}
               isLast
@@ -105,7 +105,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: muted }]}>Informacao</Text>
+          <Text style={[styles.sectionTitle, { color: muted }]}>Informação</Text>
           <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
             <SettingsRow
               icon="information-circle-outline"

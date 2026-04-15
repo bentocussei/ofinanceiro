@@ -46,14 +46,14 @@ export default function ReferralCard() {
     if (!stats) return
     await Clipboard.setStringAsync(stats.referral_code)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    Alert.alert('Copiado', 'Codigo copiado para a area de transferencia')
+    Alert.alert('Copiado', 'Código copiado para a área de transferência')
   }
 
   async function handleShare() {
     if (!stats) return
     try {
       await Share.share({
-        message: stats.share_message || `Usa o meu codigo ${stats.referral_code} no O Financeiro! https://ofinanceiro.app/register?ref=${stats.referral_code}`,
+        message: stats.share_message || `Usa o meu código ${stats.referral_code} no O Financeiro! https://ofinanceiro.app/register?ref=${stats.referral_code}`,
       })
     } catch {
       // User cancelled
@@ -74,13 +74,13 @@ export default function ReferralCard() {
       </View>
 
       <Text style={[styles.subtitle, { color: muted }]}>
-        Ganha dias gratis por cada convite
+        Ganha dias grátis por cada convite
       </Text>
 
       {/* Code */}
       <View style={[styles.codeRow, { borderColor: border }]}>
         <View>
-          <Text style={[styles.codeLabel, { color: muted }]}>O seu codigo</Text>
+          <Text style={[styles.codeLabel, { color: muted }]}>O seu código</Text>
           <Text style={[styles.codeValue, { color: text }]}>
             {stats?.referral_code || '—'}
           </Text>
@@ -106,7 +106,7 @@ export default function ReferralCard() {
       {/* Progress */}
       <View style={styles.progressSection}>
         <Text style={[styles.progressLabel, { color: muted }]}>
-          {total} de {max} referencias usadas
+          {total} de {max} referências usadas
         </Text>
         <View style={[styles.progressBg, { backgroundColor: tc.border }]}>
           <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: colors.success }]} />

@@ -86,7 +86,7 @@ export default function LoginScreen() {
 
   async function handleSendOtp() {
     if (!phone.trim()) {
-      Alert.alert('Erro', 'Preencha o numero de telefone')
+      Alert.alert('Erro', 'Preencha o número de telefone')
       return
     }
     Keyboard.dismiss()
@@ -96,7 +96,7 @@ export default function LoginScreen() {
       startCountdown()
       setTimeout(() => otpRefs.current[0]?.focus(), 300)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao enviar codigo')
+      Alert.alert('Erro', error.message || 'Erro ao enviar código')
     }
   }
 
@@ -106,7 +106,7 @@ export default function LoginScreen() {
     try {
       await verifyOtp(fullPhone, code)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Codigo invalido ou expirado')
+      Alert.alert('Erro', error.message || 'Código inválido ou expirado')
       setOtp(['', '', '', '', '', ''])
       otpRefs.current[0]?.focus()
     }
@@ -190,7 +190,7 @@ export default function LoginScreen() {
                 styles.tabText,
                 { color: tab === 'otp' ? (isDark ? '#000' : '#fff') : muted },
               ]}>
-                Com codigo SMS
+                Com código SMS
               </Text>
             </Pressable>
             <Pressable
@@ -214,7 +214,7 @@ export default function LoginScreen() {
           {/* Password Login */}
           {tab === 'password' && (
             <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-              <Text style={[styles.label, { color: muted }]}>Numero de telefone</Text>
+              <Text style={[styles.label, { color: muted }]}>Número de telefone</Text>
               <View style={[styles.phoneRow, { borderColor: border }]}>
                 <Pressable style={styles.countryBtn} onPress={cycleCountry}>
                   <Text style={styles.countryFlag}>{country.flag}</Text>
@@ -265,7 +265,7 @@ export default function LoginScreen() {
           {/* OTP Login */}
           {tab === 'otp' && otpStep === 'phone' && (
             <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-              <Text style={[styles.label, { color: muted }]}>Numero de telefone</Text>
+              <Text style={[styles.label, { color: muted }]}>Número de telefone</Text>
               <View style={[styles.phoneRow, { borderColor: border }]}>
                 <Pressable style={styles.countryBtn} onPress={cycleCountry}>
                   <Text style={styles.countryFlag}>{country.flag}</Text>
@@ -288,7 +288,7 @@ export default function LoginScreen() {
                 disabled={isLoading}
               >
                 <Text style={[styles.submitText, { color: isDark ? '#000' : '#fff' }]}>
-                  {isLoading ? 'A enviar...' : 'Enviar codigo SMS'}
+                  {isLoading ? 'A enviar...' : 'Enviar código SMS'}
                 </Text>
               </Pressable>
             </View>
@@ -297,7 +297,7 @@ export default function LoginScreen() {
           {/* OTP Verify */}
           {tab === 'otp' && otpStep === 'verify' && (
             <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-              <Text style={[styles.otpTitle, { color: text }]}>Enviamos um codigo para</Text>
+              <Text style={[styles.otpTitle, { color: text }]}>Enviamos um código para</Text>
               <Text style={[styles.otpPhone, { color: muted }]}>
                 {country.code} {maskPhone(phone)}
               </Text>
@@ -330,7 +330,7 @@ export default function LoginScreen() {
                 </Pressable>
                 <Pressable onPress={countdown === 0 ? handleSendOtp : undefined}>
                   <Text style={[styles.otpLink, { color: countdown > 0 ? muted : accent }]}>
-                    {countdown > 0 ? `Reenviar em ${countdown}s` : 'Reenviar codigo'}
+                    {countdown > 0 ? `Reenviar em ${countdown}s` : 'Reenviar código'}
                   </Text>
                 </Pressable>
               </View>
@@ -339,7 +339,7 @@ export default function LoginScreen() {
 
           {/* Register link */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: muted }]}>Nao tem conta? </Text>
+            <Text style={[styles.footerText, { color: muted }]}>Não tem conta? </Text>
             <Pressable onPress={() => router.push('/register')}>
               <Text style={[styles.footerLink, { color: accent }]}>Criar conta</Text>
             </Pressable>

@@ -3,13 +3,7 @@
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -129,17 +123,16 @@ export function CreateAccountDialog({ onCreated, open: controlledOpen, onOpenCha
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
+    <>
       {!hideTrigger && (
-        <DialogTrigger render={<Button />}>
-          + Nova conta
-        </DialogTrigger>
+        <Button onClick={() => setOpen(true)}>+ Nova conta</Button>
       )}
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Nova conta</DialogTitle>
-        </DialogHeader>
-
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={(v) => { setOpen(v); if (!v) reset() }}
+        title="Nova conta"
+        desktopClassName="sm:max-w-md"
+      >
         <div className="space-y-4 py-2">
           <div>
             <Label>Nome da conta</Label>
@@ -254,7 +247,7 @@ export function CreateAccountDialog({ onCreated, open: controlledOpen, onOpenCha
             {isSubmitting ? "A criar..." : "Criar conta"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
+    </>
   )
 }

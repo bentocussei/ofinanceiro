@@ -5,13 +5,7 @@ import { toast } from "sonner"
 import { CalendarIcon, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -155,17 +149,16 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
+    <>
       {!hideTrigger && (
-        <DialogTrigger render={<Button />}>
-          + Nova transacção
-        </DialogTrigger>
+        <Button onClick={() => setOpen(true)}>+ Nova transacção</Button>
       )}
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Nova transacção</DialogTitle>
-        </DialogHeader>
-
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={(v) => { setOpen(v); if (!v) reset() }}
+        title="Nova transacção"
+        desktopClassName="sm:max-w-md"
+      >
         <div className="space-y-4 py-2">
           {/* Type Toggle */}
           <div className="flex gap-2">
@@ -342,7 +335,7 @@ export function CreateTransactionDialog({ onCreated, open: controlledOpen, onOpe
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
+    </>
   )
 }

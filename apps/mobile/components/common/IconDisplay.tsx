@@ -31,14 +31,14 @@ const ICON_MAP: Record<string, string> = {
   alimentacao: 'restaurant-outline',
   casa: 'home-outline',
   transporte: 'car-outline',
-  saude: 'medkit-outline',
+  saúde: 'medkit-outline',
   filhos: 'people-outline',
   comunicacoes: 'phone-portrait-outline',
   lazer: 'heart-outline',
   educacao: 'school-outline',
   financeiro: 'business-outline',
   pessoal: 'person-outline',
-  transferencias: 'swap-horizontal-outline',
+  transferências: 'swap-horizontal-outline',
   receitas: 'cash-outline',
 
   // Fallback

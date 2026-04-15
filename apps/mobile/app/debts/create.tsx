@@ -54,7 +54,7 @@ export default function CreateDebtScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatorio'); return }
+    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatório'); return }
     if (!originalAmount || parseFloat(originalAmount) <= 0) { Alert.alert('Erro', 'Defina o montante original'); return }
     if (!currentBalance || parseFloat(currentBalance) < 0) { Alert.alert('Erro', 'Defina o saldo actual'); return }
 
@@ -78,7 +78,7 @@ export default function CreateDebtScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       router.back()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel criar a divida')
+      Alert.alert('Erro', error.message || 'Não foi possível criar a dívida')
     } finally {
       setIsSubmitting(false)
     }
@@ -90,7 +90,7 @@ export default function CreateDebtScreen() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.title, isDark && styles.textLight]}>Nova divida</Text>
+        <Text style={[styles.title, isDark && styles.textLight]}>Nova dívida</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -98,7 +98,7 @@ export default function CreateDebtScreen() {
         <Text style={[styles.label, isDark && styles.textMuted]}>Nome</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
-          placeholder="Ex: Emprestimo bancario"
+          placeholder="Ex: Empréstimo bancário"
           placeholderTextColor={colors.light.textMuted}
           value={name}
           onChangeText={setName}
@@ -203,7 +203,7 @@ export default function CreateDebtScreen() {
           onChangeText={setPaymentDay}
         />
 
-        <Text style={[styles.label, isDark && styles.textMuted]}>Data inicio (opcional)</Text>
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data início (opcional)</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="AAAA-MM-DD"
@@ -226,7 +226,7 @@ export default function CreateDebtScreen() {
         <Text style={[styles.label, isDark && styles.textMuted]}>Notas (opcional)</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark, { height: 60, textAlignVertical: 'top' }]}
-          placeholder="Observacoes sobre a divida"
+          placeholder="Observações sobre a dívida"
           placeholderTextColor={colors.light.textMuted}
           value={notes}
           onChangeText={setNotes}
@@ -238,7 +238,7 @@ export default function CreateDebtScreen() {
           onPress={handleSubmit}
           disabled={isSubmitting}
         >
-          <Text style={styles.submitText}>{isSubmitting ? 'A criar...' : 'Criar divida'}</Text>
+          <Text style={styles.submitText}>{isSubmitting ? 'A criar...' : 'Criar dívida'}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

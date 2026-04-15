@@ -335,7 +335,7 @@ export function AssetDetailDialog({
               <>
                 <div><Label>Morada</Label><Input value={morada} onChange={(e) => setMorada(e.target.value)} /></div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div><Label>Area (m2)</Label><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} className="font-mono" /></div>
+                  <div><Label>Área (m2)</Label><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} className="font-mono" /></div>
                   <div><Label>Quartos</Label><Input type="number" value={quartos} onChange={(e) => setQuartos(e.target.value)} className="font-mono" /></div>
                   <div><Label>Estac.</Label><Input type="number" value={estacionamento} onChange={(e) => setEstacionamento(e.target.value)} className="font-mono" /></div>
                 </div>

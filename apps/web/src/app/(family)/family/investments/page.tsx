@@ -508,7 +508,7 @@ export default function FamilyInvestmentsPage() {
             <p className="text-sm text-muted-foreground">Nenhum investimento familiar registado</p>
           </div>
         ) : (
-          <div className="rounded-xl bg-card shadow-sm border border-border divide-y divide-border">
+          <div className="md:rounded-xl md:bg-card md:shadow-sm md:border md:border-border md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
             {investments.map((inv) => {
               const returnVal = inv.current_value - inv.invested_amount
               const returnPct = inv.invested_amount > 0
@@ -516,7 +516,7 @@ export default function FamilyInvestmentsPage() {
                 : 0
 
               return (
-                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailInvestmentId(inv.id); setDetailOpen(true) }}>
+                <div key={inv.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none" onClick={() => { setDetailInvestmentId(inv.id); setDetailOpen(true) }}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`flex items-center justify-center h-9 w-9 rounded-lg ${returnVal >= 0 ? "bg-green-50 dark:bg-green-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
                       {returnVal >= 0

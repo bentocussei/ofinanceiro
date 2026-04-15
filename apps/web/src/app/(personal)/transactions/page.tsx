@@ -232,9 +232,9 @@ export default function TransactionsPage() {
                     {formatKz(Math.abs(dayTotal))}
                   </span>
                 </div>
-                <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+                <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
                   {items.map((txn) => (
-                    <div key={txn.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
+                    <div key={txn.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none" onClick={() => setSelectedTxn(txn)}>
                       <span className="text-sm truncate min-w-0 flex-1">{txn.description || "Sem descrição"}</span>
                       <span
                         className={`font-mono font-semibold text-sm whitespace-nowrap shrink-0 ${

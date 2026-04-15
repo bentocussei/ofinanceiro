@@ -5,6 +5,7 @@ import {
   CreditCard,
   Gift,
   Mail,
+  MessageSquare,
   Phone,
   ShieldCheck,
   Smartphone,
@@ -18,6 +19,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget"
 import { InstallAppTab } from "@/components/settings/InstallAppTab"
 import { SecurityTab } from "@/components/settings/SecurityTab"
 import { SubscriptionTab } from "@/components/settings/SubscriptionTab"
@@ -26,7 +28,7 @@ import { ReferralCard } from "@/components/referral/ReferralCard"
 import { usersApi } from "@/lib/api/users"
 import { getCurrentUser, type UserProfile } from "@/lib/auth"
 
-type TabId = "profile" | "subscription" | "referrals" | "tags" | "security" | "install"
+type TabId = "profile" | "subscription" | "referrals" | "feedback" | "tags" | "security" | "install"
 
 interface TabDef {
   id: TabId
@@ -37,10 +39,11 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: "profile", label: "Perfil", icon: User },
-  { id: "subscription", label: "Subscricao", icon: CreditCard },
+  { id: "subscription", label: "Subscrição", icon: CreditCard },
   { id: "referrals", label: "Convites", icon: Gift },
+  { id: "feedback", label: "Feedback", icon: MessageSquare },
   { id: "tags", label: "Etiquetas", icon: TagIcon },
-  { id: "security", label: "Seguranca", icon: ShieldCheck },
+  { id: "security", label: "Segurança", icon: ShieldCheck },
   { id: "install", label: "Instalar app", icon: Smartphone, mobileOnly: true },
 ]
 
@@ -82,7 +85,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold tracking-tight mb-6">Configuracoes</h1>
+      <h1 className="text-xl font-bold tracking-tight mb-6">Configurações</h1>
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto scrollbar-hide">
@@ -114,6 +117,11 @@ export default function SettingsPage() {
       {tab === "referrals" && (
         <div className="max-w-lg">
           <ReferralCard />
+        </div>
+      )}
+      {tab === "feedback" && (
+        <div className="max-w-lg">
+          <FeedbackWidget variant="inline" />
         </div>
       )}
       {tab === "tags" && <TagsTab />}
@@ -156,11 +164,11 @@ function ProfileTab({ user, onUserUpdate }: { user: UserProfile | null; onUserUp
     if (!file) return
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Formato nao suportado. Use JPEG, PNG ou WebP.")
+      toast.error("Formato não suportado. Use JPEG, PNG ou WebP.")
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Foto muito grande. Maximo 2MB.")
+      toast.error("Foto muito grande. Máximo 2MB.")
       return
     }
 
@@ -199,7 +207,7 @@ function ProfileTab({ user, onUserUpdate }: { user: UserProfile | null; onUserUp
           </div>
           <div>
             <h2 className="text-[15px] font-semibold">Foto de perfil</h2>
-            <p className="text-xs text-muted-foreground">JPEG, PNG ou WebP. Maximo 2MB.</p>
+            <p className="text-xs text-muted-foreground">JPEG, PNG ou WebP. Máximo 2MB.</p>
           </div>
         </div>
 
@@ -250,7 +258,7 @@ function ProfileTab({ user, onUserUpdate }: { user: UserProfile | null; onUserUp
           </div>
           <div>
             <h2 className="text-[15px] font-semibold">Dados pessoais</h2>
-            <p className="text-xs text-muted-foreground">Informacoes da sua conta</p>
+            <p className="text-xs text-muted-foreground">Informações da sua conta</p>
           </div>
         </div>
 
@@ -298,7 +306,7 @@ function ProfileTab({ user, onUserUpdate }: { user: UserProfile | null; onUserUp
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="s-salary" className="text-xs">Dia do salario</Label>
+              <Label htmlFor="s-salary" className="text-xs">Dia do salário</Label>
               <Input
                 id="s-salary"
                 type="number"

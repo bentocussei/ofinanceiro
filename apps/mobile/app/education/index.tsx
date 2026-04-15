@@ -41,7 +41,7 @@ export default function EducationScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.levelBadge}>
             <Ionicons name="shield-checkmark" size={24} color={colors.warning} />
-            <Text style={styles.levelText}>Nivel {profile.level}</Text>
+            <Text style={styles.levelText}>Nível {profile.level}</Text>
           </View>
           <View style={styles.streakBadge}>
             <Ionicons name="flame-outline" size={18} color={colors.error} />
@@ -135,7 +135,7 @@ export default function EducationScreen() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.title, { color: tc.text }]}>Educacao financeira</Text>
+        <Text style={[styles.title, { color: tc.text }]}>Educação financeira</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -157,7 +157,7 @@ export default function EducationScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="school-outline" size={48} color={tc.handle} />
-            <Text style={[styles.emptyText, { color: tc.textMuted }]}>Nenhum desafio disponivel</Text>
+            <Text style={[styles.emptyText, { color: tc.textMuted }]}>Nenhum desafio disponível</Text>
           </View>
         }
       />

@@ -83,7 +83,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
       setSubscription(result)
       setRefreshKey((k) => k + 1)
       if (result.pending_plan_name) {
-        toast.success(`Mudanca para ${result.pending_plan_name} agendada para o final do periodo`)
+        toast.success(`Mudanca para ${result.pending_plan_name} agendada para o final do período`)
       } else {
         toast.success("Plano alterado com sucesso!")
       }
@@ -95,18 +95,18 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
   }
 
   const handleCancel = () => {
-    toast("Tem a certeza que deseja cancelar a sua subscricao?", {
-      description: "Pode reactivar a qualquer momento antes do final do periodo.",
+    toast("Tem a certeza que deseja cancelar a sua subscrição?", {
+      description: "Pode reactivar a qualquer momento antes do final do período.",
       action: {
-        label: "Cancelar subscricao",
+        label: "Cancelar subscrição",
         onClick: async () => {
           try {
             await billingApi.cancel()
             const updated = await billingApi.subscription().catch(() => null)
             setSubscription(updated)
-            toast.success("Subscricao cancelada. Pode reactivar a qualquer momento.")
+            toast.success("Subscrição cancelada. Pode reactivar a qualquer momento.")
           } catch {
-            toast.error("Erro ao cancelar subscricao.")
+            toast.error("Erro ao cancelar subscrição.")
           }
         },
       },
@@ -118,9 +118,9 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
     try {
       const result = await billingApi.reactivate()
       setSubscription(result)
-      toast.success("Subscricao reactivada com sucesso!")
+      toast.success("Subscrição reactivada com sucesso!")
     } catch {
-      toast.error("Erro ao reactivar subscricao.")
+      toast.error("Erro ao reactivar subscrição.")
     }
   }
 
@@ -129,13 +129,13 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
     setApplyingPromo(true)
     try {
       const result = await billingApi.applyPromo(promoCode.trim())
-      toast.success(result.message || "Codigo promocional aplicado!")
+      toast.success(result.message || "Código promocional aplicado!")
       setPromoCode("")
       // Refresh subscription to see updated price
       const updated = await billingApi.subscription().catch(() => null)
       setSubscription(updated)
     } catch {
-      toast.error("Codigo promocional invalido ou expirado.")
+      toast.error("Código promocional inválido ou expirado.")
     } finally {
       setApplyingPromo(false)
     }
@@ -144,17 +144,17 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
   if (loadingSub) {
     return (
       <div className="flex h-40 items-center justify-center text-muted-foreground">
-        A carregar informacoes de subscricao...
+        A carregar informações de subscrição...
       </div>
     )
   }
 
   const priceDisplay = () => {
-    if (!subscription) return "Sem subscricao activa"
+    if (!subscription) return "Sem subscrição activa"
     if (subscription.status === "trialing" && subscription.trial_end_date) {
-      return `0 Kz (trial ate ${formatDate(subscription.trial_end_date)})`
+      return `0 Kz (trial até ${formatDate(subscription.trial_end_date)})`
     }
-    const cycle = subscription.billing_cycle === "annual" ? "/ano" : "/mes"
+    const cycle = subscription.billing_cycle === "annual" ? "/ano" : "/mês"
     return `${formatKz(subscription.final_price)}${cycle}`
   }
 
@@ -167,7 +167,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
             <Crown className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold">Subscricao actual</h2>
+            <h2 className="text-[15px] font-semibold">Subscrição actual</h2>
             <p className="text-xs text-muted-foreground">Detalhes do seu plano</p>
           </div>
         </div>
@@ -195,11 +195,11 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
                   <p>{subscription.billing_cycle === "annual" ? "Anual" : "Mensal"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Inicio</p>
+                  <p className="text-xs text-muted-foreground">Início</p>
                   <p>{formatDate(subscription.start_date)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Proximo pagamento</p>
+                  <p className="text-xs text-muted-foreground">Próximo pagamento</p>
                   <p>{formatDate(subscription.end_date)}</p>
                 </div>
                 {subscription.discount_amount > 0 && (
@@ -209,8 +209,8 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
                   </div>
                 )}
                 <div>
-                  <p className="text-xs text-muted-foreground">Renovacao automatica</p>
-                  <p>{subscription.auto_renew ? "Sim" : "Nao"}</p>
+                  <p className="text-xs text-muted-foreground">Renovacao automática</p>
+                  <p>{subscription.auto_renew ? "Sim" : "Não"}</p>
                 </div>
               </div>
             </div>
@@ -243,10 +243,10 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
             {!subscription.auto_renew && subscription.status !== "expired" && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800 p-3">
                 <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                  Subscricao cancelada — acesso ate {formatDate(subscription.end_date)}
+                  Subscrição cancelada — acesso até {formatDate(subscription.end_date)}
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                  Nao sera renovada automaticamente. Pode reactivar a qualquer momento.
+                  Não será renovada automaticamente. Pode reactivar a qualquer momento.
                 </p>
               </div>
             )}
@@ -254,11 +254,11 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
             <div className="flex gap-2">
               {!subscription.auto_renew && subscription.status !== "expired" ? (
                 <Button size="sm" onClick={handleReactivate}>
-                  Reactivar subscricao
+                  Reactivar subscrição
                 </Button>
               ) : subscription.status !== "expired" ? (
                 <Button size="sm" variant="outline" onClick={handleCancel}>
-                  Cancelar subscricao
+                  Cancelar subscrição
                 </Button>
               ) : null}
             </div>
@@ -267,7 +267,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
           <div className="rounded-lg border border-dashed border-border p-6 text-center">
             <CreditCard className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
-              Nenhuma subscricao activa. Escolha um plano abaixo.
+              Nenhuma subscrição activa. Escolha um plano abaixo.
             </p>
           </div>
         )}
@@ -281,7 +281,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
               <Star className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-[15px] font-semibold">Planos disponiveis</h2>
+              <h2 className="text-[15px] font-semibold">Planos disponíveis</h2>
               <p className="text-xs text-muted-foreground">Escolha o plano ideal para si</p>
             </div>
           </div>
@@ -314,7 +314,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
                   <div className="mb-3">
                     <p className="font-mono text-lg font-bold">
                       {formatKz(plan.base_price_monthly)}
-                      <span className="text-xs font-normal text-muted-foreground">/mes</span>
+                      <span className="text-xs font-normal text-muted-foreground">/mês</span>
                     </p>
                     {plan.base_price_annual > 0 && (
                       <p className="text-xs text-muted-foreground">
@@ -325,7 +325,7 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
 
                   {plan.max_family_members > 0 && (
                     <p className="text-xs text-muted-foreground mb-3">
-                      Ate {plan.max_family_members} membros da familia
+                      Até {plan.max_family_members} membros da família
                       {plan.extra_member_cost > 0 && (
                         <> ({formatKz(plan.extra_member_cost)} por membro extra)</>
                       )}
@@ -371,14 +371,14 @@ export function SubscriptionTab({ user }: { user: UserProfile | null }) {
             <Gift className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold">Codigo promocional</h2>
-            <p className="text-xs text-muted-foreground">Aplique um codigo para obter desconto</p>
+            <h2 className="text-[15px] font-semibold">Código promocional</h2>
+            <p className="text-xs text-muted-foreground">Aplique um código para obter desconto</p>
           </div>
         </div>
 
         <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1.5">
-            <Label className="text-xs">Codigo</Label>
+            <Label className="text-xs">Código</Label>
             <Input
               placeholder="Ex: BEMVINDO50"
               value={promoCode}
@@ -483,7 +483,7 @@ function ModuleAddonsSection({ subscription, onUpdate }: { subscription: Subscri
               {!included && (
                 <div className="flex items-center justify-between mt-3">
                   <p className="text-xs font-mono font-semibold">
-                    +{formatKz(addon.price_monthly)}/mes
+                    +{formatKz(addon.price_monthly)}/mês
                   </p>
                   {isActive ? (
                     <Button
@@ -544,7 +544,7 @@ function PaymentMethodsSection() {
     setRemoving(id)
     try {
       await billingApi.removePaymentMethod(id)
-      toast.success("Metodo de pagamento removido")
+      toast.success("Método de pagamento removido")
       await loadMethods()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Erro ao remover"
@@ -558,10 +558,10 @@ function PaymentMethodsSection() {
     setSettingDefault(id)
     try {
       await billingApi.setDefaultPaymentMethod(id)
-      toast.success("Metodo predefinido actualizado")
+      toast.success("Método predefinido actualizado")
       await loadMethods()
     } catch {
-      toast.error("Erro ao definir metodo predefinido")
+      toast.error("Erro ao definir método predefinido")
     } finally {
       setSettingDefault(null)
     }
@@ -574,9 +574,9 @@ function PaymentMethodsSection() {
 
   const gatewayLabel = (gateway: string) => {
     const labels: Record<string, string> = {
-      stripe: "Cartao Internacional",
+      stripe: "Cartão Internacional",
       multicaixa_express: "Multicaixa Express",
-      referencia_bancaria: "Referencia Bancaria",
+      referencia_bancaria: "Referência Bancária",
       unitel_money: "Unitel Money",
       e_kwanza: "e-Kwanza",
       paypay: "PayPay",
@@ -592,8 +592,8 @@ function PaymentMethodsSection() {
             <CreditCard className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold">Metodos de pagamento</h2>
-            <p className="text-xs text-muted-foreground">Gerir os seus metodos de pagamento</p>
+            <h2 className="text-[15px] font-semibold">Métodos de pagamento</h2>
+            <p className="text-xs text-muted-foreground">Gerir os seus métodos de pagamento</p>
           </div>
         </div>
 
@@ -603,10 +603,10 @@ function PaymentMethodsSection() {
           <div className="rounded-lg border border-dashed border-border p-6 text-center">
             <Wallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground mb-3">
-              Nenhum metodo de pagamento configurado.
+              Nenhum método de pagamento configurado.
             </p>
             <Button size="sm" onClick={() => setDialogOpen(true)}>
-              Adicionar cartao
+              Adicionar cartão
             </Button>
           </div>
         ) : (
@@ -654,7 +654,7 @@ function PaymentMethodsSection() {
               </div>
             ))}
             <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)}>
-              Adicionar cartao
+              Adicionar cartão
             </Button>
           </div>
         )}
@@ -765,7 +765,7 @@ function AddCardDialog({
     })
 
     if (error) {
-      setErrorMsg(error.message || "Erro ao confirmar cartao")
+      setErrorMsg(error.message || "Erro ao confirmar cartão")
       setStep("ready")
       return
     }
@@ -777,10 +777,10 @@ function AddCardDialog({
           payment_method_token: setupIntent.payment_method as string,
           set_as_default: true,
         })
-        toast.success("Cartao adicionado com sucesso")
+        toast.success("Cartão adicionado com sucesso")
         onSuccess()
       } catch {
-        setErrorMsg("Cartao confirmado mas erro ao guardar. Tente novamente.")
+        setErrorMsg("Cartão confirmado mas erro ao guardar. Tente novamente.")
         setStep("ready")
       }
     }
@@ -793,7 +793,7 @@ function AddCardDialog({
           <DialogTitle>
             <span className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Adicionar cartao
+              Adicionar cartão
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -817,7 +817,7 @@ function AddCardDialog({
           {(step === "ready" || step === "confirming") && (
             <>
               <div>
-                <Label className="text-xs mb-2 block">Dados do cartao</Label>
+                <Label className="text-xs mb-2 block">Dados do cartão</Label>
                 <div
                   ref={mountCard}
                   className="rounded-md border border-input bg-background px-3 py-3 shadow-sm"
@@ -829,7 +829,7 @@ function AddCardDialog({
               )}
 
               <p className="text-xs text-muted-foreground">
-                Os dados do cartao sao processados de forma segura pelo Stripe. Nunca armazenamos os dados completos do cartao.
+                Os dados do cartão são processados de forma segura pelo Stripe. Nunca armazenamos os dados completos do cartão.
               </p>
             </>
           )}
@@ -847,7 +847,7 @@ function AddCardDialog({
                   A confirmar...
                 </>
               ) : (
-                "Confirmar cartao"
+                "Confirmar cartão"
               )}
             </Button>
           </DialogFooter>
@@ -882,7 +882,7 @@ function InvoicesReceiptsSection() {
   if (loading || (invoices.length === 0 && receipts.length === 0)) return null
 
   const docTypeLabel = (t: string) => {
-    const map: Record<string, string> = { FT: "Factura", NC: "Nota de Credito", RC: "Recibo" }
+    const map: Record<string, string> = { FT: "Factura", NC: "Nota de Crédito", RC: "Recibo" }
     return map[t] || t
   }
 
@@ -1020,8 +1020,8 @@ function PaymentHistorySection() {
           <Receipt className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-[15px] font-semibold">Historico de pagamentos</h2>
-          <p className="text-xs text-muted-foreground">Ultimos pagamentos realizados</p>
+          <h2 className="text-[15px] font-semibold">Histórico de pagamentos</h2>
+          <p className="text-xs text-muted-foreground">Últimos pagamentos realizados</p>
         </div>
       </div>
 

@@ -37,8 +37,8 @@ export default function AboutScreen() {
 
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <Text style={[styles.desc, { color: muted }]}>
-            A melhor app de gestao financeira pessoal e familiar para Angola e PALOP.
-            Controla as tuas financas com ajuda da inteligencia artificial.
+            A melhor app de gestão financeira pessoal e familiar para Angola e PALOP.
+            Controla as tuas finanças com ajuda da inteligencia artificial.
           </Text>
         </View>
 

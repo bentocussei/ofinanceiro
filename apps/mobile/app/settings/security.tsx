@@ -72,7 +72,7 @@ export default function SecurityScreen() {
       return
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas nao coincidem')
+      Alert.alert('Erro', 'As senhas não coincidem')
       return
     }
     Keyboard.dismiss()
@@ -115,7 +115,7 @@ export default function SecurityScreen() {
             <Pressable onPress={() => router.back()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={24} color={text} />
             </Pressable>
-            <Text style={[styles.title, { color: text }]}>Seguranca</Text>
+            <Text style={[styles.title, { color: text }]}>Segurança</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
@@ -126,7 +126,7 @@ export default function SecurityScreen() {
               style={[styles.input, { borderColor: border, color: text }]}
               value={currentPassword}
               onChangeText={setCurrentPassword}
-              placeholder="Deixe vazio se nao definiu"
+              placeholder="Deixe vazio se não definiu"
               placeholderTextColor={muted}
               secureTextEntry
             />
@@ -136,7 +136,7 @@ export default function SecurityScreen() {
               style={[styles.input, { borderColor: border, color: text }]}
               value={newPassword}
               onChangeText={setNewPassword}
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               placeholderTextColor={muted}
               secureTextEntry
             />

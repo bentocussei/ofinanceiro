@@ -179,7 +179,7 @@ export default function HomeScreen() {
       </View>
       <View style={styles.txnInfo}>
         <Text style={[styles.txnDesc, { color: tc.text }]} numberOfLines={1}>
-          {item.description || 'Sem descricao'}
+          {item.description || 'Sem descrição'}
         </Text>
         {item.merchant ? (
           <Text style={[styles.txnMerchant, { color: tc.textMuted }]} numberOfLines={1}>
@@ -224,7 +224,7 @@ export default function HomeScreen() {
             <FadeInView delay={100}>
               <View style={[styles.balanceCard, { backgroundColor: tc.card }]}>
                 <Text style={[styles.balanceLabel, { color: tc.textSecondary }]}>
-                  PATRIMONIO LIQUIDO
+                  PATRIMÓNIO LÍQUIDO
                 </Text>
                 <Text style={[styles.balanceAmount, { color: tc.text }]}>
                   {formatKz(patrimony?.net_worth ?? summary?.net_worth ?? 0)}
@@ -262,7 +262,7 @@ export default function HomeScreen() {
                   <View style={[styles.patrimonySubCard, { backgroundColor: tc.cardAlt }]}>
                     <View style={styles.patrimonySubHeader}>
                       <Ionicons name="card-outline" size={12} color={colors.error} />
-                      <Text style={[styles.patrimonySubLabel, { color: tc.textSecondary }]}>Dividas</Text>
+                      <Text style={[styles.patrimonySubLabel, { color: tc.textSecondary }]}>Dívidas</Text>
                     </View>
                     <Text style={[styles.patrimonySubValue, { color: colors.error }]}>
                       -{formatKz(patrimony?.liabilities?.total ?? summary?.total_liabilities ?? 0)}
@@ -343,7 +343,7 @@ export default function HomeScreen() {
                   <View style={styles.referralTextWrap}>
                     <Text style={styles.referralTitle}>Convide amigos e ganhe</Text>
                     <Text style={styles.referralSubtitle}>
-                      Ganhe 1 mes gratis por cada convite
+                      Ganhe 1 mês grátis por cada convite
                     </Text>
                   </View>
                   <Pressable
@@ -363,7 +363,7 @@ export default function HomeScreen() {
               <FadeInView delay={225}>
                 <View style={styles.sectionHeader}>
                   <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>
-                    ORCAMENTOS ACTIVOS
+                    ORÇAMENTOS ACTIVOS
                   </Text>
                   <Pressable onPress={() => router.push('/budget')}>
                     <Text style={styles.seeAll}>Ver todos</Text>
@@ -450,7 +450,7 @@ export default function HomeScreen() {
             <FadeInView delay={275}>
               <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: tc.textSecondary }]}>
-                  ULTIMAS TRANSACCOES
+                  ÚLTIMAS TRANSACÇÕES
                 </Text>
                 <Pressable onPress={() => router.push('/(tabs)/transactions')}>
                   <Text style={styles.seeAll}>Ver todas</Text>
@@ -479,13 +479,13 @@ export default function HomeScreen() {
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={48} color={tc.handle} />
               <Text style={[styles.emptyText, { color: tc.textMuted }]}>
-                Nenhuma transaccao registada
+                Nenhuma transacção registada
               </Text>
               <Pressable
                 style={styles.emptyBtn}
                 onPress={() => txnSheetRef.current?.expand()}
               >
-                <Text style={styles.emptyBtnText}>Registar primeira transaccao</Text>
+                <Text style={styles.emptyBtnText}>Registar primeira transacção</Text>
               </Pressable>
             </View>
           )
@@ -500,7 +500,7 @@ export default function HomeScreen() {
                     GASTOS POR CATEGORIA
                   </Text>
                   <Pressable onPress={() => router.push('/(tabs)/reports')}>
-                    <Text style={styles.seeAll}>Ver relatorio</Text>
+                    <Text style={styles.seeAll}>Ver relatório</Text>
                   </Pressable>
                 </View>
                 <View style={styles.categoryWrap}>
@@ -583,7 +583,7 @@ export default function HomeScreen() {
         actions={[
           {
             key: 'add',
-            label: 'Registar transaccao',
+            label: 'Registar transacção',
             icon: 'add-circle-outline',
             onPress: () => handleQuickAction('add'),
             color: colors.primary,

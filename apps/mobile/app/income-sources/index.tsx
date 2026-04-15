@@ -75,7 +75,7 @@ export default function IncomeSourcesScreen() {
   const openCreate = () => { resetForm(); sheetRef.current?.expand() }
 
   const handleSubmit = async () => {
-    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatorio'); return }
+    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatório'); return }
     if (!expectedAmount || parseFloat(expectedAmount) <= 0) { Alert.alert('Erro', 'Defina o valor esperado'); return }
 
     setIsSubmitting(true)
@@ -266,7 +266,7 @@ export default function IncomeSourcesScreen() {
             onChangeText={setDayOfMonth}
           />
 
-          <Text style={[styles.label, isDark && styles.textMuted]}>Descricao (opcional)</Text>
+          <Text style={[styles.label, isDark && styles.textMuted]}>Descrição (opcional)</Text>
           <TextInput
             style={[styles.input, isDark && styles.inputDark, styles.inputMultiline]}
             placeholder="Detalhes sobre esta fonte de rendimento"

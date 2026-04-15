@@ -257,7 +257,7 @@ export default function FamilyAssetsPage() {
                 <>
                   <div><Label>Morada</Label><Input placeholder="Endereço do imóvel" value={morada} onChange={(e) => setMorada(e.target.value)} /></div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div><Label>Area (m2)</Label><Input type="number" placeholder="0" value={area} onChange={(e) => setArea(e.target.value)} className="font-mono" /></div>
+                    <div><Label>Área (m2)</Label><Input type="number" placeholder="0" value={area} onChange={(e) => setArea(e.target.value)} className="font-mono" /></div>
                     <div><Label>Quartos</Label><Input type="number" placeholder="0" value={quartos} onChange={(e) => setQuartos(e.target.value)} className="font-mono" /></div>
                     <div><Label>Estac.</Label><Input type="number" placeholder="0" value={estacionamento} onChange={(e) => setEstacionamento(e.target.value)} className="font-mono" /></div>
                   </div>
@@ -368,7 +368,7 @@ export default function FamilyAssetsPage() {
           <p className="text-muted-foreground mt-3">Nenhum bem familiar registado</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {assets.map((asset) => {
             const appreciation = asset.current_value - asset.purchase_price
             const appPct = asset.purchase_price > 0
@@ -378,7 +378,7 @@ export default function FamilyAssetsPage() {
             const keyDetail = getKeyDetail(asset)
 
             return (
-              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors" onClick={() => { setDetailAssetId(asset.id); setDetailOpen(true) }}>
+              <div key={asset.id} className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/50 active:bg-muted/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none" onClick={() => { setDetailAssetId(asset.id); setDetailOpen(true) }}>
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">

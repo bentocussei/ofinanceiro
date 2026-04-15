@@ -19,8 +19,8 @@ type Tab = 'rating' | 'suggestion' | 'complaint'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'rating', label: 'Avaliar' },
-  { id: 'suggestion', label: 'Sugestao' },
-  { id: 'complaint', label: 'Reclamacao' },
+  { id: 'suggestion', label: 'Sugestão' },
+  { id: 'complaint', label: 'Reclamação' },
 ]
 
 const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
@@ -45,7 +45,7 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
 
   async function handleSubmit() {
     if (tab === 'rating' && rating === 0) {
-      Alert.alert('Erro', 'Seleccione uma avaliacao')
+      Alert.alert('Erro', 'Seleccione uma avaliação')
       return
     }
     if ((tab === 'suggestion' || tab === 'complaint') && !message.trim()) {
@@ -65,9 +65,9 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       const msgs: Record<Tab, string> = {
-        rating: 'Avaliacao enviada. Obrigado!',
-        suggestion: 'Sugestao recebida. Obrigado!',
-        complaint: 'Reclamacao registada. Vamos analisar.',
+        rating: 'Avaliação enviada. Obrigado!',
+        suggestion: 'Sugestão recebida. Obrigado!',
+        complaint: 'Reclamação registada. Vamos analisar.',
       }
       Alert.alert('Sucesso', msgs[tab])
       reset()
@@ -115,7 +115,7 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
         {/* Rating */}
         {tab === 'rating' && (
           <View style={styles.section}>
-            <Text style={[styles.label, { color: muted }]}>Como avalia a aplicacao?</Text>
+            <Text style={[styles.label, { color: muted }]}>Como avalia a aplicação?</Text>
             <View style={styles.stars}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Pressable key={n} onPress={() => setRating(n)}>
@@ -131,7 +131,7 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
               style={[styles.textArea, { borderColor: border, color: text }]}
               value={message}
               onChangeText={setMessage}
-              placeholder="Comentario (opcional)"
+              placeholder="Comentário (opcional)"
               placeholderTextColor={muted}
               multiline
               numberOfLines={3}
@@ -143,7 +143,7 @@ const FeedbackSheet = forwardRef<BottomSheet>((_props, ref) => {
         {(tab === 'suggestion' || tab === 'complaint') && (
           <View style={styles.section}>
             <Text style={[styles.label, { color: muted }]}>
-              {tab === 'suggestion' ? 'Descreva a sua sugestao' : 'Descreva o problema'}
+              {tab === 'suggestion' ? 'Descreva a sua sugestão' : 'Descreva o problema'}
             </Text>
             <TextInput
               style={[styles.textArea, { borderColor: border, color: text, minHeight: 100 }]}

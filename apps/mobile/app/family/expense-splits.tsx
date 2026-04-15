@@ -114,7 +114,7 @@ export default function ExpenseSplitsScreen() {
               <Ionicons name="people-outline" size={48} color={muted} />
               <Text style={[styles.emptyText, { color: muted }]}>Nenhuma despesa dividida</Text>
               <Text style={[styles.emptyDesc, { color: muted }]}>
-                Divide despesas com os membros da familia pelo assistente ou pela web.
+                Divide despesas com os membros da família pelo assistente ou pela web.
               </Text>
             </View>
           ) : null

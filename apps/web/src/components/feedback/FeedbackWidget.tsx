@@ -1,7 +1,7 @@
 "use client"
 
 import { MessageSquare, Star, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,8 @@ type Tab = "rating" | "suggestion" | "complaint"
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "rating", label: "Avaliar" },
-  { id: "suggestion", label: "Sugestao" },
-  { id: "complaint", label: "Reclamacao" },
+  { id: "suggestion", label: "Sugestão" },
+  { id: "complaint", label: "Reclamação" },
 ]
 
 function StarRating({
@@ -52,8 +52,16 @@ function StarRating({
   )
 }
 
-export function FeedbackWidget() {
-  const [open, setOpen] = useState(false)
+interface FeedbackWidgetProps {
+  /**
+   * - `"floating"` (default): fixed button + popover panel (original behavior)
+   * - `"inline"`: renders as an always-visible form card (for embedding in pages like Settings)
+   */
+  variant?: "floating" | "inline"
+}
+
+export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps = {}) {
+  const [open, setOpen] = useState(variant === "inline")
   const [tab, setTab] = useState<Tab>("rating")
   const [rating, setRating] = useState(0)
   const [message, setMessage] = useState("")
@@ -65,6 +73,14 @@ export function FeedbackWidget() {
   function handleOpen() {
     setOpen(true)
   }
+
+  // Allow other components (e.g. mobile dashboard feedback link) to open the widget
+  // by dispatching `window.dispatchEvent(new CustomEvent("feedback:open"))`
+  useEffect(() => {
+    const onOpen = () => setOpen(true)
+    window.addEventListener("feedback:open", onOpen)
+    return () => window.removeEventListener("feedback:open", onOpen)
+  }, [])
 
   function handleClose() {
     setOpen(false)
@@ -81,7 +97,7 @@ export function FeedbackWidget() {
 
   async function handleSubmit() {
     if (tab === "rating" && rating === 0) {
-      toast.error("Por favor seleccione uma avaliacao")
+      toast.error("Por favor seleccione uma avaliação")
       return
     }
     if ((tab === "suggestion" || tab === "complaint") && !message.trim()) {
@@ -106,12 +122,21 @@ export function FeedbackWidget() {
       })
       toast.success(
         tab === "rating"
-          ? "Avaliacao enviada. Obrigado!"
+          ? "Avaliação enviada. Obrigado!"
           : tab === "suggestion"
-          ? "Sugestao recebida. Obrigado!"
-          : "Reclamacao registada. Vamos analisar."
+          ? "Sugestão recebida. Obrigado!"
+          : "Reclamação registada. Vamos analisar."
       )
-      handleClose()
+      if (variant === "inline") {
+        // Inline variant: just reset the form, don't close
+        setRating(0)
+        setMessage("")
+        setContactName("")
+        setContactEmail("")
+        setContactPhone("")
+      } else {
+        handleClose()
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao enviar"
       toast.error(msg)
@@ -120,12 +145,86 @@ export function FeedbackWidget() {
     }
   }
 
+  // Inline variant — embedded in pages (e.g. Settings)
+  if (variant === "inline") {
+    return (
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-sm font-semibold">Feedback</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Avalie a aplicação, envie sugestões ou reporte problemas.
+          </p>
+        </div>
+        <div className="flex border-b border-border">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                tab === t.id
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="p-4 space-y-4">
+          {tab === "rating" && (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs">Como avalia a aplicação?</Label>
+                <StarRating value={rating} onChange={setRating} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="fw-inline-rating" className="text-xs">
+                  Comentário (opcional)
+                </Label>
+                <textarea
+                  id="fw-inline-rating"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Conte-nos mais..."
+                  rows={3}
+                  className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+                />
+              </div>
+            </>
+          )}
+          {(tab === "suggestion" || tab === "complaint") && (
+            <div className="space-y-1.5">
+              <Label htmlFor="fw-inline-text" className="text-xs">
+                {tab === "suggestion" ? "Descreva a sua sugestão" : "Descreva o problema"}
+              </Label>
+              <textarea
+                id="fw-inline-text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={
+                  tab === "suggestion"
+                    ? "Tenho uma ideia para melhorar..."
+                    : "Encontrei um problema em..."
+                }
+                rows={4}
+                className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+              />
+            </div>
+          )}
+          <Button className="w-full h-9" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "A enviar..." : "Enviar"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Trigger button */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.18)] hover:bg-primary/90 transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] right-4 md:bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.18)] hover:bg-primary/90 transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         aria-label="Feedback"
       >
         <MessageSquare className="h-5 w-5" />
@@ -140,7 +239,7 @@ export function FeedbackWidget() {
             onClick={handleClose}
           />
 
-          <div className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-xl bg-card border border-border shadow-[0_8px_40px_rgba(0,0,0,0.18)] overflow-hidden">
+          <div className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] right-4 md:bottom-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-xl bg-card border border-border shadow-[0_8px_40px_rgba(0,0,0,0.18)] overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <h3 className="text-sm font-semibold">Feedback</h3>
@@ -174,12 +273,12 @@ export function FeedbackWidget() {
               {tab === "rating" && (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-xs">Como avalia a aplicacao?</Label>
+                    <Label className="text-xs">Como avalia a aplicação?</Label>
                     <StarRating value={rating} onChange={setRating} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="fw-msg-rating" className="text-xs">
-                      Comentario (opcional)
+                      Comentário (opcional)
                     </Label>
                     <textarea
                       id="fw-msg-rating"
@@ -197,7 +296,7 @@ export function FeedbackWidget() {
                 <>
                   <div className="space-y-1.5">
                     <Label htmlFor="fw-msg-text" className="text-xs">
-                      {tab === "suggestion" ? "Descreva a sua sugestao" : "Descreva o problema"}
+                      {tab === "suggestion" ? "Descreva a sua sugestão" : "Descreva o problema"}
                     </Label>
                     <textarea
                       id="fw-msg-text"

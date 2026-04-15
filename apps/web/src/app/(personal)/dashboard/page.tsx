@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { ReferralCard } from "@/components/referral/ReferralCard"
+import { FadeIn } from "@/components/common/FadeIn"
 import { IconDisplay } from "@/components/common/IconDisplay"
+import { SpeedDial } from "@/components/common/SpeedDial"
+import { CreateTransactionDialog } from "@/components/transactions/CreateTransactionDialog"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTour } from "@/lib/tours"
 import { accountsApi, type AccountSummary } from "@/lib/api/accounts"
 import { onboardingApi } from "@/lib/api/onboarding"
@@ -16,15 +20,36 @@ import { goalsApi } from "@/lib/api/goals"
 import { formatKz } from "@/lib/format"
 import {
   ArrowDownRight,
+  ArrowLeftRight,
   ArrowUpRight,
   Building2,
   CreditCard,
+  Gift,
   PieChart,
   Plus,
+  PlusCircle,
   Target,
   TrendingUp,
   Wallet,
+  X,
 } from "lucide-react"
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                           */
+/* ------------------------------------------------------------------ */
+
+const CHART_PALETTE = [
+  "#0D9488",
+  "#D97706",
+  "#2563EB",
+  "#7C3AED",
+  "#15803D",
+  "#EA580C",
+  "#DB2777",
+  "#B91C1C",
+]
+
+const REFERRAL_DISMISSED_KEY = "referral_banner_dismissed"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -74,6 +99,35 @@ export default function DashboardPage() {
   const [monthIncome, setMonthIncome] = useState(0)
   const [monthExpense, setMonthExpense] = useState(0)
   const [spending, setSpending] = useState<SpendingCategory[]>([])
+  const [referralDismissed, setReferralDismissed] = useState(false)
+  const [txnDialogOpen, setTxnDialogOpen] = useState(false)
+
+  // Read referral dismissal state from localStorage (mobile-only banner)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      setReferralDismissed(window.localStorage.getItem(REFERRAL_DISMISSED_KEY) === "true")
+    } catch {
+      // ignore — default to not dismissed
+    }
+  }, [])
+
+  function handleDismissReferral() {
+    setReferralDismissed(true)
+    try {
+      window.localStorage.setItem(REFERRAL_DISMISSED_KEY, "true")
+    } catch {
+      // persistence unavailable — banner stays dismissed for this session
+    }
+  }
+
+  // Per-section loading states — drive skeletons
+  const [loadingSummary, setLoadingSummary] = useState(true)
+  const [loadingPatrimony, setLoadingPatrimony] = useState(true)
+  const [loadingTransactions, setLoadingTransactions] = useState(true)
+  const [loadingBudgets, setLoadingBudgets] = useState(true)
+  const [loadingGoals, setLoadingGoals] = useState(true)
+  const [loadingMonthly, setLoadingMonthly] = useState(true)
 
   useEffect(() => {
     // Check onboarding status — redirect if not completed
@@ -89,14 +143,17 @@ export default function DashboardPage() {
     accountsApi.summary()
       .then(setSummary)
       .catch(() => {})
+      .finally(() => setLoadingSummary(false))
 
     reportsApi.patrimony()
       .then(setPatrimony)
       .catch(() => {})
+      .finally(() => setLoadingPatrimony(false))
 
     transactionsApi.list("limit=5")
       .then((d) => setTransactions(d.items as Transaction[]))
       .catch(() => {})
+      .finally(() => setLoadingTransactions(false))
 
     budgetsApi.list()
       .then(async (budgetList) => {
@@ -118,10 +175,12 @@ export default function DashboardPage() {
         setBudgets(items)
       })
       .catch(() => {})
+      .finally(() => setLoadingBudgets(false))
 
     goalsApi.list("status=active")
       .then((d) => setGoals((d ?? []).slice(0, 3) as GoalItem[]))
       .catch(() => {})
+      .finally(() => setLoadingGoals(false))
 
     transactionsApi.monthlySummary()
       .then((d) => {
@@ -130,6 +189,7 @@ export default function DashboardPage() {
         setSpending(((d.by_category ?? []) as unknown as SpendingCategory[]).slice(0, 5))
       })
       .catch(() => {})
+      .finally(() => setLoadingMonthly(false))
   }, [router])
 
   const currentMonth = new Date().toLocaleDateString("pt-AO", {
@@ -140,6 +200,14 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* --- Património Hero (full width) --- */}
+      <FadeIn delay={0}>
+      {loadingPatrimony ? (
+        <Skeleton
+          data-tour="net-worth"
+          className="h-[220px] rounded-xl"
+          aria-label="A carregar património"
+        />
+      ) : (
       <div data-tour="net-worth" className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
           Património Líquido
@@ -180,7 +248,7 @@ export default function DashboardPage() {
           <div className="rounded-lg bg-muted/50 p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <CreditCard className="h-3.5 w-3.5 text-expense" />
-              <span className="text-xs text-muted-foreground">Dividas</span>
+              <span className="text-xs text-muted-foreground">Dívidas</span>
             </div>
             <p className="text-sm font-bold font-mono text-expense">
               -{formatKz(patrimony?.liabilities.total ?? 0)}
@@ -208,41 +276,53 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      )}
+      </FadeIn>
 
       {/* --- 2-Column Grid --- */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left Column */}
         <div className="space-y-6">
           {/* Cash Flow */}
+          <FadeIn delay={100}>
           <section data-tour="cashflow">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Fluxo de Caixa
             </h2>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Receitas</p>
-                  <ArrowUpRight className="h-4 w-4 text-income" />
-                </div>
-                <p className="text-2xl font-bold font-mono text-income">
-                  +{formatKz(monthIncome)}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1 capitalize">{currentMonth}</p>
+            {loadingMonthly ? (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <Skeleton className="h-[108px] rounded-xl" />
+                <Skeleton className="h-[108px] rounded-xl" />
               </div>
-              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Despesas</p>
-                  <ArrowDownRight className="h-4 w-4 text-expense" />
+            ) : (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">Receitas</p>
+                    <ArrowUpRight className="h-4 w-4 text-income" />
+                  </div>
+                  <p className="text-2xl font-bold font-mono text-income">
+                    +{formatKz(monthIncome)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1 capitalize">{currentMonth}</p>
                 </div>
-                <p className="text-2xl font-bold font-mono text-expense">
-                  -{formatKz(monthExpense)}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1 capitalize">{currentMonth}</p>
+                <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)]">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">Despesas</p>
+                    <ArrowDownRight className="h-4 w-4 text-expense" />
+                  </div>
+                  <p className="text-2xl font-bold font-mono text-expense">
+                    -{formatKz(monthExpense)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1 capitalize">{currentMonth}</p>
+                </div>
               </div>
-            </div>
+            )}
           </section>
+          </FadeIn>
 
           {/* Recent Transactions */}
+          <FadeIn delay={300}>
           <section data-tour="recent-transactions">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -255,12 +335,21 @@ export default function DashboardPage() {
                 Ver todas
               </Link>
             </div>
-            {transactions.length > 0 ? (
-              <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
+            {loadingTransactions ? (
+              <div className="md:space-y-0 md:rounded-xl md:bg-card md:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] md:divide-y md:divide-border">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="h-14 mb-2 rounded-xl md:mb-0 md:rounded-none"
+                  />
+                ))}
+              </div>
+            ) : transactions.length > 0 ? (
+              <div className="md:rounded-xl md:bg-card md:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] md:divide-y md:divide-border">
                 {transactions.map((txn) => (
                   <div
                     key={txn.id}
-                    className="flex items-center justify-between px-5 h-14 hover:bg-accent/40 transition-colors"
+                    className="flex items-center justify-between h-14 transition-colors bg-card rounded-xl px-4 mb-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)] md:my-0 md:mb-0 md:rounded-none md:px-5 md:shadow-none md:bg-transparent hover:bg-accent/40"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
@@ -302,6 +391,7 @@ export default function DashboardPage() {
               />
             )}
           </section>
+          </FadeIn>
         </div>
 
         {/* Right Column */}
@@ -319,7 +409,15 @@ export default function DashboardPage() {
                 Ver todas
               </Link>
             </div>
-            {summary && summary.accounts.length > 0 ? (
+            {loadingSummary ? (
+              <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="px-5 py-3">
+                    <Skeleton className="h-10 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : summary && summary.accounts.length > 0 ? (
               <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-border">
                 {summary.accounts.slice(0, 4).map((acc) => (
                   <div
@@ -360,6 +458,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Budget Progress */}
+          <FadeIn delay={150}>
           <section data-tour="budget-summary">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -372,7 +471,17 @@ export default function DashboardPage() {
                 Ver todos
               </Link>
             </div>
-            {budgets.length > 0 ? (
+            {loadingBudgets ? (
+              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-1.5 w-full rounded-full" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : budgets.length > 0 ? (
               <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-4">
                 {budgets.map((b) => {
                   const pct = b.limit_amount > 0 ? (b.spent_amount / b.limit_amount) * 100 : 0
@@ -413,8 +522,10 @@ export default function DashboardPage() {
               />
             )}
           </section>
+          </FadeIn>
 
           {/* Goals */}
+          <FadeIn delay={200}>
           <section data-tour="goals-summary">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -427,7 +538,17 @@ export default function DashboardPage() {
                 Ver todas
               </Link>
             </div>
-            {goals.length > 0 ? (
+            {loadingGoals ? (
+              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-1.5 w-full rounded-full" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : goals.length > 0 ? (
               <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-4">
                 {goals.map((g) => {
                   const pct =
@@ -468,33 +589,81 @@ export default function DashboardPage() {
               />
             )}
           </section>
+          </FadeIn>
 
-          {/* Referral */}
-          <ReferralCard />
+          {/* Referral — mobile: informational banner linking to settings; desktop: full card */}
+          {!referralDismissed && (
+            <Link
+              href="/settings?tab=referrals"
+              className="relative md:hidden flex items-center gap-3 rounded-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] hover:bg-accent/40 transition-colors"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Gift className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1 pr-8">
+                <p className="text-sm font-semibold truncate">Convide amigos e ganhe descontos</p>
+                <p className="text-xs text-muted-foreground truncate">Toque para saber mais</p>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleDismissReferral()
+                }}
+                aria-label="Dispensar"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Link>
+          )}
+          <div className="hidden md:block">
+            <ReferralCard />
+          </div>
 
           {/* Spending by Category */}
+          <FadeIn delay={250}>
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Gastos por Categoria
             </h2>
-            {spending.length > 0 ? (
+            {loadingMonthly ? (
               <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-3">
-                {spending.map((cat) => (
-                  <div key={cat.category_name} className="flex items-center justify-between">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="h-2 w-2 rounded-full bg-expense shrink-0" />
-                      <span className="text-sm capitalize truncate">{cat.category_name}</span>
+                      <Skeleton className="h-2.5 w-2.5 rounded-full shrink-0" />
+                      <Skeleton className="h-3 w-28" />
                     </div>
-                    <div className="flex items-center gap-3 ml-4">
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {Math.round(cat.percentage)}%
-                      </span>
-                      <span className="text-sm font-mono font-semibold text-expense w-28 text-right">
-                        {formatKz(cat.amount)}
-                      </span>
-                    </div>
+                    <Skeleton className="h-3 w-16 ml-4" />
                   </div>
                 ))}
+              </div>
+            ) : spending.length > 0 ? (
+              <div className="rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] space-y-3">
+                {spending.map((cat, i) => {
+                  const color = CHART_PALETTE[i % CHART_PALETTE.length]
+                  return (
+                    <div key={cat.category_name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-sm capitalize truncate">{cat.category_name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 ml-4">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {Math.round(cat.percentage)}%
+                        </span>
+                        <span className="text-sm font-mono font-semibold text-expense w-28 text-right">
+                          {formatKz(cat.amount)}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <EmptyState
@@ -505,8 +674,35 @@ export default function DashboardPage() {
               />
             )}
           </section>
+          </FadeIn>
         </div>
       </div>
+
+      {/* Controlled transaction dialog for SpeedDial (mobile only). */}
+      <CreateTransactionDialog
+        hideTrigger
+        open={txnDialogOpen}
+        onOpenChange={setTxnDialogOpen}
+      />
+
+      {/* Speed Dial — mobile only. Replaces single FAB with expandable actions. */}
+      <SpeedDial
+        actions={[
+          {
+            key: "add",
+            label: "Registar transacção",
+            icon: PlusCircle,
+            onClick: () => setTxnDialogOpen(true),
+            color: "#0D9488",
+          },
+          {
+            key: "transfer",
+            label: "Transferir entre contas",
+            icon: ArrowLeftRight,
+            onClick: () => router.push("/accounts"),
+          },
+        ]}
+      />
     </div>
   )
 }

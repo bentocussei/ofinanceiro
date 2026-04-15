@@ -127,14 +127,16 @@ const FAMILY_SECTIONS: NavSection[] = [
 
 const PERSONAL_TABS: NavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home },
-  { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
+  { href: "/accounts", label: "Contas", icon: Wallet },
   { href: "/assistant", label: "Assistente", icon: Bot },
+  { href: "/transactions", label: "Transacções", icon: ArrowLeftRight },
 ]
 
 const FAMILY_TABS: NavItem[] = [
   { href: "/family/dashboard", label: "Início", icon: Home },
-  { href: "/family/transactions", label: "Transações", icon: ArrowLeftRight },
+  { href: "/family/accounts", label: "Contas", icon: Wallet },
   { href: "/family/assistant", label: "Assistente", icon: Bot },
+  { href: "/family/transactions", label: "Transacções", icon: ArrowLeftRight },
 ]
 
 export function MobileNav({ context }: { context: "personal" | "family" }) {
@@ -161,9 +163,8 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
     return null
   })()
 
-  const headerTitle = currentPageTitle
-    ? `${currentPageTitle} (${contextLabel})`
-    : contextLabel
+  // Page title only — context is shown by the ContextSwitcher on the right
+  const headerTitle = currentPageTitle || contextLabel
 
   useEffect(() => {
     getCurrentUser().then(setUser).catch(() => {})
@@ -190,17 +191,20 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
   const ThemeIcon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor
 
   return (
-    <>
-      {/* Top bar — mobile only */}
-      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-card border-b border-border">
-        <Sheet open={open} onOpenChange={(v) => { if (v) hapticTap(); setOpen(v) }}>
-          <SheetTrigger
-            className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent"
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-5 w-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col">
+    <Sheet open={open} onOpenChange={(v) => { if (v) hapticTap(); setOpen(v) }}>
+      {/* Top bar — mobile only (title on left, ContextSwitcher on right) */}
+      {/* Safe-area-inset-top ensures content stays below the iPhone notch/Dynamic Island */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-card border-b border-border">
+        <span className="min-w-0 flex-1 text-base font-semibold tracking-tight truncate">
+          {headerTitle}
+        </span>
+        <div className="shrink-0">
+          <ContextSwitcher />
+        </div>
+      </header>
+
+      {/* Drawer content (right side — opens from right, closer to thumb) */}
+      <SheetContent side="right" className="w-72 p-0 flex flex-col">
             <SheetHeader className="px-2 py-2 border-b border-border">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <ContextSwitcher />
@@ -320,17 +324,10 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
                 </PopoverContent>
               </Popover>
             </div>
-          </SheetContent>
-        </Sheet>
+      </SheetContent>
 
-        <span className="text-sm font-semibold tracking-tight truncate px-2">{headerTitle}</span>
-
-        {/* Spacer to keep the title centred (mirrors the hamburger button width) */}
-        <span className="h-9 w-9 shrink-0" aria-hidden="true" />
-      </header>
-
-      {/* Bottom tab bar — mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-14 bg-card border-t border-border">
+      {/* Bottom tab bar — mobile only (3 tabs + Menu button on the right) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-card border-t border-border">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const active = isActive(tab.href)
@@ -348,7 +345,15 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
             </Link>
           )
         })}
+        {/* Menu trigger — thumb-reachable bottom-right */}
+        <SheetTrigger
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5" />
+          <span>Mais</span>
+        </SheetTrigger>
       </nav>
-    </>
+    </Sheet>
   )
 }

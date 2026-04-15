@@ -243,12 +243,12 @@ export default function NewsPage() {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           Feed de notícias financeiras
         </p>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="-mx-4 px-4 md:mx-0 md:px-0 flex gap-1.5 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-2 md:pb-0 scrollbar-hide">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               onClick={() => handleCategoryChange(cat.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 activeCategory === cat.value
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"

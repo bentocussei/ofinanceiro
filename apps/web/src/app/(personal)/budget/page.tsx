@@ -64,17 +64,17 @@ export default function BudgetPage() {
   return (
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">Orcamentos</h2>
-        <Button className="hidden md:inline-flex" data-tour="new-budget" onClick={() => setCreateOpen(true)}>+ Novo orcamento</Button>
-      <MobileFAB onClick={() => setCreateOpen(true)} label="Novo orcamento" />
+        <h2 className="text-2xl font-bold tracking-tight">Orçamentos</h2>
+        <Button className="hidden md:inline-flex" data-tour="new-budget" onClick={() => setCreateOpen(true)}>+ Novo orçamento</Button>
+      <MobileFAB onClick={() => setCreateOpen(true)} label="Novo orçamento" />
       </div>
 
       {budgets.length === 0 ? (
         <div className="text-center py-16">
           <PieChart className="h-10 w-10 mx-auto text-muted-foreground/30" />
-          <p className="text-muted-foreground mt-3">Nenhum orcamento criado</p>
+          <p className="text-muted-foreground mt-3">Nenhum orçamento criado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie um orcamento para controlar os seus gastos
+            Crie um orçamento para controlar os seus gastos
           </p>
         </div>
       ) : (
@@ -89,7 +89,7 @@ export default function BudgetPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold">{budget.name || "Orcamento"}</h3>
+                    <h3 className="font-semibold">{budget.name || "Orçamento"}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs rounded-full bg-muted px-2 py-0.5">
                         {METHOD_LABELS[budget.method] || budget.method}

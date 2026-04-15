@@ -72,11 +72,11 @@ export default function ReportsPage() {
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Relatórios</h2>
-        <div className="flex gap-2 flex-wrap">
+        <div className="-mx-4 px-4 md:mx-0 md:px-0 flex gap-2 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-1 md:pb-0 scrollbar-hide">
           {periodOptions.map((opt) => (
             <button
               key={opt.value}
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs border whitespace-nowrap transition-colors ${
                 period === opt.value
                   ? "bg-foreground text-background border-foreground"
                   : "border-border hover:bg-accent"

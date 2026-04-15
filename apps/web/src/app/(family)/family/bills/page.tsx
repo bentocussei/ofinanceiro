@@ -308,16 +308,16 @@ export default function FamilyBillsPage() {
           <p className="text-xs text-muted-foreground mt-1">Adicione as contas recorrentes da família para nunca perder um prazo</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+        <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
           {items.map((item) => {
             const statusStyle = STATUS_STYLES[item.status] || STATUS_STYLES.PENDING
             return (
-              <div key={item.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Receipt className="h-5 w-5 text-muted-foreground" />
-                  <div>
+              <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 py-3.5 hover:bg-accent/50 transition-colors mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Receipt className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground truncate">
                       {item.category && <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mr-2">{item.category}</span>}
                       Dia {item.due_day} -- {FREQ_LABELS[item.frequency] || item.frequency}
                       {item.next_due_date ? ` -- Próximo: ${new Date(item.next_due_date + "T00:00:00").toLocaleDateString("pt-AO")}` : ""}
@@ -327,11 +327,11 @@ export default function FamilyBillsPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 flex-wrap">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}>
                     {statusStyle.label}
                   </span>
-                  <p className="font-mono font-semibold">{formatKz(item.amount)}</p>
+                  <p className="font-mono font-semibold whitespace-nowrap">{formatKz(item.amount)}</p>
                   {item.status !== "PAID" && (
                     <Button variant="outline" size="sm" onClick={() => handleMarkPaid(item.id)} title="Marcar como paga">
                       <Check className="h-4 w-4" />

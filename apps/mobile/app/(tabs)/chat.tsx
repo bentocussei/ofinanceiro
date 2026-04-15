@@ -137,20 +137,20 @@ function parseAssistantContent(content: string): ContentSegment[] {
 
 const PERSONAL_ACTIONS = [
   { category: 'Contas', label: 'Quanto tenho de saldo?' },
-  { category: 'Despesas', label: 'Quanto gastei este mes?' },
-  { category: 'Orcamento', label: 'Como esta o meu orcamento?' },
+  { category: 'Despesas', label: 'Quanto gastei este mês?' },
+  { category: 'Orçamento', label: 'Como esta o meu orçamento?' },
   { category: 'Metas', label: 'Qual o estado das minhas metas?' },
-  { category: 'Dividas', label: 'Resumo das minhas dividas' },
+  { category: 'Dívidas', label: 'Resumo das minhas dívidas' },
   { category: 'Investimentos', label: 'Como estao os meus investimentos?' },
 ]
 
 const FAMILY_ACTIONS = [
   { category: 'Contas', label: 'Quanto temos de saldo familiar?' },
-  { category: 'Despesas', label: 'Quanto gastamos este mes?' },
-  { category: 'Orcamento', label: 'Como esta o orcamento familiar?' },
-  { category: 'Metas', label: 'Qual o estado das metas da familia?' },
-  { category: 'Dividas', label: 'Resumo das dividas familiares' },
-  { category: 'Membros', label: 'Quem gastou mais este mes?' },
+  { category: 'Despesas', label: 'Quanto gastamos este mês?' },
+  { category: 'Orçamento', label: 'Como esta o orçamento familiar?' },
+  { category: 'Metas', label: 'Qual o estado das metas da família?' },
+  { category: 'Dívidas', label: 'Resumo das dívidas familiares' },
+  { category: 'Membros', label: 'Quem gastou mais este mês?' },
 ]
 
 // Animated bouncing dots component
@@ -318,7 +318,7 @@ export default function ChatScreen() {
   const handleTakePhoto = useCallback(async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync()
     if (!perm.granted) {
-      Alert.alert('Permissao necessaria', 'Precisamos de acesso a camara.')
+      Alert.alert('Permissao necessária', 'Precisamos de acesso a camara.')
       return
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -335,7 +335,7 @@ export default function ChatScreen() {
   const handlePickImage = useCallback(async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!perm.granted) {
-      Alert.alert('Permissao necessaria', 'Precisamos de acesso a galeria.')
+      Alert.alert('Permissao necessária', 'Precisamos de acesso a galeria.')
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -375,7 +375,7 @@ export default function ChatScreen() {
         }
       )
     } else {
-      Alert.alert('Anexar ficheiro', 'Escolha uma opcao', [
+      Alert.alert('Anexar ficheiro', 'Escolha uma opção', [
         { text: 'Tirar foto', onPress: handleTakePhoto },
         { text: 'Escolher da galeria', onPress: handlePickImage },
         { text: 'Escolher documento', onPress: handlePickDocument },
@@ -474,8 +474,8 @@ export default function ChatScreen() {
               </Text>
               <Text style={[styles.emptySubtitle, { color: tc.textMuted }]}>
                 {isFamilyContext()
-                  ? 'Pergunte sobre as financas da familia, orcamento conjunto, ou gastos dos membros.'
-                  : 'Podes dizer-me quanto gastaste, perguntar o teu saldo, ou pedir conselhos sobre as tuas financas.'}
+                  ? 'Pergunte sobre as finanças da família, orçamento conjunto, ou gastos dos membros.'
+                  : 'Podes dizer-me quanto gastaste, perguntar o teu saldo, ou pedir conselhos sobre as tuas finanças.'}
               </Text>
 
               {/* Quick Actions — context-aware */}
@@ -547,7 +547,7 @@ export default function ChatScreen() {
             </Pressable>
           </View>
           <Text style={[styles.disclaimer, { color: tc.textMuted }]}>
-            O assistente pode cometer erros. Verifique informacoes importantes.
+            O assistente pode cometer erros. Verifique informações importantes.
           </Text>
         </View>
       </KeyboardAvoidingView>

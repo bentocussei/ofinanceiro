@@ -71,9 +71,9 @@ export default function AccountsPage() {
           </div>
 
           {/* Accounts List */}
-          <div className="rounded-xl bg-card shadow-sm divide-y divide-border">
+          <div className="md:rounded-xl md:bg-card md:shadow-sm md:divide-y md:divide-border space-y-1 md:space-y-0 -mx-4 md:mx-0">
             {summary.accounts.map((acc) => (
-              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAccount(acc)}>
+              <div key={acc.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer mx-4 my-1 rounded-xl bg-card shadow-sm md:mx-0 md:my-0 md:rounded-none md:bg-transparent md:shadow-none" onClick={() => setSelectedAccount(acc)}>
                 <div className="flex items-center gap-3">
                   <IconDisplay name={acc.type} className="h-6 w-6" />
                   <div>

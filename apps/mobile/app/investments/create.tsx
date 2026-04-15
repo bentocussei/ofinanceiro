@@ -11,12 +11,12 @@ import { colors, themeColors } from '../../lib/tokens'
 import { useInvestmentsStore } from '../../stores/investments'
 
 const INVESTMENT_TYPES = [
-  { value: 'stocks', label: 'Acoes' },
+  { value: 'stocks', label: 'Ações' },
   { value: 'bonds', label: 'Obrigacoes' },
-  { value: 'real_estate', label: 'Imoveis' },
+  { value: 'real_estate', label: 'Imóveis' },
   { value: 'mutual_fund', label: 'Fundo mutuo' },
   { value: 'crypto', label: 'Criptomoedas' },
-  { value: 'fixed_deposit', label: 'Deposito a prazo' },
+  { value: 'fixed_deposit', label: 'Depósito a prazo' },
   { value: 'other', label: 'Outro' },
 ]
 
@@ -38,7 +38,7 @@ export default function CreateInvestmentScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatorio'); return }
+    if (!name.trim()) { Alert.alert('Erro', 'O nome e obrigatório'); return }
     if (!investedAmount || parseFloat(investedAmount) <= 0) { Alert.alert('Erro', 'Defina o montante investido'); return }
     if (!currentValue || parseFloat(currentValue) < 0) { Alert.alert('Erro', 'Defina o valor actual'); return }
 
@@ -58,7 +58,7 @@ export default function CreateInvestmentScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       router.back()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel criar o investimento')
+      Alert.alert('Erro', error.message || 'Não foi possível criar o investimento')
     } finally {
       setIsSubmitting(false)
     }
@@ -78,7 +78,7 @@ export default function CreateInvestmentScreen() {
         <Text style={[styles.label, isDark && styles.textMuted]}>Nome</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
-          placeholder="Ex: Deposito BAI"
+          placeholder="Ex: Depósito BAI"
           placeholderTextColor={colors.light.textMuted}
           value={name}
           onChangeText={setName}
@@ -137,7 +137,7 @@ export default function CreateInvestmentScreen() {
           onChangeText={setInterestRate}
         />
 
-        <Text style={[styles.label, isDark && styles.textMuted]}>Data de inicio (opcional)</Text>
+        <Text style={[styles.label, isDark && styles.textMuted]}>Data de início (opcional)</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark]}
           placeholder="AAAA-MM-DD"
@@ -160,7 +160,7 @@ export default function CreateInvestmentScreen() {
         <Text style={[styles.label, isDark && styles.textMuted]}>Notas (opcional)</Text>
         <TextInput
           style={[styles.input, isDark && styles.inputDark, { height: 60, textAlignVertical: 'top' }]}
-          placeholder="Observacoes"
+          placeholder="Observações"
           placeholderTextColor={colors.light.textMuted}
           value={notes}
           onChangeText={setNotes}

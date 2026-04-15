@@ -111,7 +111,7 @@ export default function EducationPage() {
     <div>
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-[22px] font-bold tracking-tight">Educacao financeira</h2>
+        <h2 className="text-[22px] font-bold tracking-tight">Educação financeira</h2>
         <Button variant="outline" onClick={fetchData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
           Actualizar
@@ -127,14 +127,14 @@ export default function EducationPage() {
                 <Star className="h-7 w-7 text-amber-500" />
               </div>
               <div>
-                <p className="text-xl font-bold">Nivel {profile.level}</p>
+                <p className="text-xl font-bold">Nível {profile.level}</p>
                 <p className="text-sm text-muted-foreground font-mono">{profile.total_xp} XP total</p>
               </div>
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                <span>Progresso para o proximo nivel</span>
+                <span>Progresso para o próximo nível</span>
                 <span className="font-mono">{profile.xp_to_next_level} XP restantes</span>
               </div>
               <div className="h-2.5 bg-muted rounded-full">
@@ -217,7 +217,7 @@ export default function EducationPage() {
             ) : (
               <div className="text-center py-6">
                 <Lightbulb className="h-8 w-8 mx-auto text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground mt-2">Nenhuma dica disponivel hoje</p>
+                <p className="text-sm text-muted-foreground mt-2">Nenhuma dica disponível hoje</p>
               </div>
             )}
           </div>
@@ -227,7 +227,7 @@ export default function EducationPage() {
         <div className="rounded-xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
           <div className="bg-purple-50 dark:bg-purple-900/20 px-5 py-3 flex items-center gap-2 border-b border-purple-100 dark:border-purple-900/30">
             <MessageCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">Pergunte a IA sobre financas</p>
+            <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">Pergunte a IA sobre finanças</p>
           </div>
           <div className="p-5">
             <div className="flex gap-2">
@@ -236,7 +236,7 @@ export default function EducationPage() {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAsk()}
-                placeholder="Ex: Como comecar a poupar?"
+                placeholder="Ex: Como começar a poupar?"
                 className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 disabled={askingAi}
               />
@@ -253,12 +253,12 @@ export default function EducationPage() {
             {aiAnswer && (
               <div className="mt-3 rounded-lg bg-muted/60 p-3">
                 <p className="text-sm leading-relaxed">{aiAnswer}</p>
-                <p className="text-[11px] text-muted-foreground mt-2 italic">Resposta automatica — IA em breve</p>
+                <p className="text-[11px] text-muted-foreground mt-2 italic">Resposta automática — IA em breve</p>
               </div>
             )}
             {!askingAi && !aiAnswer && (
               <p className="text-[12px] text-muted-foreground mt-3">
-                A IA vai responder a questoes sobre orcamento, poupanca, investimentos e mais.
+                A IA vai responder a questões sobre orçamento, poupança, investimentos e mais.
               </p>
             )}
           </div>
@@ -272,7 +272,7 @@ export default function EducationPage() {
             <BookOpen className="h-4 w-4 text-primary" />
             <p className="text-sm font-semibold">Percurso de aprendizagem</p>
             {profile && (
-              <span className="ml-auto text-[11px] text-muted-foreground">Nivel {profile.level}</span>
+              <span className="ml-auto text-[11px] text-muted-foreground">Nível {profile.level}</span>
             )}
           </div>
           <div className="p-5">
@@ -307,7 +307,7 @@ export default function EducationPage() {
                         <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{mod.description}</p>
                         {mod.locked ? (
                           <p className="text-[11px] text-muted-foreground mt-2 font-medium">
-                            Nivel {mod.level_required} necessario
+                            Nível {mod.level_required} necessário
                           </p>
                         ) : (
                           <div className="mt-2">
@@ -346,7 +346,7 @@ export default function EducationPage() {
           {challenges.length === 0 ? (
             <div className="text-center py-6">
               <Trophy className="h-8 w-8 mx-auto text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground mt-2">Nenhum desafio disponivel</p>
+              <p className="text-sm text-muted-foreground mt-2">Nenhum desafio disponível</p>
             </div>
           ) : (
             <div className="space-y-5">

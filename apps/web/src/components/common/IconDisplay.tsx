@@ -54,14 +54,14 @@ const ICON_MAP: Record<string, ElementType> = {
   alimentacao: Utensils,
   casa: Home,
   transporte: Car,
-  saude: Pill,
+  saúde: Pill,
   filhos: Users,
   comunicacoes: Smartphone,
   lazer: Heart,
   educacao: GraduationCap,
   financeiro: Landmark,
   pessoal: Users,
-  transferencias: Zap,
+  transferências: Zap,
   receitas: Banknote,
 
   // Fallback

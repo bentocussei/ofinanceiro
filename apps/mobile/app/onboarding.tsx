@@ -28,26 +28,26 @@ interface Step {
 const STEPS: Step[] = [
   {
     icon: 'wallet-outline',
-    title: 'Controla as tuas financas',
-    description: 'Regista receitas e despesas de forma rapida. Organiza por categorias pensadas para Angola.',
+    title: 'Controla as tuas finanças',
+    description: 'Regista receitas e despesas de forma rápida. Organiza por categorias pensadas para Angola.',
     color: colors.primary,
   },
   {
     icon: 'chatbubble-ellipses-outline',
     title: 'Assistente inteligente',
-    description: 'Fala com o assistente para registar transaccoes, consultar saldos e receber conselhos financeiros.',
+    description: 'Fala com o assistente para registar transacções, consultar saldos e receber conselhos financeiros.',
     color: colors.purple,
   },
   {
     icon: 'people-outline',
-    title: 'Financas familiares',
-    description: 'Gere o orcamento da familia em conjunto. Cada membro controla os seus gastos.',
+    title: 'Finanças familiares',
+    description: 'Gere o orçamento da família em conjunto. Cada membro controla os seus gastos.',
     color: colors.warning,
   },
   {
     icon: 'bar-chart-outline',
-    title: 'Relatorios e metas',
-    description: 'Acompanha os teus gastos com graficos. Define metas de poupanca e controla dividas.',
+    title: 'Relatórios e metas',
+    description: 'Acompanha os teus gastos com gráficos. Define metas de poupança e controla dívidas.',
     color: colors.success,
   },
 ]
@@ -149,7 +149,7 @@ export default function OnboardingScreen() {
           onPress={handleNext}
         >
           <Text style={[styles.nextText, { color: isDark ? '#000' : '#fff' }]}>
-            {currentIndex === STEPS.length - 1 ? 'Comecar' : 'Proximo'}
+            {currentIndex === STEPS.length - 1 ? 'Começar' : 'Próximo'}
           </Text>
           <Ionicons
             name={currentIndex === STEPS.length - 1 ? 'checkmark' : 'arrow-forward'}

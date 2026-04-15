@@ -29,7 +29,7 @@ const COUNTRIES = [
   { code: 'PT', dial: '+351', flag: '\u{1F1F5}\u{1F1F9}', label: 'Portugal' },
   { code: 'BR', dial: '+55', flag: '\u{1F1E7}\u{1F1F7}', label: 'Brasil' },
   { code: 'GW', dial: '+245', flag: '\u{1F1EC}\u{1F1FC}', label: 'Guine-Bissau' },
-  { code: 'ST', dial: '+239', flag: '\u{1F1F8}\u{1F1F9}', label: 'Sao Tome' },
+  { code: 'ST', dial: '+239', flag: '\u{1F1F8}\u{1F1F9}', label: 'São Tome' },
   { code: 'TL', dial: '+670', flag: '\u{1F1F9}\u{1F1F1}', label: 'Timor-Leste' },
 ]
 
@@ -103,7 +103,7 @@ export default function RegisterScreen() {
       return
     }
     if (!phone.trim() || phone.replace(/\D/g, '').length < 7) {
-      Alert.alert('Erro', 'Preencha um numero de telefone valido')
+      Alert.alert('Erro', 'Preencha um número de telefone válido')
       return
     }
     Keyboard.dismiss()
@@ -120,7 +120,7 @@ export default function RegisterScreen() {
       setTimeout(() => otpRefs.current[0]?.focus(), 300)
     } catch (error: any) {
       const msg = error.code === 'PHONE_EXISTS'
-        ? 'Este numero ja esta registado'
+        ? 'Este número já esta registado'
         : error.message || 'Erro ao criar conta'
       Alert.alert('Erro', msg)
     }
@@ -132,7 +132,7 @@ export default function RegisterScreen() {
     try {
       await verifyOtp(fullPhone, code)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Codigo invalido ou expirado')
+      Alert.alert('Erro', error.message || 'Código inválido ou expirado')
       setOtp(['', '', '', '', '', ''])
       otpRefs.current[0]?.focus()
     }
@@ -143,7 +143,7 @@ export default function RegisterScreen() {
       await sendOtp(fullPhone)
       startCountdown()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao reenviar codigo')
+      Alert.alert('Erro', error.message || 'Erro ao reenviar código')
     }
   }
 
@@ -198,7 +198,7 @@ export default function RegisterScreen() {
           <View style={styles.brand}>
             <Text style={[styles.brandTitle, { color: text_ }]}>Criar conta</Text>
             <Text style={[styles.brandSubtitle, { color: muted }]}>
-              Comeca a gerir as tuas financas
+              Começa a gerir as tuas finanças
             </Text>
           </View>
 
@@ -207,7 +207,7 @@ export default function RegisterScreen() {
             <View style={[styles.referralBanner, { borderColor: primary + '40', backgroundColor: primary + '10' }]}>
               <Ionicons name="gift-outline" size={18} color={primary} />
               <Text style={[styles.referralText, { color: primary }]}>
-                Foste convidado por um amigo! Ambos ganharao 30 dias gratis apos o registo.
+                Foste convidado por um amigo! Ambos ganharao 30 dias grátis após o registo.
               </Text>
             </View>
           )}
@@ -226,7 +226,7 @@ export default function RegisterScreen() {
               />
 
               {/* Phone */}
-              <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Numero de telefone</Text>
+              <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Número de telefone</Text>
               <View style={[styles.phoneRow, { borderColor: border }]}>
                 <Pressable style={styles.countryBtn} onPress={cycleCountry}>
                   <Text style={styles.countryFlag}>{country.flag}</Text>
@@ -250,12 +250,12 @@ export default function RegisterScreen() {
                 >
                   <Ionicons name="pricetag-outline" size={16} color={muted} />
                   <Text style={[styles.promoToggleText, { color: muted }]}>
-                    Tenho um codigo promocional
+                    Tenho um código promocional
                   </Text>
                 </Pressable>
               ) : (
                 <>
-                  <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Codigo promocional</Text>
+                  <Text style={[styles.label, { color: muted, marginTop: 16 }]}>Código promocional</Text>
                   <TextInput
                     style={[styles.input, { borderColor: border, color: text_ }]}
                     placeholder="Ex: PROMO2026"
@@ -282,7 +282,7 @@ export default function RegisterScreen() {
           {/* OTP Verification */}
           {step === 'otp' && (
             <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-              <Text style={[styles.otpTitle, { color: text_ }]}>Enviamos um codigo para</Text>
+              <Text style={[styles.otpTitle, { color: text_ }]}>Enviamos um código para</Text>
               <Text style={[styles.otpPhone, { color: muted }]}>
                 {country.dial} {maskPhone(phone)}
               </Text>
@@ -313,7 +313,7 @@ export default function RegisterScreen() {
                 </Pressable>
                 <Pressable onPress={countdown === 0 ? handleResendOtp : undefined}>
                   <Text style={[styles.otpLink, { color: countdown > 0 ? muted : accent }]}>
-                    {countdown > 0 ? `Reenviar em ${countdown}s` : 'Reenviar codigo'}
+                    {countdown > 0 ? `Reenviar em ${countdown}s` : 'Reenviar código'}
                   </Text>
                 </Pressable>
               </View>
@@ -322,7 +322,7 @@ export default function RegisterScreen() {
 
           {/* Login link */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: muted }]}>Ja tem conta? </Text>
+            <Text style={[styles.footerText, { color: muted }]}>Já tem conta? </Text>
             <Pressable onPress={() => router.back()}>
               <Text style={[styles.footerLink, { color: accent }]}>Entrar</Text>
             </Pressable>

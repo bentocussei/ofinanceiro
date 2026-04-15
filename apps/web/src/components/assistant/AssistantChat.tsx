@@ -351,7 +351,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-5xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-3.5rem-env(safe-area-inset-bottom))] md:h-screen max-w-5xl mx-auto">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
@@ -552,7 +552,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isLoading}
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                className="flex-1 bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground/60"
               />
               <button
                 type="submit"

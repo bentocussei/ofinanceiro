@@ -68,7 +68,7 @@ export default function BudgetDetailScreen() {
         })
         .catch(() => {
           setIsLoading(false)
-          Alert.alert('Erro', 'Orcamento nao encontrado')
+          Alert.alert('Erro', 'Orçamento não encontrado')
           router.back()
         })
     }
@@ -88,7 +88,7 @@ export default function BudgetDetailScreen() {
       setStatus(data)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Nao foi possivel actualizar')
+      Alert.alert('Erro', error.message || 'Não foi possível actualizar')
     } finally {
       setIsSaving(false)
     }
@@ -96,7 +96,7 @@ export default function BudgetDetailScreen() {
 
   const handleDelete = () => {
     if (!id) return
-    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar este orcamento?', [
+    Alert.alert('Eliminar', 'Tem a certeza que deseja eliminar este orçamento?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -107,7 +107,7 @@ export default function BudgetDetailScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             router.back()
           } catch (error: any) {
-            Alert.alert('Erro', error.message || 'Nao foi possivel eliminar')
+            Alert.alert('Erro', error.message || 'Não foi possível eliminar')
           }
         },
       },
@@ -133,7 +133,7 @@ export default function BudgetDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={tc.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, isDark && styles.textLight]}>Orcamento</Text>
+        <Text style={[styles.headerTitle, isDark && styles.textLight]}>Orçamento</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={() => setIsEditing(!isEditing)} style={styles.actionBtn}>
             <Ionicons name={isEditing ? 'close' : 'pencil'} size={20} color={tc.text} />
@@ -152,12 +152,12 @@ export default function BudgetDetailScreen() {
               style={[styles.editInput, isDark && styles.editInputDark]}
               value={editName}
               onChangeText={setEditName}
-              placeholder="Nome do orcamento"
+              placeholder="Nome do orçamento"
               placeholderTextColor={colors.light.textMuted}
             />
           ) : (
             <Text style={[styles.budgetName, isDark && styles.textLight]}>
-              {status.name || 'Orcamento'}
+              {status.name || 'Orçamento'}
             </Text>
           )}
         </View>

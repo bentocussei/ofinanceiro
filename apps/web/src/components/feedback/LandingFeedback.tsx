@@ -71,7 +71,7 @@ export function LandingFeedback() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (rating === 0) {
-      toast.error("Por favor seleccione uma avaliacao")
+      toast.error("Por favor seleccione uma avaliação")
       return
     }
     setSubmitting(true)
@@ -89,11 +89,11 @@ export function LandingFeedback() {
       })
       if (!res.ok) {
         const body = await res.json().catch(() => null)
-        const msg = body?.detail ?? "Erro ao enviar avaliacao"
-        throw new Error(typeof msg === "string" ? msg : "Erro ao enviar avaliacao")
+        const msg = body?.detail ?? "Erro ao enviar avaliação"
+        throw new Error(typeof msg === "string" ? msg : "Erro ao enviar avaliação")
       }
       setSubmitted(true)
-      toast.success("Avaliacao enviada. Obrigado pelo seu feedback!")
+      toast.success("Avaliação enviada. Obrigado pelo seu feedback!")
       // update local average optimistically
       const newCount = ratingCount + 1
       const newAvg = avgRating !== null
@@ -129,13 +129,13 @@ export function LandingFeedback() {
                   <StarRating value={Math.round(avgRating)} size="lg" />
                   <p className="text-sm text-muted-foreground">
                     {ratingCount.toLocaleString("pt-AO")}{" "}
-                    {ratingCount === 1 ? "avaliacao" : "avaliacoes"}
+                    {ratingCount === 1 ? "avaliação" : "avaliações"}
                   </p>
                 </div>
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">
-                Seja o primeiro a avaliar a aplicacao.
+                Seja o primeiro a avaliar a aplicação.
               </p>
             )}
           </div>
@@ -147,21 +147,21 @@ export function LandingFeedback() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                   <Star className="h-6 w-6 text-primary fill-primary" />
                 </div>
-                <p className="font-semibold">Obrigado pela sua avaliacao!</p>
+                <p className="font-semibold">Obrigado pela sua avaliação!</p>
                 <p className="text-sm text-muted-foreground">
-                  O seu feedback ajuda-nos a melhorar a aplicacao.
+                  O seu feedback ajuda-nos a melhorar a aplicação.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium mb-2">A sua avaliacao</p>
+                  <p className="text-sm font-medium mb-2">A sua avaliação</p>
                   <StarRating value={rating} onChange={setRating} size="lg" />
                 </div>
 
                 <div className="space-y-1.5">
                   <label htmlFor="lf-message" className="text-xs text-muted-foreground">
-                    Comentario (opcional)
+                    Comentário (opcional)
                   </label>
                   <textarea
                     id="lf-message"
@@ -192,7 +192,7 @@ export function LandingFeedback() {
                   disabled={submitting || rating === 0}
                   className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "A enviar..." : "Enviar avaliacao"}
+                  {submitting ? "A enviar..." : "Enviar avaliação"}
                 </button>
               </form>
             )}
