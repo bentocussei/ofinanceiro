@@ -143,6 +143,7 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
   const sections = context === "family" ? FAMILY_SECTIONS : PERSONAL_SECTIONS
@@ -180,6 +181,21 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
     return () => mq.removeEventListener("change", handler)
   }, [])
 
+  // Detect when the mobile keyboard is open so we can hide the bottom tab bar
+  // (matches native iOS behaviour — tab bars disappear while the keyboard is up).
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return
+    const vv = window.visualViewport
+    const update = () => {
+      // Keyboard typically takes at least 150px; use 100px as a safe threshold
+      const diff = window.innerHeight - vv.height
+      setKeyboardOpen(diff > 100)
+    }
+    update()
+    vv.addEventListener("resize", update)
+    return () => vv.removeEventListener("resize", update)
+  }, [])
+
   const cycleTheme = () => {
     const order: Theme[] = ["system", "light", "dark"]
     const idx = order.indexOf(theme)
@@ -204,7 +220,10 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
       </header>
 
       {/* Drawer content (right side — opens from right, closer to thumb) */}
-      <SheetContent side="right" className="w-72 p-0 flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-72 p-0 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      >
             <SheetHeader className="px-2 py-2 border-b border-border">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <ContextSwitcher />
@@ -326,8 +345,13 @@ export function MobileNav({ context }: { context: "personal" | "family" }) {
             </div>
       </SheetContent>
 
-      {/* Bottom tab bar — mobile only (3 tabs + Menu button on the right) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-card border-t border-border">
+      {/* Bottom tab bar — mobile only (4 tabs + Menu button on the right) */}
+      {/* Hidden while the mobile keyboard is open to match native iOS/Android behaviour */}
+      <nav
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-card border-t border-border transition-transform ${
+          keyboardOpen ? "translate-y-full" : "translate-y-0"
+        }`}
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon
           const active = isActive(tab.href)
