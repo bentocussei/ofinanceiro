@@ -31,7 +31,7 @@ export function StickyCTA() {
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold truncate">90 dias grátis</p>
-          <p className="text-xs text-muted-foreground truncate">Sem cartão de crédito</p>
+          <p className="text-xs text-muted-foreground truncate">Registe-se em segundos</p>
         </div>
         <Link
           href="/register"
