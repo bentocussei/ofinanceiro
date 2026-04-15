@@ -398,7 +398,7 @@ export default function LandingPage() {
                 Comece a controlar as suas finanças hoje
               </h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-lg">
-                90 dias grátis. Sem cartão de crédito. Sem compromisso.
+                90 dias grátis. Sem compromisso.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
