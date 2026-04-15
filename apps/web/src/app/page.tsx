@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { MobileShowcase } from "@/components/landing/MobileShowcase"
+import { DeviceShowcase } from "@/components/landing/DeviceShowcase"
+import { PerspectiveCards } from "@/components/landing/PerspectiveCards"
 import { PhoneFrame } from "@/components/landing/PhoneFrame"
-import { ScreenshotGrid } from "@/components/landing/ScreenshotGrid"
 import { StickyCTA } from "@/components/landing/StickyCTA"
 import { ThemeToggle } from "@/components/landing/ThemeToggle"
 import { LogoFull } from "@/components/Logo"
@@ -274,26 +274,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Mobile showcase — 3 phones with real mobile screenshots */}
-      <MobileShowcase />
+      {/* Device showcase — Telemóvel + Computador tabs */}
+      <DeviceShowcase />
 
-      {/* Platform showcase */}
+      {/* Context perspectives — Pessoal + Familiar */}
       <section id="plataforma" className="border-t border-border bg-muted/30 py-14 md:py-20">
         <div className="mx-auto px-4 md:px-8 max-w-[1600px]">
           <div className="max-w-xl mb-10 md:mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              Plataforma
+              Contextos
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
               Uma plataforma, duas perspectivas
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Finanças pessoais e familiares em contextos separados. Mude entre eles com um clique.
+              Finanças pessoais e familiares em contextos separados. Mude entre eles com
+              um clique.
             </p>
           </div>
 
-          {/* Screenshot grid with lightbox */}
-          <ScreenshotGrid />
+          <PerspectiveCards />
         </div>
       </section>
 
