@@ -84,7 +84,7 @@ export function InstallPWAPrompt() {
       role="dialog"
       aria-label="Instalar O Financeiro"
       className="md:hidden fixed left-3 right-3 z-40 rounded-2xl bg-card shadow-2xl ring-1 ring-border animate-in slide-in-from-bottom-4 fade-in-0 duration-300"
-      style={{ bottom: "calc(56px + env(safe-area-inset-bottom) + 12px)" }}
+      style={{ bottom: "calc(72px + env(safe-area-inset-bottom) + 12px)" }}
     >
       <button
         type="button"

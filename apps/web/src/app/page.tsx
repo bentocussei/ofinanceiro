@@ -1,5 +1,8 @@
 import Link from "next/link"
+import { MobileShowcase } from "@/components/landing/MobileShowcase"
+import { PhoneFrame } from "@/components/landing/PhoneFrame"
 import { ScreenshotGrid } from "@/components/landing/ScreenshotGrid"
+import { StickyCTA } from "@/components/landing/StickyCTA"
 import { ThemeToggle } from "@/components/landing/ThemeToggle"
 import { LogoFull } from "@/components/Logo"
 import { LandingFeedback } from "@/components/feedback/LandingFeedback"
@@ -121,9 +124,9 @@ const stats = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex items-center justify-between px-4 md:px-8 py-3 max-w-[1600px]">
           <a href="/"><LogoFull className="h-9 md:h-12" /></a>
           <nav className="hidden items-center gap-6 text-sm md:flex">
@@ -156,7 +159,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-20 md:pt-28 pb-12 md:pb-16">
+      <section className="relative overflow-hidden pt-[calc(5rem+env(safe-area-inset-top))] md:pt-28 pb-12 md:pb-16">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="pointer-events-none absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
 
@@ -201,7 +204,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right — real screenshot */}
+            {/* Right — desktop browser mockup (lg+) */}
             <div className="hidden lg:block">
               <div className="rounded-2xl border border-border/50 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-muted/30">
@@ -218,6 +221,16 @@ export default function LandingPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Mobile phone mockup — below the CTA on <lg */}
+          <div className="lg:hidden mt-12 flex justify-center">
+            <PhoneFrame
+              src="/screenshots-mobile/mobile-04-dashboard.png"
+              alt="O Financeiro no telemóvel"
+              priority
+              className="max-w-[240px]"
+            />
           </div>
         </div>
       </section>
@@ -237,20 +250,20 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {features.map((f) => {
               const Icon = f.icon
               return (
                 <div
                   key={f.title}
-                  className="group flex gap-4 rounded-xl bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
+                  className="group flex flex-col gap-2.5 rounded-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] sm:flex-row sm:gap-4 sm:p-5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-10 sm:w-10">
+                    <Icon className="h-[18px] w-[18px] text-primary sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold">{f.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    <h3 className="text-sm font-semibold leading-tight">{f.title}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-3 sm:line-clamp-none sm:text-sm">
                       {f.description}
                     </p>
                   </div>
@@ -260,6 +273,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Mobile showcase — 3 phones with real mobile screenshots */}
+      <MobileShowcase />
 
       {/* Platform showcase */}
       <section id="plataforma" className="border-t border-border bg-muted/30 py-14 md:py-20">
@@ -441,8 +457,11 @@ export default function LandingPage() {
       {/* Feedback */}
       <LandingFeedback />
 
+      {/* Mobile-only sticky CTA bar */}
+      <StickyCTA />
+
       {/* Footer */}
-      <footer className="border-t border-border py-4">
+      <footer className="border-t border-border py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto flex flex-col items-center justify-between gap-3 px-4 md:px-8 text-sm text-muted-foreground sm:flex-row max-w-[1600px]">
           <LogoFull className="h-12" />
           <p>Gestão financeira pessoal e familiar para Angola</p>

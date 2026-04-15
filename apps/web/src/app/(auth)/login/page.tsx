@@ -17,7 +17,7 @@ type Step = "form" | "otp"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [method, setMethod] = useState<LoginMethod>("password")
+  const [method, setMethod] = useState<LoginMethod>("otp")
   const [step, setStep] = useState<Step>("form")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
@@ -106,21 +106,9 @@ export default function LoginPage() {
     <div className="rounded-xl border border-border bg-card p-6 shadow-sm w-full max-w-sm">
       <h2 className="mb-6 text-center text-lg font-semibold">Entrar</h2>
 
-      {/* Method selector */}
+      {/* Method selector (OTP first — primary recommended method) */}
       {step === "form" && (
         <div className="flex gap-2 mb-6">
-          <button
-            type="button"
-            onClick={() => { setMethod("password"); setError("") }}
-            className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-colors ${
-              method === "password"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            }`}
-          >
-            <Lock className="h-3.5 w-3.5" />
-            Com senha
-          </button>
           <button
             type="button"
             onClick={() => { setMethod("otp"); setError("") }}
@@ -132,6 +120,18 @@ export default function LoginPage() {
           >
             <Smartphone className="h-3.5 w-3.5" />
             Com código SMS
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMethod("password"); setError("") }}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-colors ${
+              method === "password"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-accent"
+            }`}
+          >
+            <Lock className="h-3.5 w-3.5" />
+            Com senha
           </button>
         </div>
       )}
