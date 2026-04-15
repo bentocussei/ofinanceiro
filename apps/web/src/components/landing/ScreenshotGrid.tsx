@@ -73,21 +73,24 @@ export function ScreenshotGrid() {
       </div>
 
       {view === "desktop" ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((item) => (
-            <button
-              key={item.title}
-              onClick={() => setSelected(item.src)}
-              className="group text-left cursor-zoom-in"
-            >
-              <div className="rounded-lg border border-border/50 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:scale-[1.02]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.src} alt={item.title} className="w-full" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold">{item.title}</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
-            </button>
-          ))}
+        // Mobile (<sm): horizontal scroll-snap. Tablet+: grid.
+        <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none scrollbar-hide">
+          <div className="flex gap-4 px-4 sm:px-0 sm:grid sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {items.map((item) => (
+              <button
+                key={item.title}
+                onClick={() => setSelected(item.src)}
+                className="group text-left cursor-zoom-in snap-center shrink-0 w-[82vw] sm:w-auto"
+              >
+                <div className="rounded-lg border border-border/50 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:scale-[1.02]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.src} alt={item.title} className="w-full" />
+                </div>
+                <h3 className="mt-3 text-sm font-semibold">{item.title}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
       ) : (
         // Mobile (<sm): horizontal scroll-snap. Tablet+: grid.
