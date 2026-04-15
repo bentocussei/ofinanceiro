@@ -30,7 +30,19 @@ export function OtpInput({ length = 6, disabled = false, onComplete }: OtpInputP
   )
 
   function handleChange(index: number, value: string) {
-    const digit = value.replace(/\D/g, "").slice(-1)
+    const cleaned = value.replace(/\D/g, "")
+
+    // iOS/Android SMS auto-fill injects the whole code as a single onChange
+    // event on the first field (not a paste event). Detect it and fill all.
+    if (cleaned.length >= length) {
+      const filled = cleaned.slice(0, length).split("")
+      setDigits(filled)
+      inputRefs.current[length - 1]?.focus()
+      onComplete(filled.join(""))
+      return
+    }
+
+    const digit = cleaned.slice(-1)
     const newDigits = [...digits]
     newDigits[index] = digit
     setDigits(newDigits)
@@ -82,7 +94,10 @@ export function OtpInput({ length = 6, disabled = false, onComplete }: OtpInputP
           }}
           type="text"
           inputMode="numeric"
-          maxLength={1}
+          // First input accepts full paste/autofill; others only 1 digit
+          maxLength={index === 0 ? length : 1}
+          // Triggers iOS/Android SMS code auto-fill suggestion
+          autoComplete={index === 0 ? "one-time-code" : "off"}
           value={digit}
           onChange={(e) => handleChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(index, e)}
