@@ -22,14 +22,14 @@ const perspectives = [
   {
     icon: Users,
     badge: "Familiar",
-    title: "Finanças partilhadas com quem importa",
+    title: "O seu controlo financeiro familiar",
     description:
       "Veja, oriente e cresça em conjunto — cada membro com a visibilidade certa.",
     bullets: [
       "Património familiar agregado",
       "Contas e despesas partilhadas",
       "Metas familiares em conjunto",
-      "Membros com perfis: admin, adulto, criança",
+      "Membros com perfis distintos",
       "Convites por código, sem fricção",
     ],
     image: "/screenshots-mobile/mobile-30-family-dashboard.png",
