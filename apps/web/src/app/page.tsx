@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { DeviceShowcase } from "@/components/landing/DeviceShowcase"
 import { PerspectiveCards } from "@/components/landing/PerspectiveCards"
-import { PhoneFrame } from "@/components/landing/PhoneFrame"
 import { StickyCTA } from "@/components/landing/StickyCTA"
 import { ThemeToggle } from "@/components/landing/ThemeToggle"
 import { LogoFull } from "@/components/Logo"
@@ -223,15 +222,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Mobile phone mockup — below the CTA on <lg */}
-          <div className="lg:hidden mt-12 flex justify-center">
-            <PhoneFrame
-              src="/screenshots-mobile/mobile-04-dashboard.png"
-              alt="O Financeiro no telemóvel"
-              priority
-              className="max-w-[240px]"
-            />
-          </div>
         </div>
       </section>
 
